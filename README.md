@@ -1,6 +1,6 @@
-<p style="text-align:center;font-size:3rem">📺 抖音弹幕监听器</p>
+<p style="text-align:center;font-size:3rem"></p>
 
-
+# 📺 抖音弹幕监听器
 
 <p style="text-align:center">- 小白不圆 -</p>
 
@@ -67,7 +67,7 @@
 
 ## 🖼️控制台截图
 
-[![控制台截图](https://s1.ax1x.com/2022/11/10/z9YYPU.png)](https://imgse.com/i/z9YYPU)
+[![控制台截图](./imgs/控制台截图.png)](https://imgse.com/i/z9YYPU)
 
 ## 😎介绍及配置
 
@@ -210,19 +210,19 @@
 
 1. 前往扩展商店 搜索 `switchyomega` 安装
 
-   [<img src="https://s21.ax1x.com/2024/09/28/pA1SSSg.png" alt="pA1SSSg.png" style="zoom: 50%;" />](https://imgse.com/i/pA1SSSg)
+   [<img src="./imgs/proxy1.png" style="zoom: 50%;" />](https://imgse.com/i/pA1SSSg)
 
 2. 添加弹幕代理
 
-   [<img src="https://s21.ax1x.com/2024/09/28/pA1SCOs.png" alt="pA1SCOs.png" style="zoom:50%;" />](https://imgse.com/i/pA1SCOs)
+   [<img src="./imgs/proxy2.png" alt="pA1SCOs.png" style="zoom:50%;" />](https://imgse.com/i/pA1SCOs)
 
 3. 配置代理地址，并保存，不要配置为ws服务端口地址，程序默认代理端口是**8827**
 
-   [<img src="https://s21.ax1x.com/2024/09/28/pA1SLjJ.png" alt="pA1SLjJ.png" style="zoom:50%;" />](https://imgse.com/i/pA1SLjJ)
+   [<img src="./imgs/proxy3.png" style="zoom:50%;" />](https://imgse.com/i/pA1SLjJ)
 
 4. 进入直播页，应用代理，完成！
 
-   [<img src="https://s21.ax1x.com/2024/09/28/pA1SXu9.png" alt="pA1SXu9.png" style="zoom:50%;" />](https://imgse.com/i/pA1SXu9)
+   [<img src="./imgs/proxy4.png" style="zoom:50%;" />](https://imgse.com/i/pA1SXu9)
 
 5. Chrome 用户请自行百度搜索扩展安装方法
 
@@ -257,7 +257,7 @@
 <a id="user-content-支持一下" class="anchor"></a>
 
 ## 🍻支持一下?
-开源不易，老板
+开源不易
 <p>
 <img src="./imgs/微信.png" alt="微信支付" style="zoom:70%;border-radius: 5px;" />
 </p>
