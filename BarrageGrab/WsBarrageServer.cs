@@ -36,8 +36,7 @@ namespace BarrageGrab
         Timer dieout = new Timer(10000);//离线客户端清理计时器
         Timer giftCountTimer = new Timer(10000);//礼物缓存清理计时器
         WssBarrageGrab grab = new WssBarrageGrab();//弹幕解析器核心
-        AppSetting Appsetting = AppSetting.Current;//全局配置文件实例        
-        WebCastGiftPack giftData = null; //礼物数据
+        AppSetting Appsetting = AppSetting.Current;//全局配置文件实例
         static int printCount = 0; //控制台输出计数，用于判断清理控制台
 
         /// <summary>
@@ -91,39 +90,6 @@ namespace BarrageGrab
             this.socketServer = socket;
             //dieout.Start();
             giftCountTimer.Start();
-
-            InitGiftData();
-        }
-
-        // 初始化礼物数据
-        private void InitGiftData()
-        {
-            var path = Path.Combine(AppContext.BaseDirectory, "LocalData", "gift.json");
-            if (File.Exists(path))
-            {
-                var jsonData = File.ReadAllText(path);
-                this.giftData = JsonConvert.DeserializeObject<WebCastGiftPack>(jsonData);
-            }
-
-            return;
-            //从服务器获取礼物数据
-            DyServer.GetGifts().ContinueWith(t =>
-            {
-                if (t.IsFaulted) return;
-                if (t.Result == null) return;
-
-                this.giftData = t.Result;
-                Logger.LogInfo("礼物数据下载成功");
-                try
-                {
-                    //覆写本地数据
-                    File.WriteAllText(path, t.Result.ToJson(true));
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogWarn("缓存礼物数据到本地失败，"+ex.Message);
-                }
-            });
         }
 
         //礼物缓存清理计时器回调
@@ -272,7 +238,7 @@ namespace BarrageGrab
                     SecUid = roomInfo.Owner.SecUid,
                     UserId = roomInfo.Owner.UserId
                 };
-                msg.WebRoomId = roomInfo.WebRoomId;
+                msg.WebRoomId = roomInfo.WebRoomId;                
             }
         }
 
@@ -286,7 +252,8 @@ namespace BarrageGrab
                 MsgId = msg.Common.msgId,
                 Content = msg.Content,
                 RoomId = msg.Common.roomId.ToString(),
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),                
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),    
+                Appid = e.Message.Common.appId.ToString(),
                 Type = msg.Type,
                 User = GetUser(msg.User)
             };
@@ -314,6 +281,7 @@ namespace BarrageGrab
                 RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计直播间人数 {msg.totalPvForAnchor}",
+                Appid = e.Message.Common.appId.ToString(),
                 User = null
             };
 
@@ -337,15 +305,15 @@ namespace BarrageGrab
             int lastCount = 0;
 
             //纠正赋值礼物数据，比如是否连击，弹幕回送会不准确
-            var findForData = giftData?.gifts?.FirstOrDefault(f => f.id == msg.giftId);
-            if (findForData != null)
-            {
-                var ogift = msg.Gift;
-                ogift.Name = findForData.name;
-                ogift.Combo = findForData.combo;
-                ogift.diamondCount = findForData.diamond_count;
-                ogift.Name = findForData.name;
-            }
+            //var findForData = giftData?.gifts?.FirstOrDefault(f => f.id == msg.giftId);
+            //if (findForData != null)
+            //{
+            //    var ogift = msg.Gift;
+            //    ogift.Name = findForData.name;
+            //    ogift.Combo = findForData.combo;
+            //    ogift.diamondCount = findForData.diamond_count;
+            //    ogift.Name = findForData.name;
+            //}
 
             //判断礼物重复
             if (msg.repeatEnd == 1 && giftCountCache.ContainsKey(key))
@@ -400,7 +368,8 @@ namespace BarrageGrab
                 Combo = msg.Gift.Combo,
                 ImgUrl = msg.Gift.Image?.urlLists?.FirstOrDefault() ?? "",
                 User = GetUser(msg.User),
-                ToUser = GetUser(msg.toUser)
+                ToUser = GetUser(msg.toUser),
+                Appid = e.Message.Common.appId.ToString()                
             };
 
             if (enty.ToUser != null)
@@ -428,7 +397,8 @@ namespace BarrageGrab
                 Content = $"{msg.User.Nickname} 关注了主播",
                 RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                User = GetUser(msg.User)
+                User = GetUser(msg.User),
+                Appid = e.Message.Common.appId.ToString()
             };
 
             var msgType = PackMsgType.关注消息;
@@ -459,7 +429,8 @@ namespace BarrageGrab
                 RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 ShareType = type,
-                User = GetUser(msg.User)
+                User = GetUser(msg.User),
+                Appid = e.Message.Common.appId.ToString()
             };
 
             var msgType = PackMsgType.直播间分享;
@@ -482,11 +453,13 @@ namespace BarrageGrab
             var enty = new Modles.JsonEntity.MemberMessage()
             {
                 MsgId = msg.Common.msgId,
-                Content = $"{msg.User.Nickname} 来了 直播间人数:{msg.memberCount}",
+                Content = $"{msg.User.Nickname}${(e.Message.userEnterTipType==6?" 通过分享":"")} 来了 直播间人数:{msg.memberCount}",
                 RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 CurrentCount = msg.memberCount,
-                User = GetUser(msg.User)
+                User = GetUser(msg.User),
+                Appid = e.Message.Common.appId.ToString(),
+                EnterTipType = e.Message.userEnterTipType,
             };
 
             var msgType = PackMsgType.进直播间;
@@ -512,7 +485,8 @@ namespace BarrageGrab
                 RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 Total = msg.Total,
-                User = GetUser(msg.User)
+                User = GetUser(msg.User),
+                Appid = e.Message.Common.appId.ToString()
             };
 
             var msgType = PackMsgType.点赞消息;
@@ -536,6 +510,7 @@ namespace BarrageGrab
                 RoomId = msg.Common.roomId.ToString(),
                 WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                 User = GetUser(msg.User),
+                Appid = e.Message.Common.appId.ToString()
             };
 
             var msgType = PackMsgType.弹幕消息;
@@ -562,7 +537,8 @@ namespace BarrageGrab
                     Content = "直播已结束",
                     RoomId = msg.Common.roomId.ToString(),
                     WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                    User = null
+                    User = null,
+                    Appid = e.Message.Common.appId.ToString()   
                 };
 
                 var msgType = PackMsgType.下播;

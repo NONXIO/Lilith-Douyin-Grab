@@ -146,6 +146,8 @@ message MemberMessage{
     Image backgroundImageV2 = 17;
     Text anchorDisplayText = 18;
     PublicAreaCommon publicAreaCommon = 19;
+    string userEnterTipType = 20;
+    string anchorEnterTipType = 21;
 
     message EffectConfig{
         int64 type = 1;
@@ -197,6 +199,7 @@ message Common{
     Room room = 16;
     int64 anchorFoldTypeV2 = 17;
     int64 processAtSeiTimeMs = 18;
+    int64 appId = 24;
 }
 
 message Text{

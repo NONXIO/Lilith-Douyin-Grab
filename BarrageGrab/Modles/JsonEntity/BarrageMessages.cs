@@ -53,6 +53,15 @@ namespace BarrageGrab.Modles.JsonEntity
         抖音好友 = 112
     }
 
+    /// <summary>
+    /// 观众的进入方式
+    /// </summary>
+    public enum EnterType
+    {
+        正常进入 = 0,
+        通过分享进入 = 6,
+        //...其他暂时未知
+    }
 
     /// <summary>
     /// 数据包装器
@@ -121,6 +130,11 @@ namespace BarrageGrab.Modles.JsonEntity
         /// web直播间ID
         /// </summary>
         public string WebRoomId { get; set; }
+
+        /// <summary>
+        /// 用户使用的 Appid ，已知 1128，8663，2329 等
+        /// </summary>
+        public string Appid { get; set; }
     }
 
     /// <summary>
@@ -365,6 +379,11 @@ namespace BarrageGrab.Modles.JsonEntity
         /// 当前直播间人数
         /// </summary>
         public long CurrentCount { get; set; }
+
+        /// <summary>
+        /// 直播间进入方式，目前已知 0 正常进入，6 通过分享进入
+        /// </summary>
+        public long EnterTipType { get; set; }
     }
 
     /// <summary>
