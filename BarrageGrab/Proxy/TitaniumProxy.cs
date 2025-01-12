@@ -102,7 +102,7 @@ namespace BarrageGrab.Proxy
             proxyServer.CertificateManager.TrustRootCertificate(true);
 
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
-            proxyServer.BeforeRequest += ProxyServer_BeforeRequest;
+            //proxyServer.BeforeRequest += ProxyServer_BeforeRequest;
             proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
             //proxyServer.AfterResponse += ProxyServer_AfterResponse;            
 
@@ -196,24 +196,6 @@ namespace BarrageGrab.Proxy
         private bool CheckBrowser(string processName)
         {
             return AppSetting.Current.ProcessFilter.Contains(processName) && processName != "直播伴侣" && processName != "douyin";
-        }
-
-        private async Task ProxyServer_BeforeRequest(object sender, SessionEventArgs e)
-        {
-            string uri = e.HttpClient.Request.RequestUri.ToString();
-            string hostname = e.HttpClient.Request.RequestUri.Host;
-            var processid = e.HttpClient.ProcessId.Value;
-            var processName = base.GetProcessName(processid);
-            var contentType = e.HttpClient.Response.ContentType ?? "";
-
-            //ws 方式
-            if (
-                e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
-                webcastBarrageReg.IsMatch(uri)
-               )
-            {
-               
-            }
         }
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
