@@ -17,6 +17,9 @@ using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Modles.ProtoEntity;
 using System.Drawing;
 using System.Collections.Concurrent;
+using System.Dynamic;
+using static BarrageGrab.Modles.ProtoEntity.Image;
+using static BarrageGrab.Modles.WebCastGift;
 
 namespace BarrageGrab
 {
@@ -163,12 +166,67 @@ namespace BarrageGrab
             return user;
         }
 
+        //检查属性定义
+        private bool HasProperty(dynamic obj, string propertyName)
+        {
+            if (obj is ExpandoObject)
+            {
+                return ((IDictionary<string, object>)obj).ContainsKey(propertyName);
+            }
+            return obj.GetType().GetProperty(propertyName) != null;
+        }
+
+        private T CreateMsg<T>(dynamic msg) where T : Msg, new()
+        {
+            var roomid = msg.Common.roomId.ToString();
+            RoomInfo roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
+
+            //判断 Common 属性是否存在
+            var hasUser = HasProperty(msg, nameof(msg.User));
+
+            var enty = new T()
+            {
+                MsgId = msg.Common?.msgId,
+                RoomId = roomid,
+                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid),
+                Appid = msg.Common.appId.ToString(),
+                User = hasUser ? GetUser(msg.User) : null,
+            };
+
+            //判断是否是直播间管理员
+            if (enty.User != null && roomInfo != null && roomInfo.AdminUserIds.Any())
+            {
+                enty.User.IsAdmin = roomInfo.AdminUserIds.Contains(enty.User.Id.ToString());
+            }
+
+            //判断是否是主播
+            if (enty.User != null && roomInfo != null && roomInfo.Owner != null)
+            {
+                enty.User.IsAnchor = enty.User.Id.ToString() == roomInfo.Owner.UserId;
+            }
+
+            return enty;
+        }
+
         //打印消息        
         private void PrintMsg(Msg msg, PackMsgType barType)
         {
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
             var roomName = (rinfo?.Owner?.Nickname ?? ((msg.WebRoomId.IsNullOrWhiteSpace() ? msg.RoomId.ToString() : msg.WebRoomId)));
+            var isAdmin = msg.User != null && msg.User.IsAdmin;
+            var isAnchor = msg.User != null && msg.User.IsAnchor;
+
             var text = $"{DateTime.Now.ToString("HH:mm:ss")} [{roomName}] [{barType}]";
+
+            if (isAdmin)
+            {
+                text+= " [管理员]";
+            }
+
+            if(isAnchor)
+            {
+                text += " [主播]";
+            }
 
             if (msg.User != null)
             {
@@ -226,9 +284,9 @@ namespace BarrageGrab
         //附加房间信息
         private void AttachRoomInfo(Msg msg)
         {
-            if(msg==null) return;
+            if (msg == null) return;
             var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
-            if (roomInfo != null)
+            if (roomInfo != null && roomInfo.Owner!=null)
             {
                 msg.Onwer = new RoomAnchorInfo()
                 {
@@ -238,7 +296,7 @@ namespace BarrageGrab
                     SecUid = roomInfo.Owner.SecUid,
                     UserId = roomInfo.Owner.UserId
                 };
-                msg.WebRoomId = roomInfo.WebRoomId;                
+                msg.WebRoomId = roomInfo.WebRoomId;
             }
         }
 
@@ -247,16 +305,10 @@ namespace BarrageGrab
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-            var enty = new FansclubMsg()
-            {
-                MsgId = msg.Common.msgId,
-                Content = msg.Content,
-                RoomId = msg.Common.roomId.ToString(),
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),    
-                Appid = e.Message.Common.appId.ToString(),
-                Type = msg.Type,
-                User = GetUser(msg.User)
-            };
+            var enty = CreateMsg<FansclubMsg>(msg);
+
+            enty.Content = msg.Content;
+            enty.Type = msg.Type;
             enty.Level = enty.User.FansClub.Level;
 
             var msgType = PackMsgType.粉丝团消息;
@@ -271,19 +323,13 @@ namespace BarrageGrab
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-            var enty = new UserSeqMsg()
-            {
-                MsgId = msg.Common.msgId,
-                OnlineUserCount = msg.Total,
-                TotalUserCount = msg.totalUser,
-                TotalUserCountStr = msg.totalPvForAnchor,
-                OnlineUserCountStr = msg.onlineUserForAnchor,
-                RoomId = msg.Common.roomId.ToString(),
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计直播间人数 {msg.totalPvForAnchor}",
-                Appid = e.Message.Common.appId.ToString(),
-                User = null
-            };
+
+            var enty = CreateMsg<UserSeqMsg>(msg);
+            enty.OnlineUserCount = msg.Total;
+            enty.TotalUserCount = msg.totalUser;
+            enty.TotalUserCountStr = msg.totalPvForAnchor;
+            enty.OnlineUserCountStr = msg.onlineUserForAnchor;
+            enty.Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计直播间人数 {msg.totalPvForAnchor}";
 
             var msgType = PackMsgType.直播间统计;
             AttachRoomInfo(enty);
@@ -319,7 +365,7 @@ namespace BarrageGrab
             if (msg.repeatEnd == 1 && giftCountCache.ContainsKey(key))
             {
                 //清除缓存中的key
-                if (msg.groupId > 0 )
+                if (msg.groupId > 0)
                 {
                     Tuple<int, DateTime> _;
                     giftCountCache.TryRemove(key, out _);
@@ -353,24 +399,17 @@ namespace BarrageGrab
 
             var count = currCount - lastCount;
 
-            var enty = new GiftMsg()
-            {
-                MsgId = msg.Common.msgId,
-                RoomId = msg.Common.roomId.ToString(),
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                Content = $"{msg.User.Nickname} 送出 {msg.Gift.Name}{(msg.Gift.Combo ? "(可连击)" : "")} x {msg.repeatCount}个，增量{count}个",
-                DiamondCount = msg.Gift.diamondCount,
-                RepeatCount = msg.repeatCount,
-                GiftCount = count,
-                GroupId = msg.groupId,
-                GiftId = msg.giftId,
-                GiftName = msg.Gift.Name,
-                Combo = msg.Gift.Combo,
-                ImgUrl = msg.Gift.Image?.urlLists?.FirstOrDefault() ?? "",
-                User = GetUser(msg.User),
-                ToUser = GetUser(msg.toUser),
-                Appid = e.Message.Common.appId.ToString()                
-            };
+            var enty = CreateMsg<GiftMsg>(msg);
+            enty.Content = $"{msg.User.Nickname} 送出 {msg.Gift.Name}{(msg.Gift.Combo ? "(可连击)" : "")} x {msg.repeatCount}个，增量{count}个";
+            enty.DiamondCount = msg.Gift.diamondCount;
+            enty.RepeatCount = msg.repeatCount;
+            enty.GiftCount = count;
+            enty.GroupId = msg.groupId;
+            enty.GiftId = msg.giftId;
+            enty.GiftName = msg.Gift.Name;
+            enty.Combo = msg.Gift.Combo;
+            enty.ImgUrl = msg.Gift.Image?.urlLists?.FirstOrDefault() ?? "";
+            enty.ToUser = GetUser(msg.toUser);
 
             if (enty.ToUser != null)
             {
@@ -391,15 +430,8 @@ namespace BarrageGrab
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
             if (msg.Action != 1) return;
-            var enty = new Msg()
-            {
-                MsgId = msg.Common.msgId,
-                Content = $"{msg.User.Nickname} 关注了主播",
-                RoomId = msg.Common.roomId.ToString(),
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                User = GetUser(msg.User),
-                Appid = e.Message.Common.appId.ToString()
-            };
+            var enty = CreateMsg<Msg>(msg);
+            enty.Content = $"{msg.User.Nickname} 关注了主播";
 
             var msgType = PackMsgType.关注消息;
             AttachRoomInfo(enty);
@@ -422,16 +454,9 @@ namespace BarrageGrab
                 type = (ShareType)int.Parse(msg.shareTarget);
             }
 
-            var enty = new ShareMessage()
-            {
-                MsgId = msg.Common.msgId,
-                Content = $"{msg.User.Nickname} 分享了直播间到{type}",
-                RoomId = msg.Common.roomId.ToString(),
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                ShareType = type,
-                User = GetUser(msg.User),
-                Appid = e.Message.Common.appId.ToString()
-            };
+            var enty = CreateMsg<ShareMessage>(msg);
+            enty.Content = $"{msg.User.Nickname} 分享了直播间到{type}";
+            enty.ShareType = type;
 
             var msgType = PackMsgType.直播间分享;
             AttachRoomInfo(enty);
@@ -450,17 +475,11 @@ namespace BarrageGrab
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
 
-            var enty = new Modles.JsonEntity.MemberMessage()
-            {
-                MsgId = msg.Common.msgId,
-                Content = $"{msg.User.Nickname}${(e.Message.userEnterTipType==6?" 通过分享":"")} 来了 直播间人数:{msg.memberCount}",
-                RoomId = msg.Common.roomId.ToString(),
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                CurrentCount = msg.memberCount,
-                User = GetUser(msg.User),
-                Appid = e.Message.Common.appId.ToString(),
-                EnterTipType = e.Message.userEnterTipType,
-            };
+            var enterType = e.Message.userEnterTipType;
+            var enty = CreateMsg<Modles.JsonEntity.MemberMessage>(msg);
+            enty.Content = $"{msg.User.Nickname} ${(enterType == 6 ? " 通过分享" : "")}来了 直播间人数:{msg.memberCount}";
+            enty.CurrentCount = msg.memberCount;
+            enty.EnterTipType = enterType;
 
             var msgType = PackMsgType.进直播间;
             AttachRoomInfo(enty);
@@ -477,17 +496,10 @@ namespace BarrageGrab
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
 
-            var enty = new LikeMsg()
-            {
-                MsgId = msg.Common.msgId,
-                Count = msg.Count,
-                Content = $"{msg.User.Nickname} 为主播点了{msg.Count}个赞，总点赞{msg.Total}",
-                RoomId = msg.Common.roomId.ToString(),
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                Total = msg.Total,
-                User = GetUser(msg.User),
-                Appid = e.Message.Common.appId.ToString()
-            };
+            var enty = CreateMsg<LikeMsg>(msg);
+            enty.Total = msg.Total;
+            enty.Count = msg.Count;
+            enty.Content = $"{msg.User.Nickname} 为主播点了{msg.Count}个赞，总点赞{msg.Total}";
 
             var msgType = PackMsgType.点赞消息;
             AttachRoomInfo(enty);
@@ -503,15 +515,8 @@ namespace BarrageGrab
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
 
-            var enty = new Msg()
-            {
-                MsgId = msg.Common.msgId,
-                Content = msg.Content,
-                RoomId = msg.Common.roomId.ToString(),
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                User = GetUser(msg.User),
-                Appid = e.Message.Common.appId.ToString()
-            };
+            var enty = CreateMsg<Msg>(msg);
+            enty.Content = msg.Content;
 
             var msgType = PackMsgType.弹幕消息;
             AttachRoomInfo(enty);
@@ -538,7 +543,7 @@ namespace BarrageGrab
                     RoomId = msg.Common.roomId.ToString(),
                     WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                     User = null,
-                    Appid = e.Message.Common.appId.ToString()   
+                    Appid = e.Message.Common.appId.ToString()
                 };
 
                 var msgType = PackMsgType.下播;

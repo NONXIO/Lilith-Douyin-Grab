@@ -195,6 +195,16 @@ namespace BarrageGrab.Modles.JsonEntity
         public long Id { get; set; }
 
         /// <summary>
+        /// 是否是直播间管理员
+        /// </summary>
+        public bool IsAdmin { get; set; } = false;
+
+        /// <summary>
+        /// 是否是主播自己
+        /// </summary>
+        public bool IsAnchor { get; set; } = false;
+
+        /// <summary>
         /// ShortId
         /// </summary>
         public long ShortId { get; set; }

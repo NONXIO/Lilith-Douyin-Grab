@@ -87,6 +87,29 @@ namespace BarrageGrab.Modles
         /// </summary>
         public string Ttwid { get; set; }
 
+        /// <summary>
+        /// 是否是匿名直播间
+        /// </summary>
+        public bool IsAnonymous { get; set; }
+
+        public void SetData(JObject room)
+        {
+            this.RoomId = room["id_str"]?.ToString() ?? "";
+            this.AdminUserIds = room["admin_user_ids_str"]?.Values<string>().ToList() ?? new List<string>();
+            this.IsLive = room["status"]?.Value<int>() == 2;
+            this.IsAnonymous = room["live_room_mode"]?.Value<int>() == 1;
+            this.Title = room["title"]?.ToString() ?? "";
+            this.UserCount = long.Parse(room["room_view_stats"]?["display_value"]?.Value<string>() ?? "0");
+            this.TotalUserCount = room["room_view_stats"]?["total_user_str"]?.Value<string>() ?? "0";
+            this.LikeCount = room["like_count"]?.Value<long>() ?? 0;
+            //this.QrcodeUrl = rootData["qrcode_url"]?.ToString() ?? "";
+            this.AuthInfo = room["room_auth"]?.ToObject<RoomInfo.RoomAuth>();
+            this.Cover = room["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? "";//下播情况下没有cover字段
+
+            this.AuthInfo = room["room_auth"]?.ToObject<RoomInfo.RoomAuth>();
+            this.Cover = room["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? "";//下播情况下没有cover字段
+        }
+
         public class RoomAnchor
         {
             /// <summary>
@@ -641,5 +664,58 @@ namespace BarrageGrab.Modles
 
             return Tuple.Create(0, "succ");
         }
+
+        /// <summary>
+        /// 将 EnterRoom Response 转为房间信息对象
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        public static Tuple<int, string> TryParseRoomEnterResponse(string response, out RoomInfo info)
+        {
+            info = null;
+            JObject res;
+            try
+            {
+                res = JsonConvert.DeserializeObject<JObject>(response);
+            }
+            catch (Exception)
+            {
+                return Tuple.Create(4, "不是合法的json格式");
+            }
+            if (res == null)
+            {
+                return Tuple.Create(1, "响应内容为空");
+            }
+            if (res["status_code"]?.Value<int>() != 0)
+            {
+                return Tuple.Create(2, (res["status_msg"]?.ToString() ?? "响应状态失败"));
+            }
+
+            var roomInfos = res["data"]?["data"]?.Values<JToken>().ToArray();
+            if (roomInfos == null || roomInfos.Length == 0) return Tuple.Create(3, "房间信息列表为空");
+            var rootData = res["data"];
+            var room = roomInfos[0]?.ToObject<JObject>();
+            var roomOwner = rootData?["user"] ?? room?["owner"];
+
+            var dto = new RoomInfo();
+            dto.SetData(room);
+            dto.QrcodeUrl = rootData["qrcode_url"]?.ToString() ?? "";
+            if (roomOwner != null)
+            {
+                dto.Owner = new RoomInfo.RoomAnchor()
+                {
+                    UserId = roomOwner["id_str"].ToString(),
+                    Nickname = roomOwner["nickname"].ToString(),
+                    SecUid = roomOwner["sec_uid"].ToString(),
+                    HeadUrl = roomOwner["avatar_thumb"]["url_list"].Values<string>()?.FirstOrDefault() ?? "",
+                    FollowStatus = roomOwner["follow_info"]["follow_status"].Value<int>()
+                };        
+            }
+
+            info = dto;
+            return Tuple.Create(0, "succ");
+        }
+
     }
 }

@@ -23,6 +23,9 @@ using System.Net.Http;
 using System.Text;
 using BrotliSharpLib;
 using System.IO.Compression;
+using System.Collections.Concurrent;
+using System.Security.Policy;
+using NLog.LayoutRenderers;
 
 namespace BarrageGrab.Proxy
 {
@@ -31,6 +34,7 @@ namespace BarrageGrab.Proxy
         ProxyServer proxyServer = null;
         ExplicitProxyEndPoint explicitEndPoint = null;
         ExternalProxy upStreamProxy = null;
+        List<string> rinfoRequestings = new List<string>();
 
         const string SCRIPT_HOST = "lf-cdn-tos.bytescm.com";
         const string LIVE_HOST = "live.douyin.com";
@@ -39,6 +43,7 @@ namespace BarrageGrab.Proxy
         const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
         const string LIVE_SCRIPT_PATH = "/obj/static/webcast/douyin_live";
         const string WEBCAST_AMEMV_HOST = "webcast.amemv.com";
+        private readonly Regex webcastBarrageReg = new Regex(@"webcast\d+-ws-web-\w+\.(douyin|amemv)\.com");
 
         public override string HttpUpstreamProxy { get { return proxyServer?.UpStreamHttpProxy?.ToString() ?? ""; } }
 
@@ -97,6 +102,7 @@ namespace BarrageGrab.Proxy
             proxyServer.CertificateManager.TrustRootCertificate(true);
 
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
+            proxyServer.BeforeRequest += ProxyServer_BeforeRequest;
             proxyServer.BeforeResponse += ProxyServer_BeforeResponse;
             //proxyServer.AfterResponse += ProxyServer_AfterResponse;            
 
@@ -189,7 +195,25 @@ namespace BarrageGrab.Proxy
 
         private bool CheckBrowser(string processName)
         {
-            return AppSetting.Current.ProcessFilter.Contains(processName) && processName!="直播伴侣" && processName!= "douyin";
+            return AppSetting.Current.ProcessFilter.Contains(processName) && processName != "直播伴侣" && processName != "douyin";
+        }
+
+        private async Task ProxyServer_BeforeRequest(object sender, SessionEventArgs e)
+        {
+            string uri = e.HttpClient.Request.RequestUri.ToString();
+            string hostname = e.HttpClient.Request.RequestUri.Host;
+            var processid = e.HttpClient.ProcessId.Value;
+            var processName = base.GetProcessName(processid);
+            var contentType = e.HttpClient.Response.ContentType ?? "";
+
+            //ws 方式
+            if (
+                e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
+                webcastBarrageReg.IsMatch(uri)
+               )
+            {
+               
+            }
         }
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
@@ -266,19 +290,54 @@ namespace BarrageGrab.Proxy
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
             var contentType = e.HttpClient.Response.ContentType ?? "";
+            var isLiveCompan = processName == "直播伴侣";
 
             //ws 方式
             if (
                 e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
-                hostname.StartsWith("webcast")
+                webcastBarrageReg.IsMatch(uri)
                )
             {
                 e.DataReceived += WebSocket_DataReceived;
+                var urix = new Uri(uri);
+                var roomid = urix.GetQueryParam("room_id");
+                Logger.LogInfo($"订阅到新的弹幕流地址，roomid:{roomid}");
             }
+
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
             if (uri.Contains(BARRAGE_POOL_PATH) && contentType.Contains("application/protobuffer"))
             {
                 var payload = await e.GetResponseBody();
+
+                var referrer = e.HttpClient.Request.Headers.GetFirstHeader("Referer")?.Value;
+                //https://live.douyin.com/22404217360
+
+                //检查webroomid映射
+                if (!referrer.IsNullOrWhiteSpace())
+                {
+                    var webroomid = Regex.Match(referrer, @"(?<=live\.douyin\.com\/)\d+").Value;
+                    var urix = new Uri(uri);
+                    var roomid = urix.GetQueryParam("room_id");
+                    var cookie = e.HttpClient.Request.Headers.GetFirstHeader("Cookie")?.Value;
+
+                    var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
+                    if (roomInfo == null && cookie != null && !rinfoRequestings.Contains(webroomid))
+                    {
+                        lock (rinfoRequestings) rinfoRequestings.Add(webroomid);
+                        //查询后会自动缓存
+                        DyServer.GetRoomInfoForApi(webroomid, cookie).ContinueWith(t =>
+                        {
+                            var rinfo = t.Result;
+                            //限制只尝试一次
+                            if (rinfo != null)
+                            {
+                                lock (rinfoRequestings) rinfoRequestings.Remove(webroomid);
+                            }
+                        });
+                    }
+
+                    AppRuntime.RoomCaches.SetRoomCache(roomid, webroomid);
+                }
 
                 base.FireOnFetchResponse(new HttpResponseEventArgs()
                 {
@@ -358,7 +417,7 @@ namespace BarrageGrab.Proxy
 
                     if (code == 0)
                     {
-                        Logger.LogInfo($"直播页{webrid}房间信息已采集到缓存");
+                        Logger.LogInfo($"直播页{webrid} [{roominfo.Owner.Nickname}]的直播间，房间信息已采集到缓存");
                         roominfo.WebRoomId = webrid;
                         roominfo.LiveUrl = url;
                         AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
@@ -565,6 +624,16 @@ namespace BarrageGrab.Proxy
             string hostname = e.HttpClient.Request.RequestUri.Host;
 
             e.DecryptSsl = CheckHost(hostname);
+
+
+            //ws 方式
+            //if (
+            //    e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
+            //    webcastBarrageReg.IsMatch(url)
+            //   )
+            //{
+            //    e.HttpClient.Request.RequestUri = new Uri("wss:////localhost:8828");
+            //}
         }
 
         //检测域名白名单
@@ -597,7 +666,7 @@ namespace BarrageGrab.Proxy
             var processid = args.HttpClient.ProcessId.Value;
 
             List<byte> messageData = new List<byte>();
-
+            
             try
             {
                 foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))

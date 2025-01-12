@@ -477,11 +477,9 @@ namespace BarrageGrab.Modles.ProtoEntity
         public PublicAreaCommon publicAreaCommon { get; set; }
 
         [global::ProtoBuf.ProtoMember(20)]
-        [global::System.ComponentModel.DefaultValue("")]
         public long userEnterTipType { get; set; }
 
         [global::ProtoBuf.ProtoMember(21)]
-        [global::System.ComponentModel.DefaultValue("")]
         public long anchorEnterTipType { get; set; }
 
         [global::ProtoBuf.ProtoContract()]

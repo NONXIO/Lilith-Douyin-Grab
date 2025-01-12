@@ -319,5 +319,44 @@ namespace BarrageGrab
             });
         }
 
+        /// <summary>
+        /// 获取Uri查询参数
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static IDictionary<string, string> GetQueryParams(this Uri uri)
+        {
+            if (uri == null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            var queryParams = uri.Query.TrimStart('?');
+
+            if (string.IsNullOrEmpty(queryParams))
+            {
+                return new Dictionary<string, string>();
+            }
+
+            return queryParams
+                .Split('&')
+                .Select(param => param.Split('='))
+                .ToDictionary(
+                    keyValuePair => Uri.UnescapeDataString(keyValuePair[0]),
+                    keyValuePair => Uri.UnescapeDataString(keyValuePair.Length > 1 ? keyValuePair[1] : ""));
+        }
+
+        /// <summary>
+        /// 获取Uri查询参数
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public static string GetQueryParam(this Uri uri, string key)
+        {
+            return uri.GetQueryParams().Where(w => w.Key == key).Select(s => s.Value).FirstOrDefault();
+        }
+
     }
 }
