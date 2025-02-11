@@ -109,8 +109,8 @@ namespace BarrageGrab
 
             var buff = rsp.Content.ReadAsByteArrayAsync();
             var result = Encoding.UTF8.GetString(buff.Result);
-
-            var res = RoomInfo.TryParseRoomEnterResponse(result, out var dto);
+            RoomInfo dto;
+            var res = RoomInfo.TryParseRoomEnterResponse(result, out dto);
             int code = res.Item1;
             string msg = res.Item2;
             if (code == 0)
