@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using IWshRuntimeLibrary;
 using File = System.IO.File;
+using Microsoft.Win32;
+using System.Diagnostics;
+using Newtonsoft.Json;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace BarrageGrab
 {
@@ -20,36 +24,122 @@ namespace BarrageGrab
         /// <returns></returns>
         public static string GetExePath()
         {
+            string appName = "直播伴侣";
+            appName = Path.GetFileNameWithoutExtension(appName);
             string exePath = "";
-            //获取exe所在目录
-            //1.先在开始菜单找
-            var shortcutPath = @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\直播伴侣.lnk";
-            if (File.Exists(shortcutPath))
+
+            //从卸载列表中查找
+            try
             {
-                //获取快捷方式的目标路径
-                exePath = GetInkTargetPath(shortcutPath);
-                if (!File.Exists(exePath))
+                // 打开注册表中的卸载信息节点
+                RegistryKey uninstallNode = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
+
+                if (uninstallNode != null)
                 {
-                    exePath = "";
-                    Logger.LogWarn($"直播伴侣.lnk 所指向的exe文件位置 {exePath} 无效");                    
+                    // 遍历所有的子键（每个子键代表一个已安装的程序的卸载信息）
+                    foreach (string subKeyName in uninstallNode.GetSubKeyNames())
+                    {
+                        RegistryKey subKey = uninstallNode.OpenSubKey(subKeyName);
+                        var displayName = subKey?.GetValue("DisplayName")?.ToString() ?? "";
+
+                        if (!displayName.Contains(appName)) continue;
+                        string uninstallString = subKey?.GetValue("UninstallString")?.ToString();
+                        if (uninstallString.IsNullOrWhiteSpace()) continue;
+
+                        //"D:\Program Files (x86)\webcast_mate\Uninstall 直播伴侣.exe" /allusers
+                        //正则取出""中间的内容
+                        var match = Regex.Match(uninstallString, "\"(.+?)\"");
+                        if (match.Success)
+                        {
+                            string uninstallPath = match.Groups[1].Value;
+                            string dir = Path.GetDirectoryName(uninstallPath);
+                            string exe = Path.Combine(dir, $"{appName}.exe");
+                            if (File.Exists(exe))
+                            {
+                                exePath = exe;
+                            }
+                        }
+                    }
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Logger.LogInfo("未找到直播伴侣的桌面快捷方式");
+                // 发生异常时，可能是注册表访问出错，记录错误信息
+                Logger.LogError(ex, $"Error checking for Live Companion installation path: {ex.Message}");
             }
 
-            //再从配置文件读取
-            if (exePath.IsNullOrWhiteSpace())
+            //从 C:\ProgramData\Microsoft\Windows\Start Menu\Programs 中查找
+            string startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs");
+            var findFiles = Directory.GetFiles(startMenuPath, $"{appName}.lnk", SearchOption.AllDirectories);
+            if (findFiles.Length > 0)
             {
-                exePath = AppSetting.Current.LiveCompanPath;
-                if(!exePath.IsNullOrWhiteSpace() && !File.Exists(exePath))
+                exePath = GetShortcutTarget(findFiles[0]);
+            }
+
+            var fileName = Path.GetFileName(exePath);
+
+            //判断是否是 版本选择器
+            if (fileName.Contains("Launcher"))
+            {
+                var dir = Path.GetDirectoryName(exePath);
+                //读取目录下 launcher_config.json
+                var launcherConfigPath = Path.Combine(dir, "launcher_config.json");
+                if (!File.Exists(launcherConfigPath))
                 {
-                    Logger.LogWarn($"所配置的 {exePath} 不存在");
-                    exePath = "";
+                    throw new Exception("未找到直播伴侣版本选择器的 launcher_config.json 文件");
+                }
+                var json = File.ReadAllText(launcherConfigPath, Encoding.UTF8);
+                var jobj = JsonConvert.DeserializeObject<dynamic>(json);
+                string curPath = jobj.cur_path;
+                exePath = Path.Combine(dir, curPath, "直播伴侣.exe");
+            }
+
+            // 如果没有找到相关信息，则返回空字符串
+            return exePath;
+        }
+
+        /// <summary>
+        /// 获取 .lnk 文件的目标路径
+        /// </summary>
+        /// <param name="shortcutPath">快捷方式文件路径</param>
+        /// <returns>目标路径</returns>
+        private static string GetShortcutTarget(string shortcutPath)
+        {
+            if (string.IsNullOrEmpty(shortcutPath))
+            {
+                throw new ArgumentException("快捷方式路径不能为空", nameof(shortcutPath));
+            }
+
+            var processStartInfo = new ProcessStartInfo
+            {
+                FileName = "powershell",
+                Arguments = $"-command \"$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('{shortcutPath}'); $Shortcut.TargetPath\"",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            try
+            {
+                using (var process = Process.Start(processStartInfo))
+                {
+                    if (process == null)
+                    {
+                        throw new InvalidOperationException("无法启动 PowerShell 进程");
+                    }
+
+                    using (var reader = process.StandardOutput)
+                    {
+                        string result = reader.ReadToEnd();
+                        process.WaitForExit();
+                        return result.Trim();
+                    }
                 }
             }
-            return exePath;
+            catch (Exception ex)
+            {
+                throw new Exception($"powershell 获取快捷方式目标路径失败，错误信息:{ex.Message}", ex);
+            }
         }
 
         /// <summary>
