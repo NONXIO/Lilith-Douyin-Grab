@@ -626,7 +626,8 @@ namespace BarrageGrab.Proxy
                 SCRIPT_HOST,
                 LIVE_HOST,
                 WEBCAST_AMEMV_HOST , //直播伴侣开播请求地址
-                "*-webcast-platform.bytetos.com" //新的脚本地址
+                "*-webcast-platform.bytetos.com", //新的脚本地址
+                "*webcast*" //所有带webcast的域名
             };            
 
             if (decryptSsls.Contains(hostname))
