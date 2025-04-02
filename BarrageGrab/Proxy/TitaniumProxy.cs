@@ -228,7 +228,7 @@ namespace BarrageGrab.Proxy
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
             var response = e.HttpClient.Response;
-            if (urix.AbsolutePath != "/webcast/room/create/") return;
+            if (!uri.Contains("/webcast/room/create")) return;
             if (processName != "直播伴侣") return;
             if (response.StatusCode != 200) return;
             var reponse = await e.GetResponseBodyAsString();
