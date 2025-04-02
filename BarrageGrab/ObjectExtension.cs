@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using static ProtoBuf.Serializer;
 
 namespace BarrageGrab
 {
@@ -358,5 +359,76 @@ namespace BarrageGrab
             return uri.GetQueryParams().Where(w => w.Key == key).Select(s => s.Value).FirstOrDefault();
         }
 
+    }
+
+    /// <summary>
+    /// 模式匹配相关扩展方法
+    /// </summary>
+    public static class PatternMatchExtensions
+    {
+        /// <summary>
+        /// 判断是否匹配任意一个通配符
+        /// </summary>
+        /// <param name="str">要匹配的字符串</param>
+        /// <param name="patterns">通配符表达式数组</param>
+        /// <returns>是否匹配</returns>
+        public static bool WildcardMatchAny(this string str, params string[] patterns)
+        {
+            return patterns.Any(x => x.WildcardMatch(str));
+        }
+
+        /// <summary>
+        /// 判断是否匹配通配符
+        /// </summary>
+        /// <param name="wildcard">通配符表达式</param>
+        /// <param name="s">要匹配的字符串</param>
+        /// <param name="ignoreCase">是否忽略大小写</param>
+        /// <returns>是否匹配</returns>
+        public static bool WildcardMatch(this string wildcard, string s, bool ignoreCase = false)
+        {
+            return wildcard.WildcardMatch(s, 0, 0, ignoreCase);
+        }
+
+        // 递归匹配通配符
+        private static bool WildcardMatch(this string wildcard, string s, int wildcardIndex, int sIndex, bool ignoreCase)
+        {
+            while (wildcardIndex != wildcard.Length)
+            {
+                char c = wildcard[wildcardIndex];
+                switch (c)
+                {
+                    case '*':
+                        if (wildcardIndex == wildcard.Length - 1)
+                        {
+                            return true;
+                        }
+
+                        return Enumerable.Range(sIndex, s.Length - sIndex).Any((int i) => wildcard.WildcardMatch(s, wildcardIndex + 1, i, ignoreCase));
+                    default:
+                        {
+                            char c2 = (ignoreCase ? char.ToLower(c) : c);
+                            if (s.Length == sIndex)
+                            {
+                                return false;
+                            }
+
+                            char c3 = (ignoreCase ? char.ToLower(s[sIndex]) : s[sIndex]);
+                            if (c2 != c3)
+                            {
+                                return false;
+                            }
+
+                            break;
+                        }
+                    case '?':
+                        break;
+                }
+
+                wildcardIndex++;
+                sIndex++;
+            }
+
+            return sIndex == s.Length;
+        }
     }
 }

@@ -37,7 +37,7 @@ namespace BarrageGrab.Proxy
         List<string> rinfoRequestings = new List<string>();
 
         const string SCRIPT_HOST = "lf-cdn-tos.bytescm.com";
-        const string LIVE_HOST = "live.douyin.com";
+        const string LIVE_HOST = "live.douyin.com";        
         const string DOUYIN_HOST = "www.douyin.com";
         const string USER_INFO_PATH = "/webcast/user/me/";
         const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
@@ -548,21 +548,20 @@ namespace BarrageGrab.Proxy
             if (!contentType.Trim().ToLower().Contains("application/javascript")) return;
             if (e.HttpClient.Response.StatusCode != 200) return;
 
+            //https://lf-webcast-platform.bytetos.com/obj/webcast-platform-cdn/webcast/douyin_live/chunks/island_a74ce.b55095a0.js
             //判断响应内容是否为js application/javascript
-            if (hostname == SCRIPT_HOST
-                //这俩个进程不需要注入
-                && processName != "直播伴侣" && processName != "douyin"
+            if (processName != "直播伴侣" && processName != "douyin"
                 && fileName.StartsWith("island")
                 )
             {
                 var js = await e.GetResponseBodyAsString();
-                var reg2 = new Regex(@"if\(!\((?<v1>\d,\w{1,2})\.DJ\)\(\)&&");
-                var match = reg2.Match(js);
+                var reg = new Regex(@"if\(!\(\d{1,},\w{1,}\.DJ\)\(\).+\w{1,}\.includes\(""live""\)\)\)\{");
+                var match = reg.Match(js);
                 if (match.Success)
                 {
-                    js = reg2.Replace(js, "if(false &&");
+                    js = reg.Replace(js, "if(false){");
                     e.SetResponseBodyString(js);
-                    Logger.PrintColor($"已成功绕过页面无操作检测\n", ConsoleColor.Green);
+                    Logger.PrintColor($"已成功绕过JS页面无操作检测 {urlNoQuery}\n", ConsoleColor.Green);
                 }
             }
 
@@ -627,9 +626,15 @@ namespace BarrageGrab.Proxy
                 SCRIPT_HOST,
                 LIVE_HOST,
                 WEBCAST_AMEMV_HOST , //直播伴侣开播请求地址
-            };
+                "*-webcast-platform.bytetos.com" //新的脚本地址
+            };            
 
             if (decryptSsls.Contains(hostname))
+            {
+                return true;
+            }            
+
+            if (hostname.WildcardMatchAny(decryptSsls))
             {
                 return true;
             }
