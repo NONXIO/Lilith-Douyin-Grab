@@ -85,12 +85,13 @@ namespace BarrageGrab
                 var room = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
                 if(room == null) return;
                 var date = DateTime.Now.ToString("yyyy年MM月dd日直播");
-                dir = Path.Combine(dir, $"({room.WebRoomId}){room?.Owner?.Nickname ?? "-1"}", date);
+                dir = Path.Combine(dir, $"({room.WebRoomId}){room?.Owner?.Nickname ?? "-1"}", date, "场次" + msg.RoomId.ToString());
                 if (!Directory.Exists(dir))
                 {
                     Directory.CreateDirectory(dir);
                 }
                 var path = Path.Combine(dir, type + ".txt");
+                path = SafePathString(path);
                 if (!File.Exists(path))
                 {
                     File.Create(path).Close();
@@ -106,6 +107,31 @@ namespace BarrageGrab
                 return;
             }
         }
+
+        /// <summary>
+        /// 将字符串中的特殊字符转换为'?'，使其安全用于文件路径
+        /// </summary>
+        /// <param name="input">输入字符串</param>
+        /// <returns>处理后的安全字符串</returns>
+        public static string SafePathString(string input)
+        {
+            //在文件系统中，以下字符通常不允许用于文件名：\ / : * ? " < > |
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // 文件系统中不允许的字符
+            char[] invalidChars = Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).Distinct().ToArray();
+
+            StringBuilder result = new StringBuilder(input.Length);
+            foreach (char c in input)
+            {
+                result.Append(invalidChars.Contains(c) ? '？' : c);
+            }
+
+            return result.ToString();
+        }
+
+
 
         private static string LogText(Msg msg, PackMsgType barType)
         {
