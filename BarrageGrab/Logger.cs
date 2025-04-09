@@ -85,13 +85,13 @@ namespace BarrageGrab
                 var room = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
                 if(room == null) return;
                 var date = DateTime.Now.ToString("yyyy年MM月dd日直播");
-                dir = Path.Combine(dir, $"({room.WebRoomId}){room?.Owner?.Nickname ?? "-1"}", date, "场次" + msg.RoomId.ToString());
+                var nickName = SafePathString(room?.Owner?.Nickname ?? "-1");
+                dir = Path.Combine(dir, $"({room.WebRoomId}){nickName}", date, "场次" + msg.RoomId.ToString());
                 if (!Directory.Exists(dir))
                 {
                     Directory.CreateDirectory(dir);
                 }
                 var path = Path.Combine(dir, type + ".txt");
-                path = SafePathString(path);
                 if (!File.Exists(path))
                 {
                     File.Create(path).Close();
