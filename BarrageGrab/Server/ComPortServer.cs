@@ -25,7 +25,13 @@ namespace BarrageGrab
             if (AppSetting.Current.UseComPortFilter)
             {
                 jsEngine = JsEngine.CreateNewEngine();
+
                 var jsFile = JsEngine.GetJsFile("comPortFilter.js");
+                if (jsFile.IsNullOrWhiteSpace())
+                {
+                    jsFile = EmbResource.GetFileContent("comPortFilter.js");
+                }
+
                 try
                 {
                     jsEngine.Execute(jsFile);

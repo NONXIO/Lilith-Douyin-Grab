@@ -29,7 +29,7 @@ namespace BarrageGrab
                 LogFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
                 FilterHostName = bool.Parse(AppSettings["filterHostName"].Trim());
                 HostNameFilter = AppSettings["hostNameFilter"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
-                UsedProxy = bool.Parse(AppSettings["usedProxy"].Trim());
+                UsedProxy = bool.Parse(AppSettings["sysProxy"].Trim());
                 ListenAny = bool.Parse(AppSettings["listenAny"].Trim());
                 UpstreamProxy = AppSettings["upstreamProxy"].Trim();
                 HideConsole = bool.Parse(AppSettings["hideConsole"].Trim());

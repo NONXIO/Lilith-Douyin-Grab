@@ -308,7 +308,7 @@ namespace BarrageGrab.Proxy
                     {
                         lock (rinfoRequestings) rinfoRequestings.Add(webroomid);
                         //查询后会自动缓存
-                        DyServer.GetRoomInfoForApi(webroomid, cookie).ContinueWith(t =>
+                        DyApiHelper.GetRoomInfoForApi(webroomid, cookie).ContinueWith(t =>
                         {
                             var rinfo = t.Result;
                             //限制只尝试一次
@@ -331,22 +331,6 @@ namespace BarrageGrab.Proxy
                     Payload = payload
                 });
             }
-        }
-
-        /// <summary>
-        /// 获取配置的注入的js
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        private string GetInjectScript(string name)
-        {
-            //获取exe所在目录路径            
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Scripts", "inject", name + ".js");
-            if (File.Exists(path))
-            {
-                return File.ReadAllText(path);
-            }
-            return null;
         }
 
         // Hook 直播页面
@@ -377,8 +361,7 @@ namespace BarrageGrab.Proxy
             {
                 string webrid = liveRoomMactch.Groups[1].Value;
                 //获取直播页注入js
-                string liveRoomInjectScript = GetInjectScript("livePage");
-
+                string liveRoomInjectScript = EmbResource.GetFileContent("livePage.js");
                 //注入上下文变量;
                 var scriptContext = BuildContext(new Dictionary<string, string>()
                 {
@@ -435,7 +418,7 @@ namespace BarrageGrab.Proxy
                             script.InnerHtml = liveRoomInjectScript;
                             body.AppendChild(script);
                             html = doc.DocumentNode.OuterHtml;
-                            Logger.PrintColor($"直播页{urlNoQuery},用户脚本已成功注入!\n", ConsoleColor.Green);
+                            Logger.LogTrace($"直播页{urlNoQuery},用户脚本已成功注入!\n");
                         }
                     }
                     catch (Exception ex)
@@ -459,7 +442,7 @@ namespace BarrageGrab.Proxy
             if (liveHomeMatch.Success)
             {
                 //获取直播页注入js
-                string liveHoomInjectScript = GetInjectScript("livePage");
+                string liveHoomInjectScript = EmbResource.GetFileContent("livePage.js");
 
                 //注入上下文变量;
                 var scriptContext = BuildContext(new Dictionary<string, string>()

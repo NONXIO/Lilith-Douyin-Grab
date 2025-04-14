@@ -28,8 +28,6 @@ namespace BarrageGrab
         internal static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint mode);
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint mode);
-
-        ///If the function fails, the return value is NULL.</returns>
         [DllImport("user32.dll")]
         public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 

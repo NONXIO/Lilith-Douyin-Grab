@@ -15,7 +15,7 @@ namespace BarrageGrab
     /// <summary>
     /// 抖音服务
     /// </summary>
-    internal class DyServer
+    internal class DyApiHelper
     {
         /// <summary>
         /// 获取直播礼物列表

@@ -19,6 +19,7 @@ namespace BarrageGrab
         static bool formExited = false;
         static WinApi.ControlCtrlDelegate controlCtr = ControlCtrlHandle;
         static Mutex mutex = new Mutex(false, "DyBarrageGrab");
+
         static void Main(string[] args)
         {
             if (!mutex.WaitOne(TimeSpan.Zero, true))

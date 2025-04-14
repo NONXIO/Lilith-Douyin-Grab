@@ -53,7 +53,7 @@ namespace BarrageGrab
         public static string GetJsFile(string fileName)
         {
             var path = Path.Combine(AppContext.BaseDirectory, "Scripts", "engine", fileName);
-            if (!File.Exists(path)) throw new FileNotFoundException("不存在的文件", path);
+            if (!File.Exists(path)) return null;
             return File.ReadAllText(path, Encoding.UTF8);
         }
 

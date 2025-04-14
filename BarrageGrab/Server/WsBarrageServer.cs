@@ -176,6 +176,7 @@ namespace BarrageGrab
             return obj.GetType().GetProperty(propertyName) != null;
         }
 
+        //创建消息对象
         private T CreateMsg<T>(dynamic msg) where T : Msg, new()
         {
             var roomid = msg.Common.roomId.ToString();
@@ -580,29 +581,7 @@ namespace BarrageGrab
                 try
                 {
                     var cmdPack = JsonConvert.DeserializeObject<Command>(message);
-                    if (cmdPack == null) return;
-
-                    switch (cmdPack.Cmd)
-                    {
-                        case CommandCode.Close:
-                            this.Dispose();
-                            break;
-                        case CommandCode.EnableProxy:
-                            {
-                                var enable = (bool)cmdPack.Data;
-                                if (enable)
-                                    this.grab.Proxy.RegisterSystemProxy();
-                                else
-                                    this.grab.Proxy.CloseSystemProxy();
-                                break;
-                            }
-                        case CommandCode.DisplayConsole:
-                            {
-                                var display = (bool)cmdPack.Data;
-                                AppRuntime.DisplayConsole(display);
-                                break;
-                            }
-                    }
+                    if (cmdPack == null) return;                   
                 }
                 catch (Exception) { }
             };
