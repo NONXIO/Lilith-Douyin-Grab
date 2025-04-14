@@ -258,9 +258,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="nlog.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="nlog.config">
+      <CustomToolNamespace>WssBarrageService</CustomToolNamespace>
+    </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
   </ItemGroup>
@@ -315,4 +315,12 @@
   </Target>
   <Import Project="..\packages\Costura.Fody.5.7.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.5.7.0\build\Costura.Fody.targets')" />
   <Import Project="..\packages\Fody.6.8.2\build\Fody.targets" Condition="Exists('..\packages\Fody.6.8.2\build\Fody.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>if "$(ConfigurationName)" == "Release" (
+    del /q "$(TargetDir)*.xml"
+    del /q "$(TargetDir)*.pdb"
+    del /q "$(TargetDir)*.pfx"
+    rmdir /s /q "$(TargetDir)crts"
+)</PostBuildEvent>
+  </PropertyGroup>
 </Project>

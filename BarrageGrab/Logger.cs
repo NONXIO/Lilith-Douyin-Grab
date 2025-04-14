@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using BarrageGrab.Modles.JsonEntity;
@@ -11,12 +12,26 @@ namespace BarrageGrab
 {
     public static class Logger
     {
-        private static NLog.Config.ISetupBuilder builder = LogManager.Setup().LoadConfigurationFromFile("nlog.config");
+        private static NLog.Config.ISetupBuilder builder;
 
-        private static readonly NLog.Logger logger = builder.GetLogger("*");
+        private static NLog.Logger logger;
+
+        static Logger()
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            //读取嵌入式资源文件
+            var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(s => s.EndsWith("nlog.config"));
+            if (resourceName == null)
+            {
+                throw new Exception("nlog.config 嵌入式资源不存在");
+            }
+
+            builder = LogManager.Setup().LoadConfigurationFromAssemblyResource(assembly, resourceName);
+            logger = builder.GetLogger("*");
+        }
 
         public static void PrintColor(string message, ConsoleColor foreground = ConsoleColor.White)
-        {
+        {                      
             var color = Console.ForegroundColor;
             Console.ForegroundColor = foreground;
             Console.WriteLine(message);
