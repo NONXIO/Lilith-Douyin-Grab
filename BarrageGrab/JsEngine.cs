@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 using Jint;
-using Newtonsoft.Json;
 using Jint.Native;
+using Newtonsoft.Json;
 
 namespace BarrageGrab
 {
@@ -83,7 +83,7 @@ namespace BarrageGrab
             Engine eng;
             public JsEncoder(Engine eng)
             {
-                this.eng = eng;               
+                this.eng = eng;
             }
 
             private JsValue ByteConvert(byte[] buff)
@@ -165,14 +165,14 @@ namespace BarrageGrab
                 return eng.Invoke("byteToUint8Array", buff);
             }
 
-            public JsValue toNumber(byte[] buff,int startIndex = 0)
+            public JsValue toNumber(byte[] buff, int startIndex = 0)
             {
                 return BitConverter.ToDouble(buff, startIndex);
             }
-            
+
             public bool toBoolean(byte[] buff, int startIndex = 0)
             {
-                return BitConverter.ToBoolean(buff, startIndex);                
+                return BitConverter.ToBoolean(buff, startIndex);
             }
 
             public string toString(byte[] buff, int startIndex = 0)
@@ -182,7 +182,7 @@ namespace BarrageGrab
 
             public string toString(byte[] buff, int startIndex, int length)
             {
-                return BitConverter.ToString(buff, startIndex, length);                
+                return BitConverter.ToString(buff, startIndex, length);
             }
 
             public JsValue getBytes(JsValue value)
@@ -190,21 +190,21 @@ namespace BarrageGrab
                 byte[] buff = new byte[0];
                 switch (value.Type)
                 {
-                    case Jint.Runtime.Types.Empty:                        
+                    case Jint.Runtime.Types.Empty:
                     case Jint.Runtime.Types.Undefined:
                     case Jint.Runtime.Types.Null:
                         break;
                     case Jint.Runtime.Types.Boolean:
                         buff = BitConverter.GetBytes(value.AsBoolean());
-                        break;                    
+                        break;
                     case Jint.Runtime.Types.Number:
                         buff = BitConverter.GetBytes(value.AsNumber());
-                        break;                                          
+                        break;
                     case Jint.Runtime.Types.BigInt:
                         buff = BitConverter.GetBytes((long)value.AsNumber());
-                        break;                   
+                        break;
                     default:
-                        throw new Exception($"不支持该类型转换:" + value.Type);                        
+                        throw new Exception($"不支持该类型转换:" + value.Type);
                 }
 
                 return ByteConvert(buff);

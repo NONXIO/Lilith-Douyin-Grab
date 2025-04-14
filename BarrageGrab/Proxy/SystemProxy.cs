@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Win32;
-using System.Diagnostics;
 using BarrageGrab.Proxy.ProxyEventArgs;
+using Microsoft.Win32;
 
 namespace BarrageGrab.Proxy
 {
@@ -42,7 +42,7 @@ namespace BarrageGrab.Proxy
 
         public abstract void Start();
 
-        public abstract void SetUpstreamProxy(string addr);        
+        public abstract void SetUpstreamProxy(string addr);
 
         //https://live.douyin.com/webcast/gift/list/ [礼物数据接口]
 
@@ -109,7 +109,7 @@ namespace BarrageGrab.Proxy
             RegistryKey registry = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", true);
             registry.SetValue("ProxyEnable", 1);
             registry.SetValue("ProxyServer", $"127.0.0.1:{ProxyPort}");
-           
+
             OnProxyStatus?.Invoke(this, new SystemProxyChangeEventArgs()
             {
                 Open = true
@@ -128,7 +128,7 @@ namespace BarrageGrab.Proxy
             {
                 Open = false
             });
-        }        
+        }
 
         public static bool ProxyIsOpen()
         {

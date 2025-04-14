@@ -1,8 +1,4 @@
-﻿using BarrageGrab.Forms;
-using BarrageGrab.Forms.Models;
-using BarrageGrab.Modles.JsonEntity;
-using BarrageGrab.Proxy;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -13,6 +9,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using BarrageGrab.Forms;
+using BarrageGrab.Forms.Models;
+using BarrageGrab.Modles.JsonEntity;
+using BarrageGrab.Proxy;
 
 namespace BarrageGrab
 {
@@ -29,7 +29,7 @@ namespace BarrageGrab
             InitializeComponent();
             barServer.OnPrint += WssService_OnPrint;
             barServer.Grab.Proxy.OnProxyStatus += Proxy_OnProxyStatus;
-            AppRuntime.RoomCaches.OnCache += RoomCaches_OnCache;          
+            AppRuntime.RoomCaches.OnCache += RoomCaches_OnCache;
         }
 
         private void InitTabPages()
@@ -85,8 +85,8 @@ namespace BarrageGrab
 
         private void Ck_CheckedChanged(object sender, EventArgs e)
         {
-            CheckBox cbx = sender as CheckBox;            
-            if (cbx == null) return;            
+            CheckBox cbx = sender as CheckBox;
+            if (cbx == null) return;
             var selected = GetCheckedBarTypes((FlowLayoutPanel)cbx.Parent);
             if (cbx.Parent.Parent == this.tabPage_Console)
             {
@@ -96,7 +96,7 @@ namespace BarrageGrab
             {
                 AppSetting.Current.PushFilter = selected;
             }
-            if(cbx.Parent.Parent == this.tabPage_Log)
+            if (cbx.Parent.Parent == this.tabPage_Log)
             {
                 AppSetting.Current.LogFilter = selected;
             }
@@ -113,12 +113,12 @@ namespace BarrageGrab
                 if (cbk.Checked && cbk.Name.StartsWith("cbx_bartype_"))
                 {
                     list.Add((int)cbk.Tag);
-                }                
+                }
             }
             return list.OrderBy(o => o).ToArray();
         }
 
-        private  Dictionary<int,string> GetMsgTypes()
+        private Dictionary<int, string> GetMsgTypes()
         {
             var dic = new Dictionary<int, string>();
             Type enumType = typeof(PackMsgType);
@@ -127,7 +127,7 @@ namespace BarrageGrab
             {
                 DescriptionAttribute attribute = (DescriptionAttribute)field.GetCustomAttribute(typeof(DescriptionAttribute), false);
                 int value = (int)field.GetValue(null);
-                if (attribute != null && value>0)
+                if (attribute != null && value > 0)
                 {
                     dic.Add(value, attribute.Description);
                 }
@@ -146,7 +146,7 @@ namespace BarrageGrab
                     this.label3.Text = $"房间缓存列表({AppRuntime.RoomCaches.RoomInfoCache.Count})";
                     list_roomCaches.Items.Add(item);
                 }
-            }));            
+            }));
         }
 
         private void FormView_Load(object sender, EventArgs e)
@@ -165,7 +165,7 @@ namespace BarrageGrab
             this.Invoke(new Action(() =>
             {
                 this.cbx_enableProxy.Checked = e.Open;
-            }));            
+            }));
         }
 
         private void WssService_OnPrint(object sender, WsBarrageServer.PrintEventArgs e)
@@ -187,7 +187,7 @@ namespace BarrageGrab
                     this.rich_output.Clear();
                     printCount = 0;
                 }
-            }));          
+            }));
         }
 
         private void cbx_enableProxy_CheckedChanged(object sender, EventArgs e)
@@ -209,7 +209,7 @@ namespace BarrageGrab
             var selectedItem = list_roomCaches.SelectedItem as RoomCacheItem;
             if (selectedItem == null) return;
 
-            var form = new RoomDetail(selectedItem.RoomInfo);                        
+            var form = new RoomDetail(selectedItem.RoomInfo);
             form.ShowDialog();
         }
 
@@ -225,8 +225,8 @@ namespace BarrageGrab
             catch (Exception ex)
             {
                 //弹窗提示错误
-                MessageBox.Show(ex.Message,"设置失败");
-            }            
+                MessageBox.Show(ex.Message, "设置失败");
+            }
         }
 
         private void cbx_barrageLog_CheckedChanged(object sender, EventArgs e)
@@ -235,5 +235,5 @@ namespace BarrageGrab
             AppSetting.Current.BarrageLog = checker.Checked;
             AppSetting.Current.Save();
         }
-    }    
+    }
 }

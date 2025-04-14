@@ -5,10 +5,10 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ProtoBuf;
+using BarrageGrab.Modles.ProtoEntity;
 using BarrageGrab.Proxy;
 using BarrageGrab.Proxy.ProxyEventArgs;
-using BarrageGrab.Modles.ProtoEntity;
+using ProtoBuf;
 
 namespace BarrageGrab
 {

@@ -37,10 +37,10 @@ namespace BarrageGrab
 
         static AppRuntime()
         {
-           
+
         }
 
-        public static void  Init()
+        public static void Init()
         {
             WsServer = new WsBarrageServer();
             RoomCaches = new RoomCacheManager();
@@ -57,7 +57,7 @@ namespace BarrageGrab
             var hWnd = WinApi.GetConsoleWindow();
             if (hWnd != IntPtr.Zero)
             {
-                WinApi.ShowWindow(hWnd, show? WinApi.CmdShow.SW_SHOW:WinApi.CmdShow.SW_HIDE);
+                WinApi.ShowWindow(hWnd, show ? WinApi.CmdShow.SW_SHOW : WinApi.CmdShow.SW_HIDE);
             }
         }
 
@@ -95,7 +95,7 @@ namespace BarrageGrab
                         WebRoomId = webrid,
                         Title = "房间" + webrid
                     };
-                    var succ = RoomInfoCache.TryAdd(roomid,info);
+                    var succ = RoomInfoCache.TryAdd(roomid, info);
                     if (succ)
                     {
                         OnCache?.Invoke(this, new RoomCacheEventArgs()
@@ -130,7 +130,7 @@ namespace BarrageGrab
                     var succ = RoomInfoCache.TryAdd(roomid, roomInfo);
                     if (succ)
                     {
-                        OnCache?.Invoke(this,new RoomCacheEventArgs()
+                        OnCache?.Invoke(this, new RoomCacheEventArgs()
                         {
                             Model = 0,
                             RoomInfo = roomInfo
@@ -147,7 +147,7 @@ namespace BarrageGrab
             public string GetCachedWebRoomid(string roomid)
             {
                 RoomInfo value;
-                if (RoomInfoCache.TryGetValue(roomid,out value)) return value.WebRoomId??"未知";
+                if (RoomInfoCache.TryGetValue(roomid, out value)) return value.WebRoomId ?? "未知";
                 return "未知";
             }
 
@@ -177,13 +177,13 @@ namespace BarrageGrab
 
             public class RoomCacheEventArgs : EventArgs
             {
-                public RoomInfo RoomInfo { get; set; }   
-                
+                public RoomInfo RoomInfo { get; set; }
+
                 /// <summary>
                 /// 0:添加,1更新,2删除
                 /// </summary>
                 public int Model { get; set; }
             }
-        }        
+        }
     }
 }

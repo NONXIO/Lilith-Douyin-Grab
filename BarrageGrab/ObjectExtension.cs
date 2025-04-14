@@ -31,13 +31,13 @@ namespace BarrageGrab
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public static string ToJson(this object obj,bool format = false)
+        public static string ToJson(this object obj, bool format = false)
         {
             if (obj is string)
             {
                 return obj.ToString();
             }
-            return JsonConvert.SerializeObject(obj, format?Formatting.Indented:Formatting.None);
+            return JsonConvert.SerializeObject(obj, format ? Formatting.Indented : Formatting.None);
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace BarrageGrab
             }
             return cookies;
         }
-        
+
         /// <summary>
         /// 追加另一个字典
         /// </summary>
@@ -159,11 +159,11 @@ namespace BarrageGrab
                 else
                 {
                     res.Add(item.Key, item.Value);
-                }                
+                }
             }
             return res;
         }
-        
+
 
         /// <summary>
         /// 转换为Cookie对象列表

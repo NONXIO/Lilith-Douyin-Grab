@@ -30,7 +30,7 @@ namespace BarrageGrab.Proxy.ProxyEventArgs
         /// <summary>
         /// 域名
         /// </summary>
-        public string HostName { get; set; }        
+        public string HostName { get; set; }
 
         /// <summary>
         /// 有效载荷

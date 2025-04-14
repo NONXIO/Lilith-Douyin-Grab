@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NLog;
 using BarrageGrab.Modles.JsonEntity;
-using System.IO;
+using NLog;
 
 namespace BarrageGrab
 {
@@ -83,7 +83,7 @@ namespace BarrageGrab
             {
                 var dir = Path.Combine(AppContext.BaseDirectory, "logs", "弹幕日志");
                 var room = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
-                if(room == null) return;
+                if (room == null) return;
                 var date = DateTime.Now.ToString("yyyy年MM月dd日直播");
                 var nickName = SafePathString(room?.Owner?.Nickname ?? "-1");
                 dir = Path.Combine(dir, $"({room.WebRoomId}){nickName}", date, "场次" + msg.RoomId.ToString());

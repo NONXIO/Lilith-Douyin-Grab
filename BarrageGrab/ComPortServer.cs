@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO.Ports;
-using Jint;
-using Jint.Runtime;
 using System.Windows.Forms;
+using Jint;
 using Jint.Native;
+using Jint.Runtime;
 
 namespace BarrageGrab
 {
@@ -34,7 +34,7 @@ namespace BarrageGrab
                 {
                     Logger.LogError(ex, $"comPortFilter.js 执行错误: {ex.Message}");
                     throw;
-                }                
+                }
             }
         }
 
@@ -81,7 +81,7 @@ namespace BarrageGrab
             catch (Exception ex)
             {
                 Logger.LogError(ex, $"串口过滤器 onPackData 执行错误:{ex.Message}");
-                return;                                
+                return;
             }
             if (result == null) return;
 

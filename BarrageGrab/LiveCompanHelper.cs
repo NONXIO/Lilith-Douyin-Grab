@@ -1,18 +1,18 @@
-﻿using HtmlAgilityPack;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Runtime.InteropServices;
+using HtmlAgilityPack;
 using IWshRuntimeLibrary;
-using File = System.IO.File;
 using Microsoft.Win32;
-using System.Diagnostics;
 using Newtonsoft.Json;
-using System.Runtime.InteropServices.ComTypes;
+using File = System.IO.File;
 
 namespace BarrageGrab
 {
@@ -219,7 +219,7 @@ namespace BarrageGrab
                 Logger.LogInfo($"直播伴侣文件改动检测点1已拦截");
             }
 
-            
+
             checkReg = new Regex(@"if\(\(0,\w.integrityCheckReport\)\(\w\),!\w\.ok\)");
             if (checkReg.IsMatch(content))
             {

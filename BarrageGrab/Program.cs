@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using System.IO;
-using Jint.Runtime;
 using System.Windows.Forms;
+using Jint.Runtime;
 
 namespace BarrageGrab
 {
@@ -37,18 +37,18 @@ namespace BarrageGrab
             catch (Exception ex)
             {
                 Logger.LogError(ex, $"程序初始化错误，{ex.Message}");
-                MessageBox.Show(ex.Message, "程序初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);                
+                MessageBox.Show(ex.Message, "程序初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 exited = true;
             }
 
             while (!exited)
-            {               
+            {
                 Thread.Sleep(500);
             }
 
             if (!AppRuntime.WsServer.IsDisposed)
             {
-                AppRuntime.WsServer.Dispose();                
+                AppRuntime.WsServer.Dispose();
             }
 
             Logger.PrintColor("服务器已关闭...");

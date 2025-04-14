@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace BarrageGrab.Modles
 {
@@ -659,7 +659,7 @@ namespace BarrageGrab.Modles
             }
 
 
-          
+
             info = dto;
 
             return Tuple.Create(0, "succ");
@@ -710,7 +710,7 @@ namespace BarrageGrab.Modles
                     SecUid = roomOwner["sec_uid"].ToString(),
                     HeadUrl = roomOwner["avatar_thumb"]["url_list"].Values<string>()?.FirstOrDefault() ?? "",
                     FollowStatus = roomOwner["follow_info"]["follow_status"].Value<int>()
-                };        
+                };
             }
 
             info = dto;

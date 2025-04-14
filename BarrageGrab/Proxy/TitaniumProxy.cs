@@ -1,31 +1,31 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Policy;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BarrageGrab.Modles;
 using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Proxy.ProxyEventArgs;
-using Newtonsoft.Json.Linq;
+using BrotliSharpLib;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using NLog.LayoutRenderers;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Http;
 using Titanium.Web.Proxy.Models;
 using Titanium.Web.Proxy.StreamExtended.Network;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography;
 using HtmlDocument = HtmlAgilityPack.HtmlDocument;
-using System.Net.Http;
-using System.Text;
-using BrotliSharpLib;
-using System.IO.Compression;
-using System.Collections.Concurrent;
-using System.Security.Policy;
-using NLog.LayoutRenderers;
 
 namespace BarrageGrab.Proxy
 {
@@ -37,7 +37,7 @@ namespace BarrageGrab.Proxy
         List<string> rinfoRequestings = new List<string>();
 
         const string SCRIPT_HOST = "lf-cdn-tos.bytescm.com";
-        const string LIVE_HOST = "live.douyin.com";        
+        const string LIVE_HOST = "live.douyin.com";
         const string DOUYIN_HOST = "www.douyin.com";
         const string USER_INFO_PATH = "/webcast/user/me/";
         const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
@@ -90,16 +90,17 @@ namespace BarrageGrab.Proxy
 
             proxyServer.CertificateManager.CertificateValidDays = 365 * 10;
             proxyServer.CertificateManager.SaveFakeCertificates = true;
+            proxyServer.CertificateManager.CertificateEngine = Titanium.Web.Proxy.Network.CertificateEngine.DefaultWindows;
+            proxyServer.CertificateManager.OverwritePfxFile = false;
             proxyServer.CertificateManager.RootCertificate = GetCert();
             if (proxyServer.CertificateManager.RootCertificate == null)
             {
                 Logger.PrintColor("正在进行证书安装，需要信任该证书才可进行https解密，若有提示请确定");
                 proxyServer.CertificateManager.CreateRootCertificate();
             }
-
-            //信任证书
-            proxyServer.CertificateManager.CreateRootCertificate();
             proxyServer.CertificateManager.TrustRootCertificate(true);
+
+            //https://github.com/justcoding121/titanium-web-proxy/issues/828
 
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
             //proxyServer.BeforeRequest += ProxyServer_BeforeRequest;
@@ -628,12 +629,12 @@ namespace BarrageGrab.Proxy
                 WEBCAST_AMEMV_HOST , //直播伴侣开播请求地址
                 "*-webcast-platform.bytetos.com", //新的脚本地址
                 "*webcast*" //所有带webcast的域名
-            };            
+            };
 
             if (decryptSsls.Contains(hostname))
             {
                 return true;
-            }            
+            }
 
             if (hostname.WildcardMatchAny(decryptSsls))
             {
@@ -654,7 +655,7 @@ namespace BarrageGrab.Proxy
             var processid = args.HttpClient.ProcessId.Value;
 
             List<byte> messageData = new List<byte>();
-            
+
             try
             {
                 foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))

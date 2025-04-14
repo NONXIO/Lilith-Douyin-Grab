@@ -31,7 +31,7 @@ namespace BarrageGrab.Modles
             this.Code = -1;
         }
 
-        public BusinessExecption(string msg,object data) : base(msg)
+        public BusinessExecption(string msg, object data) : base(msg)
         {
             this.ErrorTarget = data;
         }

@@ -1,9 +1,9 @@
-﻿using BarrageGrab.Modles;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BarrageGrab.Modles;
 
 namespace BarrageGrab.Forms.Models
 {
@@ -21,7 +21,7 @@ namespace BarrageGrab.Forms.Models
         public override string ToString()
         {
             if (RoomInfo == null) return "NULL";
-            return $"({RoomInfo.WebRoomId}){RoomInfo?.Owner?.Nickname??"-1"}";
+            return $"({RoomInfo.WebRoomId}){RoomInfo?.Owner?.Nickname ?? "-1"}";
         }
     }
 }

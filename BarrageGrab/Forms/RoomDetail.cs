@@ -1,5 +1,4 @@
-﻿using BarrageGrab.Modles;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using BarrageGrab.Modles;
 using Newtonsoft.Json;
 
 namespace BarrageGrab.Forms
@@ -18,7 +18,7 @@ namespace BarrageGrab.Forms
         {
             InitializeComponent();
             //小驼峰
-            var json = JsonConvert.SerializeObject(info,Formatting.Indented,new JsonSerializerSettings()
+            var json = JsonConvert.SerializeObject(info, Formatting.Indented, new JsonSerializerSettings()
             {
                 ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
             });
