@@ -46,15 +46,45 @@ namespace BarrageGrab
         }
 
         /// <summary>
-        /// 从engine 目录获取js 文件
+        /// 从scripts 目录获取js 文件
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
         public static string GetJsFile(string fileName)
         {
-            var path = Path.Combine(AppContext.BaseDirectory, "Scripts", "engine", fileName);
-            if (!File.Exists(path)) return null;
-            return File.ReadAllText(path, Encoding.UTF8);
+            var checkDirs = new string[]
+            {                
+                Path.Combine(AppContext.BaseDirectory, "Scripts"),
+                Path.Combine(AppContext.BaseDirectory, "scripts"),
+            };
+
+            foreach (var dir in checkDirs)
+            {
+                if (Directory.Exists(dir))
+                {
+                    var path = Path.Combine(dir, fileName);
+                    if (File.Exists(path))
+                    {
+                        return File.ReadAllText(path, Encoding.UTF8);
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 在scripts目录下创建js 文件
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="content"></param>
+        public static void CreateJsFile(string fileName,string content)
+        {
+            var dir = Path.Combine(AppContext.BaseDirectory, "scripts");
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            File.WriteAllText(Path.Combine(dir, fileName), content, Encoding.UTF8);
         }
 
         class JsConsole

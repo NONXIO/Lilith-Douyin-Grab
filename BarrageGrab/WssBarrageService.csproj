@@ -63,6 +63,9 @@
   <PropertyGroup>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Acornima, Version=1.1.0.0, Culture=neutral, PublicKeyToken=496b38436bb9edeb, processorArchitecture=MSIL">
       <HintPath>..\packages\Acornima.1.1.0\lib\net462\Acornima.dll</HintPath>
@@ -259,14 +262,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <EmbeddedResource Include="nlog.config">
+    <EmbeddedResource Include="Configs\nlog.config">
       <CustomToolNamespace>WssBarrageService</CustomToolNamespace>
     </EmbeddedResource>
+    <None Include="AppConfig.json" />
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
+    <Content Include="logo.ico" />
     <EmbeddedResource Include="Scripts\engine\comPortFilter.js" />
     <EmbeddedResource Include="Scripts\inject\livePage.js" />
   </ItemGroup>

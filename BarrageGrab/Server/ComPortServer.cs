@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
@@ -22,26 +23,30 @@ namespace BarrageGrab
 
         static ComPortServer()
         {
-            if (AppSetting.Current.UseComPortFilter)
+            if (!AppSetting.Current.ComPortSwitch) return;
+
+            jsEngine = JsEngine.CreateNewEngine();
+
+            var jsFile = JsEngine.GetJsFile("comPortFilter.js");
+
+            //生成模板文件
+            if (jsFile == null)
             {
-                jsEngine = JsEngine.CreateNewEngine();
-
-                var jsFile = JsEngine.GetJsFile("comPortFilter.js");
-                if (jsFile.IsNullOrWhiteSpace())
-                {
-                    jsFile = EmbResource.GetFileContent("comPortFilter.js");
-                }
-
-                try
-                {
-                    jsEngine.Execute(jsFile);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, $"comPortFilter.js 执行错误: {ex.Message}");
-                    throw;
-                }
+                jsFile = EmbResource.GetFileContent("comPortFilter.js");
+                JsEngine.CreateJsFile("comPortFilter.js", jsFile);                
+                Logger.PrintColor($"已生成串口脚本模板文件 scripts/comPortFilter.js，请按个人需求修改", ConsoleColor.Yellow);
             }
+
+            try
+            {
+                jsEngine.Execute(jsFile);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"comPortFilter.js 执行错误: {ex.Message}");
+                throw;
+            }
+
         }
 
         public ComPortServer(WsBarrageServer server)
@@ -70,7 +75,7 @@ namespace BarrageGrab
             if (e == null) return;
             if (e.Message == null) return;
 
-            if (!AppSetting.Current.UseComPortFilter)
+            if (!AppSetting.Current.ComPortSwitch)
             {
                 var json = e.ToJson() + "\r\n";
                 var jbuff = Encoding.UTF8.GetBytes(json);
@@ -152,7 +157,7 @@ namespace BarrageGrab
                 sendPort.Close();
                 sendPort.Dispose();
                 sendPort = null;
-                throw ex;
+                Logger.LogError(ex, $"串口打开失败， {ex.Message}");
             }
         }
 
