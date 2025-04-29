@@ -1,31 +1,31 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Policy;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BarrageGrab.Modles;
 using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Proxy.ProxyEventArgs;
-using Newtonsoft.Json.Linq;
+using BrotliSharpLib;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using NLog.LayoutRenderers;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Http;
 using Titanium.Web.Proxy.Models;
 using Titanium.Web.Proxy.StreamExtended.Network;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography;
 using HtmlDocument = HtmlAgilityPack.HtmlDocument;
-using System.Net.Http;
-using System.Text;
-using BrotliSharpLib;
-using System.IO.Compression;
-using System.Collections.Concurrent;
-using System.Security.Policy;
-using NLog.LayoutRenderers;
 
 namespace BarrageGrab.Proxy
 {
@@ -90,16 +90,17 @@ namespace BarrageGrab.Proxy
 
             proxyServer.CertificateManager.CertificateValidDays = 365 * 10;
             proxyServer.CertificateManager.SaveFakeCertificates = true;
+            proxyServer.CertificateManager.CertificateEngine = Titanium.Web.Proxy.Network.CertificateEngine.DefaultWindows;
+            proxyServer.CertificateManager.OverwritePfxFile = false;
             proxyServer.CertificateManager.RootCertificate = GetCert();
             if (proxyServer.CertificateManager.RootCertificate == null)
             {
                 Logger.PrintColor("正在进行证书安装，需要信任该证书才可进行https解密，若有提示请确定");
                 proxyServer.CertificateManager.CreateRootCertificate();
             }
-
-            //信任证书
-            proxyServer.CertificateManager.CreateRootCertificate();
             proxyServer.CertificateManager.TrustRootCertificate(true);
+
+            //https://github.com/justcoding121/titanium-web-proxy/issues/828
 
             proxyServer.ServerCertificateValidationCallback += ProxyServer_ServerCertificateValidationCallback;
             //proxyServer.BeforeRequest += ProxyServer_BeforeRequest;
@@ -307,7 +308,7 @@ namespace BarrageGrab.Proxy
                     {
                         lock (rinfoRequestings) rinfoRequestings.Add(webroomid);
                         //查询后会自动缓存
-                        DyServer.GetRoomInfoForApi(webroomid, cookie).ContinueWith(t =>
+                        DyApiHelper.GetRoomInfoForApi(webroomid, cookie).ContinueWith(t =>
                         {
                             var rinfo = t.Result;
                             //限制只尝试一次
@@ -330,22 +331,6 @@ namespace BarrageGrab.Proxy
                     Payload = payload
                 });
             }
-        }
-
-        /// <summary>
-        /// 获取配置的注入的js
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        private string GetInjectScript(string name)
-        {
-            //获取exe所在目录路径            
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Scripts", "inject", name + ".js");
-            if (File.Exists(path))
-            {
-                return File.ReadAllText(path);
-            }
-            return null;
         }
 
         // Hook 直播页面
@@ -376,8 +361,7 @@ namespace BarrageGrab.Proxy
             {
                 string webrid = liveRoomMactch.Groups[1].Value;
                 //获取直播页注入js
-                string liveRoomInjectScript = GetInjectScript("livePage");
-
+                string liveRoomInjectScript = EmbResource.GetFileContent("livePage.js");
                 //注入上下文变量;
                 var scriptContext = BuildContext(new Dictionary<string, string>()
                 {
@@ -434,7 +418,7 @@ namespace BarrageGrab.Proxy
                             script.InnerHtml = liveRoomInjectScript;
                             body.AppendChild(script);
                             html = doc.DocumentNode.OuterHtml;
-                            Logger.PrintColor($"直播页{urlNoQuery},用户脚本已成功注入!\n", ConsoleColor.Green);
+                            Logger.LogTrace($"直播页{urlNoQuery},用户脚本已成功注入!\n");
                         }
                     }
                     catch (Exception ex)
@@ -458,7 +442,7 @@ namespace BarrageGrab.Proxy
             if (liveHomeMatch.Success)
             {
                 //获取直播页注入js
-                string liveHoomInjectScript = GetInjectScript("livePage");
+                string liveHoomInjectScript = EmbResource.GetFileContent("livePage.js");
 
                 //注入上下文变量;
                 var scriptContext = BuildContext(new Dictionary<string, string>()
@@ -548,21 +532,20 @@ namespace BarrageGrab.Proxy
             if (!contentType.Trim().ToLower().Contains("application/javascript")) return;
             if (e.HttpClient.Response.StatusCode != 200) return;
 
+            //https://lf-webcast-platform.bytetos.com/obj/webcast-platform-cdn/webcast/douyin_live/chunks/island_a74ce.b55095a0.js
             //判断响应内容是否为js application/javascript
-            if (hostname == SCRIPT_HOST
-                //这俩个进程不需要注入
-                && processName != "直播伴侣" && processName != "douyin"
+            if (processName != "直播伴侣" && processName != "douyin"
                 && fileName.StartsWith("island")
                 )
             {
                 var js = await e.GetResponseBodyAsString();
-                var reg2 = new Regex(@"if\(!\((?<v1>\d,\w{1,2})\.DJ\)\(\)&&");
-                var match = reg2.Match(js);
+                var reg = new Regex(@"if\(!\(\d{1,},\w{1,}\.DJ\)\(\).+\w{1,}\.includes\(""live""\)\)\)\{");
+                var match = reg.Match(js);
                 if (match.Success)
                 {
-                    js = reg2.Replace(js, "if(false &&");
+                    js = reg.Replace(js, "if(false){");
                     e.SetResponseBodyString(js);
-                    Logger.PrintColor($"已成功绕过页面无操作检测\n", ConsoleColor.Green);
+                    Logger.PrintColor($"已成功绕过JS页面无操作检测 {urlNoQuery}\n", ConsoleColor.Green);
                 }
             }
 
@@ -627,9 +610,16 @@ namespace BarrageGrab.Proxy
                 SCRIPT_HOST,
                 LIVE_HOST,
                 WEBCAST_AMEMV_HOST , //直播伴侣开播请求地址
+                "*-webcast-platform.bytetos.com", //新的脚本地址
+                "*webcast*" //所有带webcast的域名
             };
 
             if (decryptSsls.Contains(hostname))
+            {
+                return true;
+            }
+
+            if (hostname.WildcardMatchAny(decryptSsls))
             {
                 return true;
             }
@@ -648,7 +638,7 @@ namespace BarrageGrab.Proxy
             var processid = args.HttpClient.ProcessId.Value;
 
             List<byte> messageData = new List<byte>();
-            
+
             try
             {
                 foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))

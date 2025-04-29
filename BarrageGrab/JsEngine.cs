@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 using Jint;
-using Newtonsoft.Json;
 using Jint.Native;
+using Newtonsoft.Json;
 
 namespace BarrageGrab
 {
@@ -46,15 +46,45 @@ namespace BarrageGrab
         }
 
         /// <summary>
-        /// 从engine 目录获取js 文件
+        /// 从scripts 目录获取js 文件
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
         public static string GetJsFile(string fileName)
         {
-            var path = Path.Combine(AppContext.BaseDirectory, "Scripts", "engine", fileName);
-            if (!File.Exists(path)) throw new FileNotFoundException("不存在的文件", path);
-            return File.ReadAllText(path, Encoding.UTF8);
+            var checkDirs = new string[]
+            {                
+                Path.Combine(AppContext.BaseDirectory, "Scripts"),
+                Path.Combine(AppContext.BaseDirectory, "scripts"),
+            };
+
+            foreach (var dir in checkDirs)
+            {
+                if (Directory.Exists(dir))
+                {
+                    var path = Path.Combine(dir, fileName);
+                    if (File.Exists(path))
+                    {
+                        return File.ReadAllText(path, Encoding.UTF8);
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 在scripts目录下创建js 文件
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="content"></param>
+        public static void CreateJsFile(string fileName,string content)
+        {
+            var dir = Path.Combine(AppContext.BaseDirectory, "scripts");
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            File.WriteAllText(Path.Combine(dir, fileName), content, Encoding.UTF8);
         }
 
         class JsConsole
@@ -83,7 +113,7 @@ namespace BarrageGrab
             Engine eng;
             public JsEncoder(Engine eng)
             {
-                this.eng = eng;               
+                this.eng = eng;
             }
 
             private JsValue ByteConvert(byte[] buff)
@@ -165,14 +195,14 @@ namespace BarrageGrab
                 return eng.Invoke("byteToUint8Array", buff);
             }
 
-            public JsValue toNumber(byte[] buff,int startIndex = 0)
+            public JsValue toNumber(byte[] buff, int startIndex = 0)
             {
                 return BitConverter.ToDouble(buff, startIndex);
             }
-            
+
             public bool toBoolean(byte[] buff, int startIndex = 0)
             {
-                return BitConverter.ToBoolean(buff, startIndex);                
+                return BitConverter.ToBoolean(buff, startIndex);
             }
 
             public string toString(byte[] buff, int startIndex = 0)
@@ -182,7 +212,7 @@ namespace BarrageGrab
 
             public string toString(byte[] buff, int startIndex, int length)
             {
-                return BitConverter.ToString(buff, startIndex, length);                
+                return BitConverter.ToString(buff, startIndex, length);
             }
 
             public JsValue getBytes(JsValue value)
@@ -190,21 +220,21 @@ namespace BarrageGrab
                 byte[] buff = new byte[0];
                 switch (value.Type)
                 {
-                    case Jint.Runtime.Types.Empty:                        
+                    case Jint.Runtime.Types.Empty:
                     case Jint.Runtime.Types.Undefined:
                     case Jint.Runtime.Types.Null:
                         break;
                     case Jint.Runtime.Types.Boolean:
                         buff = BitConverter.GetBytes(value.AsBoolean());
-                        break;                    
+                        break;
                     case Jint.Runtime.Types.Number:
                         buff = BitConverter.GetBytes(value.AsNumber());
-                        break;                                          
+                        break;
                     case Jint.Runtime.Types.BigInt:
                         buff = BitConverter.GetBytes((long)value.AsNumber());
-                        break;                   
+                        break;
                     default:
-                        throw new Exception($"不支持该类型转换:" + value.Type);                        
+                        throw new Exception($"不支持该类型转换:" + value.Type);
                 }
 
                 return ByteConvert(buff);

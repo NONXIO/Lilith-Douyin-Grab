@@ -15,7 +15,7 @@ namespace BarrageGrab
     /// <summary>
     /// 抖音服务
     /// </summary>
-    internal class DyServer
+    internal class DyApiHelper
     {
         /// <summary>
         /// 获取直播礼物列表
@@ -55,7 +55,7 @@ namespace BarrageGrab
                 Logger.LogError($"礼物信息从服务器请求失败: {ex.Message}");
                 return null;
             }
-        }     
+        }
 
         /// <summary>
         /// 获取房间信息，通过原生接口
@@ -69,7 +69,7 @@ namespace BarrageGrab
             string url = "https://live.douyin.com/webcast/room/web/enter/";
 
             var client = new HttpClient();
-            
+
 
             var uri = new UriBuilder(url);
             var dict = new Dictionary<string, string>();

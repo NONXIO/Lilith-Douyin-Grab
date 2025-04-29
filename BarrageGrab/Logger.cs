@@ -1,22 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using NLog;
 using BarrageGrab.Modles.JsonEntity;
-using System.IO;
+using NLog;
 
 namespace BarrageGrab
 {
     public static class Logger
     {
-        private static NLog.Config.ISetupBuilder builder = LogManager.Setup().LoadConfigurationFromFile("nlog.config");
+        private static NLog.Config.ISetupBuilder builder;
 
-        private static readonly NLog.Logger logger = builder.GetLogger("*");
+        private static NLog.Logger logger;
+
+        static Logger()
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            //读取嵌入式资源文件
+            var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(s => s.EndsWith("nlog.config"));
+            if (resourceName == null)
+            {
+                throw new Exception("nlog.config 嵌入式资源不存在");
+            }
+
+            builder = LogManager.Setup().LoadConfigurationFromAssemblyResource(assembly, resourceName);
+            logger = builder.GetLogger("*");
+        }
 
         public static void PrintColor(string message, ConsoleColor foreground = ConsoleColor.White)
-        {
+        {                      
             var color = Console.ForegroundColor;
             Console.ForegroundColor = foreground;
             Console.WriteLine(message);
@@ -83,9 +98,10 @@ namespace BarrageGrab
             {
                 var dir = Path.Combine(AppContext.BaseDirectory, "logs", "弹幕日志");
                 var room = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
-                if(room == null) return;
+                if (room == null) return;
                 var date = DateTime.Now.ToString("yyyy年MM月dd日直播");
-                dir = Path.Combine(dir, $"({room.WebRoomId}){room?.Owner?.Nickname ?? "-1"}", date);
+                var nickName = SafePathString(room?.Owner?.Nickname ?? "-1");
+                dir = Path.Combine(dir, $"({room.WebRoomId}){nickName}", date, "场次" + msg.RoomId.ToString());
                 if (!Directory.Exists(dir))
                 {
                     Directory.CreateDirectory(dir);
@@ -106,6 +122,31 @@ namespace BarrageGrab
                 return;
             }
         }
+
+        /// <summary>
+        /// 将字符串中的特殊字符转换为'?'，使其安全用于文件路径
+        /// </summary>
+        /// <param name="input">输入字符串</param>
+        /// <returns>处理后的安全字符串</returns>
+        public static string SafePathString(string input)
+        {
+            //在文件系统中，以下字符通常不允许用于文件名：\ / : * ? " < > |
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // 文件系统中不允许的字符
+            char[] invalidChars = Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).Distinct().ToArray();
+
+            StringBuilder result = new StringBuilder(input.Length);
+            foreach (char c in input)
+            {
+                result.Append(invalidChars.Contains(c) ? '？' : c);
+            }
+
+            return result.ToString();
+        }
+
+
 
         private static string LogText(Msg msg, PackMsgType barType)
         {

@@ -63,15 +63,15 @@
   <PropertyGroup>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Acornima, Version=1.1.0.0, Culture=neutral, PublicKeyToken=496b38436bb9edeb, processorArchitecture=MSIL">
       <HintPath>..\packages\Acornima.1.1.0\lib\net462\Acornima.dll</HintPath>
     </Reference>
     <Reference Include="BouncyCastle.Crypto, Version=1.8.8.0, Culture=neutral, PublicKeyToken=0e99375e54769942, processorArchitecture=MSIL">
       <HintPath>..\packages\Portable.BouncyCastle.1.8.8\lib\net40\BouncyCastle.Crypto.dll</HintPath>
-    </Reference>
-    <Reference Include="BouncyCastle.Cryptography, Version=2.0.0.0, Culture=neutral, PublicKeyToken=072edcf4a5328938, processorArchitecture=MSIL">
-      <HintPath>..\packages\BouncyCastle.Cryptography.2.0.0\lib\net461\BouncyCastle.Cryptography.dll</HintPath>
     </Reference>
     <Reference Include="BrotliSharpLib, Version=0.3.2.0, Culture=neutral, PublicKeyToken=3f4e2a1cd615fcb7, processorArchitecture=MSIL">
       <HintPath>..\packages\BrotliSharpLib.0.3.3\lib\net451\BrotliSharpLib.dll</HintPath>
@@ -206,11 +206,11 @@
     </Reference>
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
     <Reference Include="System.Xml.ReaderWriter, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Xml.ReaderWriter.4.3.0\lib\net46\System.Xml.ReaderWriter.dll</HintPath>
     </Reference>
@@ -221,8 +221,9 @@
   <ItemGroup>
     <Compile Include="AppRuntime.cs" />
     <Compile Include="AppSetting.cs" />
-    <Compile Include="ComPortServer.cs" />
-    <Compile Include="DyServer.cs" />
+    <Compile Include="Server\ComPortServer.cs" />
+    <Compile Include="Utility\DyApiHelper.cs" />
+    <Compile Include="Utility\EmbResource.cs" />
     <Compile Include="Forms\FormView.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -237,7 +238,7 @@
       <DependentUpon>RoomDetail.cs</DependentUpon>
     </Compile>
     <Compile Include="JsEngine.cs" />
-    <Compile Include="LiveCompanHelper.cs" />
+    <Compile Include="Utility\LiveCompanHelper.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Modles\BusinessExecption.cs" />
     <Compile Include="Modles\JsonEntity\BarrageMessages.cs" />
@@ -254,27 +255,25 @@
     <Compile Include="Program.cs" />
     <Compile Include="Proxy\SystemProxy.cs" />
     <Compile Include="Proxy\TitaniumProxy.cs" />
-    <Compile Include="WinApi.cs" />
-    <Compile Include="WssBarrageGrab.cs" />
+    <Compile Include="Utility\WinApi.cs" />
+    <Compile Include="Server\WssBarrageGrab.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WsBarrageServer.cs" />
+    <Compile Include="Server\WsBarrageServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="nlog.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="Configs\nlog.config">
+      <CustomToolNamespace>WssBarrageService</CustomToolNamespace>
+    </EmbeddedResource>
+    <None Include="AppConfig.json" />
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
-    <Content Include="Scripts\engine\comPortFilter.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Scripts\inject\livePage.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Content Include="logo.ico" />
+    <EmbeddedResource Include="Scripts\engine\comPortFilter.js" />
+    <EmbeddedResource Include="Scripts\inject\livePage.js" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.8">
@@ -318,4 +317,12 @@
   </Target>
   <Import Project="..\packages\Costura.Fody.5.7.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.5.7.0\build\Costura.Fody.targets')" />
   <Import Project="..\packages\Fody.6.8.2\build\Fody.targets" Condition="Exists('..\packages\Fody.6.8.2\build\Fody.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>if "$(ConfigurationName)" == "Release" (
+    del /q "$(TargetDir)*.xml"
+    del /q "$(TargetDir)*.pdb"
+    del /q "$(TargetDir)*.pfx"
+    rmdir /s /q "$(TargetDir)crts"
+)</PostBuildEvent>
+  </PropertyGroup>
 </Project>

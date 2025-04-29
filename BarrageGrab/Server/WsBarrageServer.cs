@@ -1,23 +1,23 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Dynamic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
-using Fleck;
-using Newtonsoft.Json;
 using BarrageGrab.Modles;
-using Newtonsoft.Json.Linq;
-using System.Net.Http;
-using System.IO.Compression;
-using System.IO;
 using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Modles.ProtoEntity;
-using System.Drawing;
-using System.Collections.Concurrent;
-using System.Dynamic;
+using Fleck;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static BarrageGrab.Modles.ProtoEntity.Image;
 using static BarrageGrab.Modles.WebCastGift;
 
@@ -176,6 +176,7 @@ namespace BarrageGrab
             return obj.GetType().GetProperty(propertyName) != null;
         }
 
+        //创建消息对象
         private T CreateMsg<T>(dynamic msg) where T : Msg, new()
         {
             var roomid = msg.Common.roomId.ToString();
@@ -220,10 +221,10 @@ namespace BarrageGrab
 
             if (isAdmin)
             {
-                text+= " [管理员]";
+                text += " [管理员]";
             }
 
-            if(isAnchor)
+            if (isAnchor)
             {
                 text += " [主播]";
             }
@@ -286,7 +287,7 @@ namespace BarrageGrab
         {
             if (msg == null) return;
             var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
-            if (roomInfo != null && roomInfo.Owner!=null)
+            if (roomInfo != null && roomInfo.Owner != null)
             {
                 msg.Onwer = new RoomAnchorInfo()
                 {
@@ -580,29 +581,7 @@ namespace BarrageGrab
                 try
                 {
                     var cmdPack = JsonConvert.DeserializeObject<Command>(message);
-                    if (cmdPack == null) return;
-
-                    switch (cmdPack.Cmd)
-                    {
-                        case CommandCode.Close:
-                            this.Dispose();
-                            break;
-                        case CommandCode.EnableProxy:
-                            {
-                                var enable = (bool)cmdPack.Data;
-                                if (enable)
-                                    this.grab.Proxy.RegisterSystemProxy();
-                                else
-                                    this.grab.Proxy.CloseSystemProxy();
-                                break;
-                            }
-                        case CommandCode.DisplayConsole:
-                            {
-                                var display = (bool)cmdPack.Data;
-                                AppRuntime.DisplayConsole(display);
-                                break;
-                            }
-                    }
+                    if (cmdPack == null) return;                   
                 }
                 catch (Exception) { }
             };

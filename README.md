@@ -17,19 +17,22 @@
 
 ## ⛳近期更新
 
+2025-04-15 v2.7.9(beta)
+1. 大幅优化了程序的体积大小
+2. 默认移除了Script目录，以及其他不必要的文件，但如果开启了串口推送开关，则会自动生成过滤器模板文件
+3. 添加了应用图标
+
+2025-04-09 v2.7.8
+1. 修复页面无操作检测拦截失效的问题，因为更新了脚本
+2. 修复弹幕日志因主播昵称的特殊字符导致无法写入的问题
+
 2025-02-11 v2.7.7
 
 1. 添加 `Appid` 字段（疑似用户看直播的APP标识） 和 `EnterTipType` 字段(用于获知用户进入直播间的方式，已知0为普通进入，6为通过分享进入)
-
 2. User字段新增  `IsAdmin` 和 `IsAnchor` 字段，用于区分是否为管理员或者主播的消息
-
 3. web在中途监听弹幕，且直播间弹幕链接已降级为轮询的情况下，解决 `webroomid` 以及房间信息丢失问题
-
 4. 修复直播伴侣更新后，无法定位到exe位置的问题
-
 5. 优化部分其他已知问题
-
-   
 
 2024-09-28 v2.7.6(beta)
 
@@ -46,38 +49,6 @@
 3. 修复了窗体初始化因控件可能导致的句柄出错的问题
 4. 修复在使用窗体的情况下，因跨线程调用抛出异常导致的弹幕断连问题
 
-2024-05-14 v2.7.4
-
-1. 修复通过抖音号进入直播偶见获取不到Owner对象和WebRoomid的问题;
-2. 修复部分电脑启动提示 ‘字符串格式错误’  导致无法启动的问题
-3. 2024.05.16 补丁: 修复在使用窗体的情况下，因跨线程调用抛出异常导致的弹幕断连问题
-
-2024-04-26 v2.7.3 (需要升级版本，请先仔细阅读)
-
-1. 支持串口转发，详见下方说明<a href="#user-content-串口转发">**串口转发**</a>
-2. 推送包字段更新<br/>
-    1. 推送包添加 `Onwer`字段,用户描述主播基本信息，客户端应优先使用其中的`SecUid`或者`Uid`作为直播间标识
-    2. **[破坏性更新]** `WebRoomid` 和 `Roomid` 改为String类型
-    3. 之前直播伴侣开播会导致`WebRoomid`为-1，现会抓取直播伴侣开播响应信息，并填充`WebRoomid`，但直播伴侣的`WebRoomid`设定为主播**抖音号**，需要根据进程名做判断，使用请注意
-
-2024-03-10 v2.7.2
-
-1. [**重要更新**] 支持设置为轮询模式监听(见配置项**forcePolling**，直播伴侣尚未支持)，比起ws更稳定，适合长时间监听
-2. 支持进入直播间画面自动暂停
-3. 优化礼物连击判定规则，可区分出可连击的礼物，进一步避免礼物数量推送不准确的问题，并新增字段:
-   1. Combo 礼物是否可连击
-   2. ImgUrl 礼物图像地址
-   3. ToUser 送礼目标
-4. roomId过滤改为 WebRoomid 过滤(仅支持已经被缓存的直播间，对直播伴侣可能无效)
-5. 添加“关闭代理.bat” 批处理脚本，见根目录或者上方文件，便于无法上网时双击执行
-6. 更多介绍请查看底下新增配置项
-
-2023-11-23 v2.7.0
-
-1. 修复了因抖音版本升级导致的WebRoomId获取不到的问题，并更近了正则表达式尽量兼容后续的变更
-2. 添加了winfrom窗体，功能有限，默认隐藏
-3. 支持了控制台隐藏，推送器弹幕类型过滤，日志弹幕类型过滤，弹幕文件日志  (见<a href="#tag1">配置文件</a>)
-4. 支持了更多的ws命令，见 [Command.cs](./BarrageGrab/Modles/JsonEntity/Command.cs)
 
 ## 🖼️控制台截图
 
@@ -88,6 +59,7 @@
 ### 介绍
 
  + 基于系统代理抓包打造的抖音弹幕服务推送程序，它能够获取电脑上所有抖音弹幕来源数据，主要包括三种来源：**浏览器进程** ，**抖音客户端**，**抖音直播伴侣**。它可以监听**弹幕**，**点赞**，**关注**，**送礼**，**进入直播间**，**直播间统计**，**粉丝团**系列消息，你可使用它做自己的直播间数据分析，以及弹幕互动游戏，语音播报等。
+ + 程序含WebSocket服务，若需要对接自己的应用，或者扩展功能，可以进行接入
 
 ### <a id="tag1">配置文件</a>
 
@@ -95,71 +67,73 @@
  + 若下载发行版，则该配置文件在根目录下的 **WssBarrageService.exe.config** 可自主配置，配置后需要重新启动程序
 
 ``` xml
-<!--配置更改后重启才能生效-->
-<appSettings>
-  <!--过滤Websocket数据源进程,可用','进行分隔，程序将会监听以下进程的弹幕信息-->
-  <add key="processFilter" value="直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore" />
-  <!--Websocket监听端口-->
-  <add key="wsListenPort" value="8888" />
-  <!--true:监听在0.0.0.0，接受任意Ip连接，false:监听在127.0.0.1，仅接受本机连接-->
-  <add key="listenAny" value="true" />
-  <!--系统代理端口-->
-  <add key="proxyPort" value="8827" />
-  <!--是否启用系统代理,若设置为false 则需要在程序手动指定代理地址 -->
-  <add key="usedProxy" value="true" />
-  <!--上游代理地址，例如开启了系统代理，但是需要将其他无关请求转发到VPN工具中,例如:127.0.0.1:11223,不要带http://-->
-  <add key="upstreamProxy" value="" />
-  <!--在控制台输出弹幕-->
-  <add key="printBarrage" value="true" />
-  <!--要在控制台打印的弹幕类型,多个使用','分隔，(空代表不过滤) 1[普通弹幕]，2[点赞消息]，3[进入直播间]，4[关注消息]，5[礼物消息]，6[统计消息]，7[粉丝团消息]，8[直播间分享]，9[下播]-->
-  <add key="printFilter" value="" />
-  <!--要推送的弹幕消息类型,多个使用','分隔，同上-->
-  <add key="pushFilter" value="" />
-  <!--要日志记录的弹幕消息类型,多个使用','分隔，同上-->
-  <add key="logFilter" value="1,2,4,5,6,7,8" />
-  <!--要进行过滤的Web房间ID，多个使用','分隔，根据缓存来过滤的，直播伴侣不支持 -->
-  <add key="webRoomIds" value="940152769375" />
-  <!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
-  <add key="filterHostName" value="true" />
-  <!--已知的弹幕域名列表 ','分隔  用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
-  <add key="hostNameFilter" value="" />
-  <!--隐藏控制台-->
-  <add key="hideConsole" value="false" />
-  <!--弹幕文件日志-->
-  <add key="barrageFileLog" value="false" />
-  <!--显示窗体-->
-  <add key="showWindow" value="false" />
-  <!--进入直播间自动暂停播放-->
-  <add key="autoPause" value="true"/>
-  <!--强制启用轮询模式获取弹幕 (对于容易断开连接或者更加追求稳定的直播间，可以启用这个开关，虽然响应速度不如WebSocket，但是绝对稳定!)-->
-  <add key="forcePolling" value="false"/>
-  <!--弹幕轮询间隔，当 forcePolling 为 true 时生效 (毫秒，1000毫秒=1秒，不建议小于1000毫秒，太小可能会被封IP，值越小，弹幕流越丝滑，对于观众多的直播间可以改小)-->
-  <add key="pollingInterval" value="3000"/>
-  <!--禁用直播页浏览器脚本缓存 (如果需要确保脚本每次能够正常匹配替换，则启用它，可能会损失一定的页面加载速度)-->
-  <add key="disableLivePageScriptCache" value="true"/>
-  <!--指定要发送的COM串口 格式:'COM1:9600' 代表用COM1发送，波特率9600，若不需要使用串口抄送服务请留空 -->
-  <add key="comPort" value="" />
-  <!--启用自定义消息过滤，启用后可去程序根目录 Scripts/engine/comPortFilter.js 调整过滤规则 -->
-  <add key="useComPortFilter" value="true" />
-  <!--直播伴侣exe文件位置(除非程序找不到，否则请留空)-->
-  <add key="liveCompanPath" value=""/>
-  <!--直播伴侣代理hook开关-->
-  <add key="liveCompanHookSwitch" value="false" />
-</appSettings>
+ <!--配置更改后重启才能生效-->
+ <appSettings>
+   <!--过滤Websocket数据源进程,可用','进行分隔，程序将会监听以下进程的弹幕信息-->
+   <add key="processFilter" value="直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore" />
+   <!--Websocket监听端口-->
+   <add key="wsListenPort" value="8888" />
+   <!--true:监听在0.0.0.0，接受任意Ip连接，false:监听在127.0.0.1，仅接受本机连接-->
+   <add key="listenAny" value="true" />
+   <!--系统代理端口-->
+   <add key="proxyPort" value="8827" />
+   <!--是否启用系统代理,若设置为false 则需要在程序手动指定代理地址 -->
+   <add key="sysProxy" value="true" />
+   <!--上游代理地址，例如开启了系统代理，但是需要将其他无关请求转发到VPN工具中,例如:127.0.0.1:11223,不要带http://-->
+   <add key="upstreamProxy" value="" />
+   <!--在控制台输出弹幕-->
+   <add key="printBarrage" value="true" />
+   <!--要在控制台打印的弹幕类型,多个使用','分隔，(空代表不过滤) 1[普通弹幕]，2[点赞消息]，3[进入直播间]，4[关注消息]，5[礼物消息]，6[统计消息]，7[粉丝团消息]，8[直播间分享]，9[下播]-->
+   <add key="printFilter" value="" />
+   <!--要推送的弹幕消息类型,多个使用','分隔，同上-->
+   <add key="pushFilter" value="" />
+   <!--要日志记录的弹幕消息类型,多个使用','分隔，同上-->
+   <add key="logFilter" value="1,2,4,5,6,7,8" />
+   <!--要进行过滤的Web房间ID，多个使用','分隔，根据缓存来过滤的，直播伴侣不支持 -->
+   <add key="webRoomIds" value="" />
+   <!--开启内置的域名过滤，设置为false会解包所有https请求，cpu占用很高，建议在无法获取弹幕数据时调整 -->
+   <add key="filterHostName" value="true" />
+   <!--已知的弹幕域名列表 ','分隔  用作过滤规则中，凡是webcast开头的域名程序都会自动列入白名单-->
+   <add key="hostNameFilter" value="" />
+   <!--隐藏控制台-->
+   <add key="hideConsole" value="false" />
+   <!--弹幕文件日志-->
+   <add key="barrageFileLog" value="false" />
+   <!--显示窗体-->
+   <add key="showWindow" value="false" />
+   <!--进入直播间自动暂停播放-->
+   <add key="autoPause" value="true" />
+   <!--强制启用轮询模式获取弹幕 (对于容易断开连接或者更加追求稳定的直播间，可以启用这个开关，虽然响应速度不如WebSocket，但是绝对稳定!)-->
+   <add key="forcePolling" value="false" />
+   <!--弹幕轮询间隔，当 forcePolling 为 true 时生效 (毫秒，1000毫秒=1秒，不建议小于1000毫秒，太小可能会被封IP，值越小，弹幕流越丝滑，对于观众多的直播间可以改小)-->
+   <add key="pollingInterval" value="3000" />
+   <!--禁用直播页浏览器脚本缓存 (如果需要确保脚本每次能够正常匹配替换，则启用它，可能会损失一定的页面加载速度)-->
+   <add key="disableLivePageScriptCache" value="false" />
+   <!-- 指定要发送的COM串口 格式:'COM1:9600' 代表用COM1发送，波特率9600，若不需要使用串口抄送服务请留空，(启用后程序会自动生成过滤器模板文件到 scripts/comPortFilter.js) -->
+   <add key="comPort" value="" />
+   <!--直播伴侣exe文件位置(除非程序找不到，否则请留空)-->
+   <add key="liveCompanPath" value="" />
+   <!--直播伴侣进程代理开关-->
+   <add key="liveCompanHookSwitch" value="false" />
+ </appSettings>
 ```
 
 ### 使用方法
 1. 管理员身份启动本程序，第一次启动会提示安装自签名证书，程序启动后挂在后台不要关，程序无法中途监听已经建立连接的弹幕流
+
 2. 打开浏览器进入任何直播间，然后观察程序控制台中是否有弹幕滚动
+
 3. 如果有请往下看，否则请参考诊断排查
+
 4. 启动后程序控制台标题会显示 ws连接地址，如果需要对接自己的应用程序，请先了解 [WebSocket](https://www.bilibili.com/video/BV1KN411n7WD/?share_source=copy_web&vd_source=39ebf42c923024b9eddeca32c9e46d16) ，然后使用自己的程序进行对接，可前往[在线测试网站](http://wstool.jackxiang.com/)进行连接测试
+
 5. 对于字段不理解，请参考 [实体类源码文件](./BarrageGrab/Modles/JsonEntity/BarrageMessages.cs) 的注释，或者加群询问
 
- <a id="user-content-串口转发"></a>
+<a id="user-content-串口转发"></a>
 
 ## 🔌 串口转发</i>
 + 配置串口：见<a href="#tag1">配置文件</a>`comPort`，配置发送串口以及波特率，不填则不启用
-+ 串口报文自定义：可在根目录`Scripts/engine/comPortFilter.js` 根据自己的需求配置转发报文，提供了一定的Bit转换函数，详见其注释
++ 串口报文自定义：配置串口后，程序会自动生成配置模板文件 `scripts/comPortFilter.js`， 可根据自己的需求配置转发报文，提供了一定的Bit转换函数，详见其注释
 
 ## 👨‍⚕️ 诊断排查
 
@@ -181,9 +155,6 @@
 
   + *尝试执行未经授权的操作*
     + 关杀毒
-
-  + *以上都不行*
-    + 请前往[这里](https://www.baidu.com/s?word=新款电脑淘宝)瞧瞧 
 
 
 + **弹幕断连**

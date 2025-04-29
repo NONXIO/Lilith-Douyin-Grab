@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Reflection;
 using System.Collections.Generic;
+using System.Reflection;
 using BarrageGrab.Proxy.ProxyEventArgs;
 
 namespace BarrageGrab.Proxy
@@ -42,5 +42,5 @@ namespace BarrageGrab.Proxy
         /// 开始监听
         /// </summary>
         void Start();
-    }    
+    }
 }

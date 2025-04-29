@@ -8,8 +8,8 @@ namespace BarrageGrab.Modles.JsonEntity
     public enum PackMsgType
     {
         [Description("无")]
-        无 = 0,       
-        [Description("消息")] 
+        无 = 0,
+        [Description("消息")]
         弹幕消息 = 1,
         [Description("点赞")]
         点赞消息 = 2,
@@ -71,8 +71,8 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 消息类型
         /// </summary>
-        public PackMsgType Type { get; set; }      
-        
+        public PackMsgType Type { get; set; }
+
         /// <summary>
         /// 进程名
         /// </summary>
@@ -88,7 +88,7 @@ namespace BarrageGrab.Modles.JsonEntity
 
         }
 
-        public BarrageMsgPack(string data, PackMsgType type,string processName)
+        public BarrageMsgPack(string data, PackMsgType type, string processName)
         {
             Data = data;
             Type = type;
@@ -304,8 +304,8 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 抖币价格
         /// </summary>
-        public int DiamondCount { get; set; }   
-        
+        public int DiamondCount { get; set; }
+
         /// <summary>
         /// 该礼物是否可连击
         /// </summary>
