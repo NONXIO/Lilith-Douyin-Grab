@@ -300,8 +300,12 @@ namespace BarrageGrab
                 UserId = roomInfo.Owner.UserId
             };
 
-            msg.WebRoomId = roomInfo.WebRoomId;
-            msg.RoomTitle = roomInfo.Title;
+            if (msg.WebRoomId.IsNullOrWhiteSpace())
+            {
+                msg.WebRoomId = roomInfo.WebRoomId;
+                msg.RoomTitle = roomInfo.Title;
+                msg.IsAnonymous = roomInfo.IsAnonymous;
+            }
         }
 
         //粉丝团
