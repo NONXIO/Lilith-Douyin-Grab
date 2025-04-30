@@ -291,14 +291,18 @@ namespace BarrageGrab
             var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
             if (roomInfo == null) return;
 
-            msg.Owner = new RoomAnchorInfo()
+            if (roomInfo.Owner != null)
             {
-                Nickname = roomInfo.Owner.Nickname,
-                HeadUrl = roomInfo.Owner.HeadUrl,
-                FollowStatus = roomInfo.Owner.FollowStatus,
-                SecUid = roomInfo.Owner.SecUid,
-                UserId = roomInfo.Owner.UserId
-            };
+                msg.Owner = new RoomAnchorInfo()
+                {
+                    Nickname = roomInfo.Owner.Nickname,
+                    HeadUrl = roomInfo.Owner.HeadUrl,
+                    FollowStatus = roomInfo.Owner.FollowStatus,
+                    SecUid = roomInfo.Owner.SecUid,
+                    UserId = roomInfo.Owner.UserId
+                };
+            }
+           
 
             if (msg.WebRoomId.IsNullOrWhiteSpace())
             {
