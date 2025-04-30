@@ -1,4 +1,8 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1.Crmf;
 
 namespace BarrageGrab.Modles.JsonEntity
 {
@@ -94,6 +98,120 @@ namespace BarrageGrab.Modles.JsonEntity
             Type = type;
             ProcessName = processName;
         }
+
+        /// <summary>
+        /// 当收到弹幕消息时执行回调
+        /// </summary>
+        public void IfChatMsg(Action<Msg> action) => IfTypedMsg(PackMsgType.弹幕消息, action);
+
+        /// <summary>
+        /// 当收到点赞消息时执行回调
+        /// </summary>
+        public void IfLikeMsg(Action<LikeMsg> action) => IfTypedMsg(PackMsgType.点赞消息, action);
+
+        /// <summary>
+        /// 当收到进直播间消息时执行回调
+        /// </summary>
+        public void IfMemberMsg(Action<MemberMessage> action) => IfTypedMsg(PackMsgType.进直播间, action);
+
+        /// <summary>
+        /// 当收到关注消息时执行回调
+        /// </summary>
+        public void IfFollowMsg(Action<Msg> action) => IfTypedMsg(PackMsgType.关注消息, action);
+
+        /// <summary>
+        /// 当收到礼物消息时执行回调
+        /// </summary>
+        public void IfGiftMsg(Action<GiftMsg> action) => IfTypedMsg(PackMsgType.礼物消息, action);
+
+        /// <summary>
+        /// 当收到直播间统计消息时执行回调
+        /// </summary>
+        public void IfUserSeqMsg(Action<UserSeqMsg> action) => IfTypedMsg(PackMsgType.直播间统计, action);
+
+        /// <summary>
+        /// 当收到粉丝团消息时执行回调
+        /// </summary>
+        public void IfFansclubMsg(Action<FansclubMsg> action) => IfTypedMsg(PackMsgType.粉丝团消息, action);
+
+        /// <summary>
+        /// 当收到直播间分享消息时执行回调
+        /// </summary>
+        public void IfShareMsg(Action<ShareMessage> action) => IfTypedMsg(PackMsgType.直播间分享, action);
+
+        /// <summary>
+        /// 当收到下播消息
+        /// </summary>
+        public void IfLiveEndMsg(Action<Msg> action) => IfTypedMsg(PackMsgType.下播, action);
+
+        /// <summary>
+        /// 解析所有未知类型的消息
+        /// </summary>
+        public void IfAnyMsg(Action<Msg> action)
+        {            
+            // 将 Data 转换为 JObject
+            JObject jObject = null;
+            try
+            {
+                jObject = JObject.Parse(this.Data);
+            }
+            catch (Exception)
+            {
+                // 解析失败，忽略错误
+                return;
+            }
+
+            // 如果成功解析为 JObject，转换为 Msg 对象
+            if (jObject != null)
+            {
+                var msg = jObject.ToObject<Msg>();
+                if (msg != null)
+                {
+                    action(msg);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 泛型方法，根据 PackMsgType 解析消息对象并执行回调
+        /// </summary>
+        private void IfTypedMsg<T>(PackMsgType expectedType, Action<T> action) where T : Msg
+        {
+            if (this.Type != expectedType) return;
+            if (this.Data == null) return;
+
+            // 尝试将 Data 直接作为 T 类型使用
+            T msg = null;
+
+            try
+            {
+                // 如果 Data 是字符串类型
+                if (this.Data is string)
+                {
+                    // 先尝试解析为 JObject
+                    try
+                    {
+                        JObject jObject = JObject.Parse(this.Data);
+                        msg = jObject.ToObject<T>();
+                    }
+                    catch
+                    {
+                        // 如果解析 JObject 失败，尝试直接反序列化
+                        msg = JsonConvert.DeserializeObject<T>(this.Data);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // 解析失败，忽略错误
+            }
+
+            // 如果成功解析消息，执行回调
+            if (msg != null)
+            {
+                action(msg);
+            }
+        }
     }
 
     /// <summary>
@@ -114,7 +232,8 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 主播简要信息
         /// </summary>
-        public RoomAnchorInfo Onwer { get; set; }
+        public RoomAnchorInfo Owner { get; set; }
+        public string Onwer { get; set; } = "该字段存在拼写错误，请修正为 ‘Owner’ 后使用";
 
         /// <summary>
         /// 消息内容
@@ -130,6 +249,16 @@ namespace BarrageGrab.Modles.JsonEntity
         /// web直播间ID
         /// </summary>
         public string WebRoomId { get; set; }
+
+        /// <summary>
+        /// 房间标题
+        /// </summary>
+        public string RoomTitle { get; set; }
+
+        /// <summary>
+        /// 是否是匿名直播间
+        /// </summary>
+        public bool IsAnonymous { get; set; }
 
         /// <summary>
         /// 用户使用的 Appid ，已知 1128，8663，2329 等
