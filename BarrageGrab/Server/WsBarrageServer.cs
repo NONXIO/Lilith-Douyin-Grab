@@ -189,7 +189,9 @@ namespace BarrageGrab
             {
                 MsgId = msg.Common?.msgId,
                 RoomId = roomid,
-                WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid),
+                WebRoomId = roomInfo?.WebRoomId ?? "",
+                RoomTitle = roomInfo?.Title ?? "",
+                IsAnonymous = roomInfo?.IsAnonymous ?? false,
                 Appid = msg.Common.appId.ToString(),
                 User = hasUser ? GetUser(msg.User) : null,
             };
@@ -287,18 +289,19 @@ namespace BarrageGrab
         {
             if (msg == null) return;
             var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
-            if (roomInfo != null && roomInfo.Owner != null)
+            if (roomInfo == null) return;
+
+            msg.Owner = new RoomAnchorInfo()
             {
-                msg.Onwer = new RoomAnchorInfo()
-                {
-                    Nickname = roomInfo.Owner.Nickname,
-                    HeadUrl = roomInfo.Owner.HeadUrl,
-                    FollowStatus = roomInfo.Owner.FollowStatus,
-                    SecUid = roomInfo.Owner.SecUid,
-                    UserId = roomInfo.Owner.UserId
-                };
-                msg.WebRoomId = roomInfo.WebRoomId;
-            }
+                Nickname = roomInfo.Owner.Nickname,
+                HeadUrl = roomInfo.Owner.HeadUrl,
+                FollowStatus = roomInfo.Owner.FollowStatus,
+                SecUid = roomInfo.Owner.SecUid,
+                UserId = roomInfo.Owner.UserId
+            };
+
+            msg.WebRoomId = roomInfo.WebRoomId;
+            msg.RoomTitle = roomInfo.Title;
         }
 
         //粉丝团
@@ -581,7 +584,7 @@ namespace BarrageGrab
                 try
                 {
                     var cmdPack = JsonConvert.DeserializeObject<Command>(message);
-                    if (cmdPack == null) return;                   
+                    if (cmdPack == null) return;
                 }
                 catch (Exception) { }
             };
