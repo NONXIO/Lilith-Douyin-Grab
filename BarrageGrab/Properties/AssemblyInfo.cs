@@ -1,17 +1,17 @@
-﻿using System.Reflection;
-using System.Resources;
+﻿using System.Resources;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // 有关程序集的一般信息由以下
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("抖音弹幕监听器")]
+[assembly: AssemblyTitle("Danmaku 抖音弹幕监听")]
 [assembly: AssemblyDescription("基于系统代理抓包打造的抖音弹幕服务推送程序，可抓取浏览器直播间，直播伴侣，抖音客户端，的各种弹幕消息。这也是一个对开发者友好的弹幕推送器")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("小白不圆个人工作室")]
-[assembly: AssemblyProduct("抖音弹幕监听器")]
-[assembly: AssemblyCopyright("Copyright © 2022")]
+[assembly: AssemblyCompany("KAMIKU | Nonxio Studio")]
+[assembly: AssemblyProduct("Danmaku抖音弹幕监听")]
+[assembly: AssemblyCopyright("Copyright ©  2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
