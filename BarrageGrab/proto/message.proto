@@ -585,3 +585,35 @@ message GiftGroupInfo {
 message EffectMixImageInfo {
     
 }
+
+message EmojiChatMessage {
+    Common common = 1;
+    User user = 2;
+    int64 emojiId = 3;
+    Text emojiContent = 4;
+    string defaultContent = 5;
+    Image backgroundImage = 6;
+    bool fromIntercom = 7;
+    bool intercomHideUserCard = 8;
+    PublicAreaCommon publicAreaCommon = 9;
+}
+
+message LotteryEventMessage {
+    Common common = 1;
+    int64 lotteryId = 2;
+    int64 lotteryStatus = 3;
+    int64 lotteryStartTime = 4;
+    int64 lotteryDrawTime = 5;
+    int64 lotteryCurrentTime = 6;
+    string rulePageScheme = 7;
+}
+
+message AudioChatMessage {
+    Common common = 1;
+    User user = 2;
+    string content = 3;
+    string audioUrl = 4;
+    int64 audioDuration = 5;
+    PublicAreaCommon publicAreaCommon = 6;
+    Text rtfContent = 7;
+}
