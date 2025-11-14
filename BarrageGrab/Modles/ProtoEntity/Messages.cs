@@ -482,6 +482,24 @@ namespace BarrageGrab.Modles.ProtoEntity
         [global::ProtoBuf.ProtoMember(21)]
         public long anchorEnterTipType { get; set; }
 
+        [global::ProtoBuf.ProtoMember(22)]
+        [global::ProtoBuf.ProtoMap]
+        public global::System.Collections.Generic.Dictionary<string, string> buriedPoint { get; } = new global::System.Collections.Generic.Dictionary<string, string>();
+
+        [global::ProtoBuf.ProtoMember(23)]
+        [global::ProtoBuf.ProtoMap]
+        public global::System.Collections.Generic.Dictionary<string, EffectConfig> alternativeEffectConfig { get; } = new global::System.Collections.Generic.Dictionary<string, EffectConfig>();
+
+        [global::ProtoBuf.ProtoMember(24)]
+        public PicoEffectConfig picoEnterEffectConfig { get; set; }
+
+        [global::ProtoBuf.ProtoMember(25)]
+        public int unsetAdminType { get; set; }
+
+        [global::ProtoBuf.ProtoMember(5000)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string userOpenId { get; set; } = "";
+
         [global::ProtoBuf.ProtoContract()]
         public partial class EffectConfig : global::ProtoBuf.IExtensible
         {
@@ -531,6 +549,78 @@ namespace BarrageGrab.Modles.ProtoEntity
             [global::ProtoBuf.ProtoMember(14)]
             public long centerAnimAssetId { get; set; }
 
+            [global::ProtoBuf.ProtoMember(15)]
+            public Image dynamicImage { get; set; }
+
+            [global::ProtoBuf.ProtoMember(16)]
+            [global::ProtoBuf.ProtoMap]
+            public global::System.Collections.Generic.Dictionary<string, string> extra { get; } = new global::System.Collections.Generic.Dictionary<string, string>();
+
+            [global::ProtoBuf.ProtoMember(17)]
+            public long mp4AnimAssetId { get; set; }
+
+            [global::ProtoBuf.ProtoMember(18, Name = @"priority")]
+            public long Priority { get; set; }
+
+            [global::ProtoBuf.ProtoMember(19)]
+            public long maxWaitTime { get; set; }
+
+            [global::ProtoBuf.ProtoMember(20)]
+            [global::System.ComponentModel.DefaultValue("")]
+            public string dressId { get; set; } = "";
+
+            [global::ProtoBuf.ProtoMember(21, Name = @"alignment")]
+            public long Alignment { get; set; }
+
+            [global::ProtoBuf.ProtoMember(22)]
+            public long alignmentOffset { get; set; }
+
+            [global::ProtoBuf.ProtoMember(23)]
+            [global::System.ComponentModel.DefaultValue("")]
+            public string effectScene { get; set; } = "";
+
+            [global::ProtoBuf.ProtoMember(24)]
+            [global::ProtoBuf.ProtoMap]
+            public global::System.Collections.Generic.Dictionary<string, TextPiece> pieceValues { get; } = new global::System.Collections.Generic.Dictionary<string, TextPiece>();
+
+        }
+
+        [global::ProtoBuf.ProtoContract()]
+        public partial class PicoEffectConfig : global::ProtoBuf.IExtensible
+        {
+            private global::ProtoBuf.IExtension __pbn__extensionData;
+            global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+                => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+            [global::ProtoBuf.ProtoMember(1, Name = @"type")]
+            public long Type { get; set; }
+
+            [global::ProtoBuf.ProtoMember(2, Name = @"icon")]
+            public Image Icon { get; set; }
+
+            [global::ProtoBuf.ProtoMember(3, Name = @"text")]
+            public Text Text { get; set; }
+
+            [global::ProtoBuf.ProtoMember(4)]
+            public Image textIcon { get; set; }
+
+            [global::ProtoBuf.ProtoMember(5)]
+            public int stayTime { get; set; }
+
+            [global::ProtoBuf.ProtoMember(6, Name = @"badge")]
+            public Image Badge { get; set; }
+
+            [global::ProtoBuf.ProtoMember(7)]
+            public long centerAnimAssetId { get; set; }
+
+            [global::ProtoBuf.ProtoMember(8)]
+            [global::ProtoBuf.ProtoMap]
+            public global::System.Collections.Generic.Dictionary<string, string> extra { get; } = new global::System.Collections.Generic.Dictionary<string, string>();
+
+            [global::ProtoBuf.ProtoMember(9)]
+            [global::System.ComponentModel.DefaultValue("")]
+            public string dressId { get; set; } = "";
+
         }
 
     }
@@ -550,6 +640,106 @@ namespace BarrageGrab.Modles.ProtoEntity
         /// </summary>
         [global::ProtoBuf.ProtoMember(2, Name = @"status")]
         public int Status { get; set; }
+
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public partial class EmojiChatMessage : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"common")]
+        public Common Common { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"user")]
+        public User User { get; set; }
+
+        [global::ProtoBuf.ProtoMember(3)]
+        public long emojiId { get; set; }
+
+        [global::ProtoBuf.ProtoMember(4)]
+        public Text emojiContent { get; set; }
+
+        [global::ProtoBuf.ProtoMember(5)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string defaultContent { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(6)]
+        public Image backgroundImage { get; set; }
+
+        [global::ProtoBuf.ProtoMember(7)]
+        public bool fromIntercom { get; set; }
+
+        [global::ProtoBuf.ProtoMember(8)]
+        public bool intercomHideUserCard { get; set; }
+
+        [global::ProtoBuf.ProtoMember(9)]
+        public PublicAreaCommon publicAreaCommon { get; set; }
+
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public partial class LotteryEventMessage : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"common")]
+        public Common Common { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2)]
+        public long lotteryId { get; set; }
+
+        [global::ProtoBuf.ProtoMember(3)]
+        public int lotteryStatus { get; set; }
+
+        [global::ProtoBuf.ProtoMember(4)]
+        public long lotteryStartTime { get; set; }
+
+        [global::ProtoBuf.ProtoMember(5)]
+        public long lotteryDrawTime { get; set; }
+
+        [global::ProtoBuf.ProtoMember(6)]
+        public long lotteryCurrentTime { get; set; }
+
+        [global::ProtoBuf.ProtoMember(7)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string rulePageScheme { get; set; } = "";
+
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public partial class AudioChatMessage : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"common")]
+        public Common Common { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"user")]
+        public User User { get; set; }
+
+        [global::ProtoBuf.ProtoMember(3, Name = @"content")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string Content { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(4)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string audioUrl { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(5)]
+        public long audioDuration { get; set; }
+
+        [global::ProtoBuf.ProtoMember(6)]
+        public PublicAreaCommon publicAreaCommon { get; set; }
+
+        [global::ProtoBuf.ProtoMember(7)]
+        public Text rtfContent { get; set; }
 
     }
 
@@ -1037,8 +1227,28 @@ namespace BarrageGrab.Modles.ProtoEntity
         [global::System.ComponentModel.DefaultValue("")]
         public string sec_uid { get; set; } = "";
 
+        [global::ProtoBuf.ProtoMember(59)]
+        public UserVIPInfo userVipInfo { get; set; }
+
+        [global::ProtoBuf.ProtoMember(61)]
+        public global::System.Collections.Generic.List<Image> badgeImageListV2 { get; } = new global::System.Collections.Generic.List<Image>();
+
+        [global::ProtoBuf.ProtoMember(67)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string webRid { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(70, Name = @"subscribe")]
+        public Subscribe subscribe { get; set; }
+
+        [global::ProtoBuf.ProtoMember(73)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string webcastUid { get; set; } = "";
+
         [global::ProtoBuf.ProtoMember(47)]
         public int user_role { get; set; } = 0;
+
+        [global::ProtoBuf.ProtoMember(1029)]
+        public bool is_follower { get; set; }
 
         [global::ProtoBuf.ProtoContract()]
         public partial class UserAttr : global::ProtoBuf.IExtensible
@@ -1046,6 +1256,18 @@ namespace BarrageGrab.Modles.ProtoEntity
             private global::ProtoBuf.IExtension __pbn__extensionData;
             global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
                 => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+            [global::ProtoBuf.ProtoMember(1)]
+            public bool isMuted { get; set; }
+
+            [global::ProtoBuf.ProtoMember(2)]
+            public bool isAdmin { get; set; }
+
+            [global::ProtoBuf.ProtoMember(3)]
+            public bool isSuperAdmin { get; set; }
+
+            [global::ProtoBuf.ProtoMember(4, IsPacked = true)]
+            public int[] adminPrivileges { get; set; }
 
         }
 
@@ -1055,6 +1277,39 @@ namespace BarrageGrab.Modles.ProtoEntity
             private global::ProtoBuf.IExtension __pbn__extensionData;
             global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
                 => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+            [global::ProtoBuf.ProtoMember(1, IsPacked = true)]
+            public long[] roomIds { get; set; }
+
+            [global::ProtoBuf.ProtoMember(2)]
+            public global::System.Collections.Generic.List<string> roomIdsStr { get; } = new global::System.Collections.Generic.List<string>();
+
+            [global::ProtoBuf.ProtoMember(3, IsPacked = true)]
+            public int[] roomIdsDisplay { get; set; }
+
+        }
+
+        [global::ProtoBuf.ProtoContract()]
+        public partial class Subscribe : global::ProtoBuf.IExtensible
+        {
+            private global::ProtoBuf.IExtension __pbn__extensionData;
+            global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+                => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+            [global::ProtoBuf.ProtoMember(1)]
+            public bool isMember { get; set; }
+
+            [global::ProtoBuf.ProtoMember(2, Name = @"level")]
+            public long Level { get; set; }
+
+            [global::ProtoBuf.ProtoMember(3)]
+            public long identityType { get; set; }
+
+            [global::ProtoBuf.ProtoMember(4)]
+            public long buyType { get; set; }
+
+            [global::ProtoBuf.ProtoMember(5, Name = @"open")]
+            public long Open { get; set; }
 
         }
 
@@ -1801,6 +2056,60 @@ namespace BarrageGrab.Modles.ProtoEntity
         private global::ProtoBuf.IExtension __pbn__extensionData;
         global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
             => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public partial class UserVIPInfo : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1)]
+        public long vipLevel { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string vipLevelName { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(3, Name = @"status")]
+        public int Status { get; set; }
+
+        [global::ProtoBuf.ProtoMember(4)]
+        public long startTime { get; set; }
+
+        [global::ProtoBuf.ProtoMember(5)]
+        public long endTime { get; set; }
+
+        [global::ProtoBuf.ProtoMember(6)]
+        public long remainingDays { get; set; }
+
+        [global::ProtoBuf.ProtoMember(7)]
+        public long totalConsume { get; set; }
+
+        [global::ProtoBuf.ProtoMember(8)]
+        public long targetConsume { get; set; }
+
+        [global::ProtoBuf.ProtoMember(9, Name = @"badge")]
+        public VIPBadge Badge { get; set; }
+
+        [global::ProtoBuf.ProtoMember(10, Name = @"privileges")]
+        [global::ProtoBuf.ProtoMap]
+        public global::System.Collections.Generic.Dictionary<long, bool> Privileges { get; } = new global::System.Collections.Generic.Dictionary<long, bool>();
+
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public partial class VIPBadge : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"icons")]
+        [global::ProtoBuf.ProtoMap]
+        public global::System.Collections.Generic.Dictionary<long, Image> Icons { get; } = new global::System.Collections.Generic.Dictionary<long, Image>();
 
     }
 

@@ -148,6 +148,11 @@ message MemberMessage{
     PublicAreaCommon publicAreaCommon = 19;
     string userEnterTipType = 20;
     string anchorEnterTipType = 21;
+    map<string, string> buriedPoint = 22;
+    map<string, EffectConfig> alternativeEffectConfig = 23;
+    PicoEffectConfig picoEnterEffectConfig = 24;
+    int32 unsetAdminType = 25;
+    string userOpenId = 5000;
 
     message EffectConfig{
         int64 type = 1;
@@ -164,12 +169,66 @@ message MemberMessage{
         bool hasSweepLight = 12;
         repeated int64 textFlexSettingArray = 13;
         int64 centerAnimAssetId = 14;
+        Image dynamicImage = 15;
+        map<string, string> extra = 16;
+        int64 mp4AnimAssetId = 17;
+        int64 priority = 18;
+        int64 maxWaitTime = 19;
+        string dressId = 20;
+        int64 alignment = 21;
+        int64 alignmentOffset = 22;
+        string effectScene = 23;
+        map<string, TextPiece> pieceValues = 24;
+    }
+
+    message PicoEffectConfig{
+        int64 type = 1;
+        Image icon = 2;
+        Text text = 3;
+        Image textIcon = 4;
+        int32 stayTime = 5;
+        Image badge = 6;
+        int64 centerAnimAssetId = 7;
+        map<string, string> extra = 8;
+        string dressId = 9;
     }
 }
 
 message ControlMessage {
     Common common = 1;
     int32 status = 2;
+}
+
+message EmojiChatMessage {
+    Common common = 1;
+    User user = 2;
+    int64 emojiId = 3;
+    Text emojiContent = 4;
+    string defaultContent = 5;
+    Image backgroundImage = 6;
+    bool fromIntercom = 7;
+    bool intercomHideUserCard = 8;
+    PublicAreaCommon publicAreaCommon = 9;
+}
+
+message LotteryEventMessage {
+    Common common = 1;
+    int64 lotteryId = 2;
+    int32 lotteryStatus = 3;
+    int64 lotteryStartTime = 4;
+    int64 lotteryDrawTime = 5;
+    int64 lotteryCurrentTime = 6;
+    string rulePageScheme = 7;
+}
+
+message AudioChatMessage {
+    Common common = 1;
+    User user = 2;
+    string content = 3;
+    string audioUrl = 4;
+    int64 audioDuration = 5;
+    PublicAreaCommon publicAreaCommon = 6;
+    Text rtfContent = 7;
 }
 
 message FansclubMessage {
@@ -326,15 +385,34 @@ message User{
     AnchorInfo anchorInfo = 36;
     int32 linkMicStats = 37;
     string displayId = 38;
+    UserVIPInfo userVipInfo = 59;
+    repeated Image badgeImageListV2 = 61;
+    string webRid = 67;
+    Subscribe subscribe = 70;
+    string webcastUid = 73;
     string sec_uid = 46; //用户主页ID
     int32 user_role = 47; //用户角色
+    bool is_follower = 1029;
 
     message UserAttr {
-
+        bool isMuted = 1;
+        bool isAdmin = 2;
+        bool isSuperAdmin = 3;
+        repeated int32 adminPrivileges = 4;
     }
 
     message OwnRoom {
+        repeated int64 roomIds = 1;
+        repeated string roomIdsStr = 2;
+        repeated int32 roomIdsDisplay = 3;
+    }
 
+    message Subscribe {
+        bool isMember = 1;
+        int64 level = 2;
+        int64 identityType = 3;
+        int64 buyType = 4;
+        int64 open = 5;
     }
 
     message AnchorInfo {
@@ -584,4 +662,21 @@ message GiftGroupInfo {
 
 message EffectMixImageInfo {
     
+}
+
+message UserVIPInfo {
+    int64 vipLevel = 1;
+    string vipLevelName = 2;
+    int32 status = 3;
+    int64 startTime = 4;
+    int64 endTime = 5;
+    int64 remainingDays = 6;
+    int64 totalConsume = 7;
+    int64 targetConsume = 8;
+    VIPBadge badge = 9;
+    map<int64, bool> privileges = 10;
+}
+
+message VIPBadge {
+    map<int64, Image> icons = 1;
 }

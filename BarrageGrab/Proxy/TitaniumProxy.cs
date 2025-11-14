@@ -691,7 +691,10 @@ namespace BarrageGrab.Proxy
         /// </summary>
         override public void Dispose()
         {
-            proxyServer.Stop();
+            if (proxyServer.ProxyRunning)
+            {
+                proxyServer.Stop();
+            }
             proxyServer.Dispose();
             if (AppSetting.Current.UsedProxy)
             {

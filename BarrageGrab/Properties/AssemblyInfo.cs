@@ -6,12 +6,12 @@ using System.Runtime.InteropServices;
 // 有关程序集的一般信息由以下
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("抖音弹幕监听器")]
+[assembly: AssemblyTitle("Danmaku 后端")]
 [assembly: AssemblyDescription("基于系统代理抓包打造的抖音弹幕服务推送程序，可抓取浏览器直播间，直播伴侣，抖音客户端，的各种弹幕消息。这也是一个对开发者友好的弹幕推送器")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("小白不圆个人工作室")]
-[assembly: AssemblyProduct("抖音弹幕监听器")]
-[assembly: AssemblyCopyright("Copyright © 2022")]
+[assembly: AssemblyCompany("Nonxio Studio")]
+[assembly: AssemblyProduct("DanmakuBackend")]
+[assembly: AssemblyCopyright("Copyright © 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -21,7 +21,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // 如果此项目向 COM 公开，则下列 GUID 用于类型库的 ID
-[assembly: Guid("a07bb1da-d5c2-4bea-9f3f-e42aadb9c1d5")]
+[assembly: Guid("6c61b41b-7aba-4f37-87c6-92559fc8cd6a")]
 
 // 程序集的版本信息由下列四个值组成: 
 //
