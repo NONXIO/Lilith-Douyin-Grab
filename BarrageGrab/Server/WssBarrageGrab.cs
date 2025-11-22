@@ -62,6 +62,21 @@ namespace BarrageGrab
         public event EventHandler<RoomMessageEventArgs<FansclubMessage>> OnFansclubMessage;
 
         /// <summary>
+        /// 表情消息
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<EmojiChatMessage>> OnEmojiChatMessage;
+
+        /// <summary>
+        /// 抽奖消息
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<LotteryEventMessage>> OnLotteryEventMessage;
+
+        /// <summary>
+        /// 语音消息
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<AudioChatMessage>> OnAudioChatMessage;
+
+        /// <summary>
         /// 代理
         /// </summary>
         public ISystemProxy Proxy { get { return proxy; } }
@@ -175,6 +190,8 @@ namespace BarrageGrab
             {
                 msgIdList.RemoveAt(0);
             }
+            
+            if (msg.Method != "WebcastChatMessage") return;
 
             try
             {
@@ -236,7 +253,42 @@ namespace BarrageGrab
                             this.OnFansclubMessage?.Invoke(this, new RoomMessageEventArgs<FansclubMessage>(processName, arg));
                             break;
                         }
+                    //表情消息
+                    case "WebcastEmojiChatMessage":
+                        {
+                            var arg = Serializer.Deserialize<EmojiChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                            this.OnEmojiChatMessage?.Invoke(this, new RoomMessageEventArgs<EmojiChatMessage>(processName, arg));
+                            Logger.LogInfo("收到表情消息:" + new RoomMessageEventArgs<EmojiChatMessage>(processName, arg).Message.ToJson());
+                            break;
+                        }
+                    //抽奖消息
+                    case "WebcastLotteryEventMessage":
+                        {
+                            var arg = Serializer.Deserialize<LotteryEventMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                            this.OnLotteryEventMessage?.Invoke(this, new RoomMessageEventArgs<LotteryEventMessage>(processName, arg));
+                            break;
+                        }
+                    //语音消息
+                    case "WebcastAudioChatMessage":
+                        {
+                            var arg = Serializer.Deserialize<AudioChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                            this.OnAudioChatMessage?.Invoke(this, new RoomMessageEventArgs<AudioChatMessage>(processName, arg));
+                            break;
+                        }
+                    case "WebcastRoomMessage":
+                    case "WebcastRoomIntroMessage":
+                    case "WebcastResidentGuestMessage":
+                    case "WebcastLowPcuGuideMessage":
+                    case "WebcastRoomDataSyncMessage":
+                    case "WebcastInRoomBannerMessage":
+                    case "WebcastRoomStreamAdaptationMessage":
+                    case "WebcastHotRoomMessage":
+                        {
+                            //不处理
+                            break;
+                        }
                     default:
+                        Logger.LogInfo("未处理的消息类型:" + msg.Method);
                         break;
                 }
             }

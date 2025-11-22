@@ -719,7 +719,7 @@ namespace BarrageGrab.Proxy
             }
             else
             {
-                Logger.LogInfo($"代理已启动(局域代理)，127.0.0.1:{base.ProxyPort}");
+                Logger.LogInfo($"代理已启动(局域代理) 端口:{base.ProxyPort}");
             }
         }
     }

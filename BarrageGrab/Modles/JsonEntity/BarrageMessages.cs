@@ -30,7 +30,11 @@ namespace BarrageGrab.Modles.JsonEntity
         [Description("分享")]
         直播间分享 = 8,
         [Description("下播")]
-        下播 = 9
+        下播 = 9,
+        [Description("会员表情")]
+        会员表情 = 10,
+        [Description("会员开通")]
+        会员开通 = 11,
     }
 
     /// <summary>
