@@ -71,12 +71,6 @@ namespace BarrageGrab
                 exited = true;
             };
 
-            //串口写入服务
-            if (!AppSetting.Current.ComPort.IsNullOrWhiteSpace())
-            {
-                AppRuntime.ComPortServer.OpenStart();
-            }
-
             //显示窗体
             if (AppSetting.Current.ShowWindow)
             {
@@ -114,6 +108,7 @@ namespace BarrageGrab
                 case 0:
                     //Logger.PrintColor("0工具被强制关闭"); //Ctrl+C关闭
                     //server.Close();
+                    AppRuntime.WsServer.Dispose();
                     break;
                 case 2:
                     Logger.PrintColor("2工具被强制关闭");//按控制台关闭按钮关闭

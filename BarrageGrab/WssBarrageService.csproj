@@ -32,6 +32,9 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>lilith.snk</AssemblyOriginatorKeyFile>
+    <PublicSign>true</PublicSign>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -221,7 +224,6 @@
   <ItemGroup>
     <Compile Include="AppRuntime.cs" />
     <Compile Include="AppSetting.cs" />
-    <Compile Include="Server\ComPortServer.cs" />
     <Compile Include="Utility\DyApiHelper.cs" />
     <Compile Include="Utility\EmbResource.cs" />
     <Compile Include="Forms\FormView.cs">
@@ -272,7 +274,6 @@
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
     <Content Include="logo.ico" />
-    <EmbeddedResource Include="Scripts\engine\comPortFilter.js" />
     <EmbeddedResource Include="Scripts\inject\livePage.js" />
   </ItemGroup>
   <ItemGroup>

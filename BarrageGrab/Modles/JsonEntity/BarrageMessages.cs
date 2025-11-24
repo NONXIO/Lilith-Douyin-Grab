@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
@@ -35,6 +36,10 @@ namespace BarrageGrab.Modles.JsonEntity
         会员表情 = 10,
         [Description("会员开通")]
         会员开通 = 11,
+        [Description("房间数据")]
+        房间数据 = 12,
+        [Description("房间排行")]
+        房间排行 = 13
     }
 
     /// <summary>
@@ -42,7 +47,6 @@ namespace BarrageGrab.Modles.JsonEntity
     /// </summary>
     public enum FansclubType
     {
-        无 = 0,
         粉丝团升级 = 1,
         加入粉丝团 = 2
     }
@@ -273,7 +277,7 @@ namespace BarrageGrab.Modles.JsonEntity
     /// <summary>
     /// 粉丝团信息
     /// </summary>
-    public class FansClubInfo
+    public struct FansClubInfo
     {
         /// <summary>
         /// 粉丝团名称
@@ -282,6 +286,22 @@ namespace BarrageGrab.Modles.JsonEntity
 
         /// <summary>
         /// 粉丝团等级，没加入则0
+        /// </summary>
+        public int Level { get; set; }
+    }
+    
+    /// <summary>
+    /// 星守护信息
+    /// </summary>
+    public class StarGuardInfo
+    {
+        /// <summary>
+        /// 粉丝团名称
+        /// </summary>
+        public string ClubName { get; set; }
+
+        /// <summary>
+        /// 等级
         /// </summary>
         public int Level { get; set; }
     }
@@ -336,6 +356,11 @@ namespace BarrageGrab.Modles.JsonEntity
         /// 是否是主播自己
         /// </summary>
         public bool IsAnchor { get; set; } = false;
+        
+        /// <summary>
+        /// 是否是VIP会员
+        /// </summary>
+        public bool IsVip { get; set; } = false;
 
         /// <summary>
         /// ShortId
@@ -381,6 +406,11 @@ namespace BarrageGrab.Modles.JsonEntity
         /// 粉丝团信息
         /// </summary>
         public FansClubInfo FansClub { get; set; }
+        
+        /// <summary>
+        /// 星守护信息
+        /// </summary>
+        public StarGuardInfo StarGuard { get; set; }
 
         /// <summary>
         /// 粉丝数
@@ -505,7 +535,7 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 粉丝团消息类型,升级1，加入2
         /// </summary>
-        public int Type { get; set; }
+        public FansclubType Type { get; set; }
 
         /// <summary>
         /// 粉丝团等级
@@ -538,5 +568,24 @@ namespace BarrageGrab.Modles.JsonEntity
         /// 分享目标
         /// </summary>
         public ShareType ShareType { get; set; }
+    }
+    
+    public class RoomStatsMsg : Msg
+    {
+        public long DisplayValue { get; set; }
+        public bool Incremental { get; set; }
+        public long Total { get; set; }
+    }
+
+    public class RoomRankMsg : Msg
+    {
+        public List<RoomRank> Ranks { get; set; }
+    }
+
+    public class RoomRank
+    {
+        public MsgUser User { get; set; }
+        public string ScoreStr { get; set; }
+        public bool ProfileHidden { get; set; }
     }
 }

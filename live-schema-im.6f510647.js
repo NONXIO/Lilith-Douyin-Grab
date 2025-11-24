@@ -8703,7 +8703,7 @@
                             }
                             return i
                         }, e
-                    }(),e.FansclubMessage = function () {
+                    }(),e.s = function () {
                         function e(e) {
                             if (e) for (var t = Object.keys(e), n = 0; n < t.length; ++n) null != e[t[n]] && (this[t[n]] = e[t[n]])
                         }

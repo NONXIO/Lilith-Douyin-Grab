@@ -26,11 +26,6 @@ namespace BarrageGrab
         public static RoomCacheManager RoomCaches { get; private set; }
 
         /// <summary>
-        /// 串口服务
-        /// </summary>
-        public static ComPortServer ComPortServer { get; private set; }
-
-        /// <summary>
         /// 程序进程信息
         /// </summary>
         public static Process CurrentProcess { get; private set; } = System.Diagnostics.Process.GetCurrentProcess();
@@ -44,7 +39,6 @@ namespace BarrageGrab
         {
             WsServer = new WsBarrageServer();
             RoomCaches = new RoomCacheManager();
-            ComPortServer = new ComPortServer(WsServer);
         }
 
         /// <summary>

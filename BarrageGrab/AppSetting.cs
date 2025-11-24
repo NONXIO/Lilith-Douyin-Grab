@@ -15,9 +15,7 @@ namespace BarrageGrab
     internal class AppSetting
     {
         private static readonly AppSetting ins = new AppSetting();
-
         public static AppSetting Current { get { return ins; } }
-
         public AppSetting()
         {
             try
@@ -44,8 +42,6 @@ namespace BarrageGrab
                 WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
                 LiveCompanPath = AppSettings["liveCompanPath"].Trim();
                 LiveCompanHookSwitch = bool.Parse(AppSettings["liveCompanHookSwitch"].Trim());
-
-                ConfigComPort();
                 ConfigFilter();
             }
             catch (Exception ex)
@@ -146,299 +142,12 @@ namespace BarrageGrab
                 LiveCompanPath = liveCompanion["path"]?.Value<string>() ?? string.Empty;
                 LiveCompanHookSwitch = liveCompanion["hookEnabled"]?.Value<bool>() ?? false;
                 AutoPause = liveCompanion["autoPause"]?.Value<bool>() ?? true;                
-
-                // COM端口配置
-                var comPort = app["comPort"];
-                string comPortStr = comPort["config"]?.Value<string>() ?? string.Empty;
-                if (!string.IsNullOrWhiteSpace(comPortStr))
-                {
-                    try
-                    {
-                        var spit = comPortStr.Split(':');
-                        ComPort = spit[0].Trim();
-                        ComBaudRate = int.Parse(spit[1].Trim());
-                        ComPortSwitch = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception("串口配置格式错误，" + ex.Message, ex);
-                    }
-                }
-
+                
                 Logger.PrintColor("已从JSON配置文件加载设置");
             }
             catch (Exception ex)
             {
                 Logger.PrintColor($"从JSON加载配置失败: {ex.Message}，将尝试从App.config加载");                
-            }
-        }
-
-        /// <summary>
-        /// 从启动参数加载配置
-        /// </summary>
-        /// <param name="args">命令行参数数组</param>
-        public void LoadFromCommand(string[] args)
-        {
-            if (args == null || args.Length == 0)
-            {
-                return;
-            }
-
-            Logger.PrintColor("正在从命令行参数加载配置...");
-
-            try
-            {
-                for (int i = 0; i < args.Length; i++)
-                {
-                    string arg = args[i].ToLower().Trim();
-
-                    // 如果参数以-或--开头，则为命令行开关
-                    if (arg.StartsWith("-") || arg.StartsWith("--"))
-                    {
-                        string paramName = arg.TrimStart('-');
-                        string paramValue = string.Empty;
-                        bool switchDef = false;
-
-                        // 检查下一个参数是否是值（不是以-开头）
-                        if (i + 1 < args.Length && !(args[i + 1].StartsWith("-") || args[i + 1].StartsWith("--")))
-                        {
-                            paramValue = args[i + 1];
-                            i++; // 跳过已处理的值参数
-                        }
-                        else
-                        {
-                            // 对于布尔开关，没有值意味着true
-                            paramValue = "?";
-                            switchDef = true;
-                        }
-
-                        // 根据参数名称设置相应的配置
-                        switch (paramName)
-                        {
-                            // 网络相关配置
-                            case "port":
-                            case "wsport":
-                            case "ws-port":
-                                if (int.TryParse(paramValue, out int wsPort))
-                                {
-                                    WsProt = wsPort;
-                                    Logger.PrintColor($"WebSocket端口设置为: {wsPort}");
-                                }
-                                break;
-
-                            case "proxy-port":
-                            case "proxyport":
-                                if (int.TryParse(paramValue, out int proxyPort))
-                                {
-                                    ProxyPort = proxyPort;
-                                    Logger.PrintColor($"代理端口设置为: {proxyPort}");
-                                }
-                                break;
-
-                            case "upstream":
-                            case "upstream-proxy":
-                                UpstreamProxy = paramValue;
-                                Logger.PrintColor($"上游代理设置为: {paramValue}");
-                                break;
-
-                            case "listen-any":
-                            case "listenany":
-                                if (switchDef) break;
-                                ListenAny = ParseBool(paramValue);
-                                Logger.PrintColor($"监听任意IP设置为: {ListenAny}");
-                                break;
-
-                            case "sysproxy":
-                            case "sys-proxy":
-                                if (switchDef) break;
-                                UsedProxy = ParseBool(paramValue);
-                                Logger.PrintColor($"系统代理设置为: {UsedProxy}");
-                                break;
-
-                            // 过滤相关配置
-                            case "process-filter":
-                            case "processfilter":
-                                ProcessFilter = paramValue.Split(',');
-                                Logger.PrintColor($"进程过滤器设置为: {paramValue}");
-                                break;
-
-                            case "hostname-filter":
-                            case "hostnamefilter":
-                                HostNameFilter = paramValue.Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
-                                Logger.PrintColor($"域名过滤器设置为: {paramValue}");
-                                break;
-
-                            case "filter-hostname":
-                            case "filterhostname":
-                                if (switchDef) break;
-                                FilterHostName = ParseBool(paramValue);
-                                Logger.PrintColor($"是否启用域名过滤设置为: {FilterHostName}");
-                                break;
-
-                            case "room-ids":
-                            case "roomids":
-                                WebRoomIds = paramValue.Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
-                                Logger.PrintColor($"房间ID过滤器设置为: {paramValue}");
-                                break;
-
-                            // 弹幕相关配置
-                            case "print":
-                            case "print-barrage":
-                                if (switchDef) break;
-                                PrintBarrage = ParseBool(paramValue);
-                                Logger.PrintColor($"控制台打印弹幕设置为: {PrintBarrage}");
-                                break;
-
-                            case "print-filter":
-                            case "printfilter":
-                                if (!string.IsNullOrWhiteSpace(paramValue))
-                                {
-                                    PrintFilter = paramValue.Split(',').Select(x => int.Parse(x)).ToArray();
-                                    Logger.PrintColor($"控制台打印过滤器设置为: {paramValue}");
-                                }
-                                break;
-
-                            case "push-filter":
-                            case "pushfilter":
-                                if (!string.IsNullOrWhiteSpace(paramValue))
-                                {
-                                    PushFilter = paramValue.Split(',').Select(x => int.Parse(x)).ToArray();
-                                    Logger.PrintColor($"推送过滤器设置为: {paramValue}");
-                                }
-                                break;
-
-                            case "log-filter":
-                            case "logfilter":
-                                if (!string.IsNullOrWhiteSpace(paramValue))
-                                {
-                                    LogFilter = paramValue.Split(',').Select(x => int.Parse(x)).ToArray();
-                                    Logger.PrintColor($"日志过滤器设置为: {paramValue}");
-                                }
-                                break;
-
-                            case "barrage-log":
-                            case "barragelog":
-                                if (switchDef) break;
-                                BarrageLog = ParseBool(paramValue);
-                                Logger.PrintColor($"弹幕文件日志设置为: {BarrageLog}");
-                                break;
-
-                            // 显示和控制台相关
-                            case "hide-console":
-                            case "hideconsole":
-                                if (switchDef) break;
-                                HideConsole = ParseBool(paramValue);
-                                Logger.PrintColor($"隐藏控制台设置为: {HideConsole}");
-                                break;
-
-                            case "show-window":
-                            case "showwindow":
-                                if (switchDef) break;
-                                ShowWindow = ParseBool(paramValue);
-                                Logger.PrintColor($"显示窗体设置为: {ShowWindow}");
-                                break;
-
-                            // 轮询相关配置
-                            case "force-polling":
-                            case "forcepolling":
-                                if (switchDef) break;
-                                ForcePolling = ParseBool(paramValue);
-                                Logger.PrintColor($"强制轮询模式设置为: {ForcePolling}");
-                                break;
-
-                            case "polling-interval":
-                            case "pollinginterval":
-                                if (int.TryParse(paramValue, out int interval))
-                                {
-                                    PollingInterval = interval;
-                                    Logger.PrintColor($"轮询间隔设置为: {interval}ms");
-                                }
-                                break;
-
-                            case "disable-cache":
-                            case "disablecache":
-                                if (switchDef) break;
-                                DisableLivePageScriptCache = ParseBool(paramValue);
-                                Logger.PrintColor($"禁用脚本缓存设置为: {DisableLivePageScriptCache}");
-                                break;
-
-                            // 直播伴侣相关
-                            case "auto-pause":
-                            case "autopause":
-                                if (switchDef) break;
-                                AutoPause = ParseBool(paramValue);
-                                Logger.PrintColor($"自动暂停设置为: {AutoPause}");
-                                break;
-
-                            case "livecompan-path":
-                            case "livecompanpath":
-                                LiveCompanPath = paramValue;
-                                Logger.PrintColor($"直播伴侣路径设置为: {paramValue}");
-                                break;
-
-                            case "livecompan-hook":
-                            case "livecompanhook":
-                                if (switchDef) break;
-                                LiveCompanHookSwitch = ParseBool(paramValue);
-                                Logger.PrintColor($"直播伴侣Hook开关设置为: {LiveCompanHookSwitch}");
-                                break;
-
-                            // COM端口相关
-                            case "com":
-                            case "comport":
-                                if (!string.IsNullOrWhiteSpace(paramValue))
-                                {
-                                    try
-                                    {
-                                        var parts = paramValue.Split(':');
-                                        if (parts.Length == 2)
-                                        {
-                                            ComPort = parts[0].Trim();
-                                            ComBaudRate = int.Parse(parts[1].Trim());
-                                            ComPortSwitch = true;
-                                            Logger.PrintColor($"COM端口设置为: {ComPort} 波特率: {ComBaudRate}");
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Logger.LogError($"COM端口配置格式错误: {ex.Message}");
-                                    }
-                                }
-                                break;
-
-                            // 配置文件相关
-                            case "config":
-                            case "jsonconfig":
-                                try
-                                {
-                                    if (File.Exists(paramValue))
-                                    {
-                                        LoadFromJson();
-                                        Logger.PrintColor($"已从JSON配置文件加载配置: {paramValue}");
-                                    }
-                                    else
-                                    {
-                                        Logger.LogError($"指定的配置文件不存在: {paramValue}");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Logger.LogError($"加载JSON配置文件失败: {ex.Message}");
-                                }
-                                break;
-
-                            default:
-                                Logger.LogWarn($"未知的命令行参数: {arg}");
-                                break;
-                        }
-                    }
-                }
-
-                Logger.PrintColor("命令行参数配置加载完成");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"命令行参数解析错误: {ex.Message}");
             }
         }
 
@@ -453,26 +162,6 @@ namespace BarrageGrab
             value = value.ToLower().Trim();
 
             return value == "true" || value == "1" || value == "yes" || value == "y" || value == "on";
-        }
-
-        //com串口设置
-        private void ConfigComPort()
-        {
-            var comPort = AppSettings["comPort"];
-            if (!comPort.IsNullOrWhiteSpace())
-            {
-                try
-                {
-                    var spit = comPort.Split(':');
-                    ComPort = spit[0].Trim();
-                    ComBaudRate = int.Parse(spit[1].Trim());
-                    ComPortSwitch = true;
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception("串口配置格式错误，" + ex.Message, ex);
-                }
-            }
         }
 
         //各种过滤器设置

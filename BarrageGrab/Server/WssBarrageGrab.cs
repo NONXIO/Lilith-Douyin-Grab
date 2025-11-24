@@ -62,6 +62,21 @@ namespace BarrageGrab
         public event EventHandler<RoomMessageEventArgs<FansclubMessage>> OnFansclubMessage;
 
         /// <summary>
+        /// 直播间统计
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<RoomStatsMessage>> OnRoomStatsMessage;
+
+        /// <summary>
+        /// 直播间排行榜
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<RoomRankMessage>> OnRoomRankMessage;
+
+        /// <summary>
+        /// 活动红心
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<ActivityEmojiGroupsMessage>> OnActivityEmojiGroupsMessage;
+
+        /// <summary>
         /// 表情消息
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<EmojiChatMessage>> OnEmojiChatMessage;
@@ -191,7 +206,7 @@ namespace BarrageGrab
                 msgIdList.RemoveAt(0);
             }
             
-            if (msg.Method != "WebcastChatMessage") return;
+            //if (msg.Method != "WebcastFansclubMessage") return;
 
             try
             {
@@ -251,6 +266,28 @@ namespace BarrageGrab
                         {
                             var arg = Serializer.Deserialize<FansclubMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnFansclubMessage?.Invoke(this, new RoomMessageEventArgs<FansclubMessage>(processName, arg));
+                            Logger.LogInfo("粉丝团消息:" + new RoomMessageEventArgs<FansclubMessage>(processName, arg).Message.ToJson());
+                            break;
+                        }
+                    //直播间统计
+                    case "WebcastRoomStatsMessage":
+                        {
+                            var arg = Serializer.Deserialize<RoomStatsMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                            this.OnRoomStatsMessage?.Invoke(this, new RoomMessageEventArgs<RoomStatsMessage>(processName, arg));
+                            break;
+                        }
+                    //直播间排行榜
+                    case "WebcastRoomRankMessage":
+                        {
+                            var arg = Serializer.Deserialize<RoomRankMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                            this.OnRoomRankMessage?.Invoke(this, new RoomMessageEventArgs<RoomRankMessage>(processName, arg));
+                            break;
+                        }
+                    //活动红心
+                    case "WebcastActivityEmojiGroupsMessage":
+                        {
+                            var arg = Serializer.Deserialize<ActivityEmojiGroupsMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                            this.OnActivityEmojiGroupsMessage?.Invoke(this, new RoomMessageEventArgs<ActivityEmojiGroupsMessage>(processName, arg));
                             break;
                         }
                     //表情消息

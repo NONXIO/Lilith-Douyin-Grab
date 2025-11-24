@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms.VisualStyles;
 using BarrageGrab.Modles.JsonEntity;
 using NLog;
 
@@ -36,6 +37,14 @@ namespace BarrageGrab
             Console.ForegroundColor = foreground;
             Console.WriteLine(message);
             Console.ForegroundColor = color;
+        }
+        
+        public static void PrintInlineColor(string message, ConsoleColor foreground = ConsoleColor.White, ConsoleColor background = ConsoleColor.Black)
+        {                      
+            Console.ForegroundColor = foreground;
+            Console.BackgroundColor = background;
+            Console.Write(message);
+            Console.ResetColor();
         }
 
         // 记录日志方法

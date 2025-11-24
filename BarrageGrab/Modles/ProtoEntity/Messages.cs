@@ -2115,5 +2115,107 @@ namespace BarrageGrab.Modles.ProtoEntity
 
 #pragma warning restore CS0612, CS0618, CS1591, CS3021, IDE0079, IDE1006, RCS1036, RCS1057, RCS1085, RCS1192
 
+    [global::ProtoBuf.ProtoContract()]
+    public class RoomStatsMessage : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"common")]
+        public Common common { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"display_short")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string displayShort { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(3, Name = @"display_middle")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string displayMiddle { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(4, Name = @"display_long")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string displayLong { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(5, Name = @"display_value")]
+        public long displayValue { get; set; }
+
+        [global::ProtoBuf.ProtoMember(6, Name = @"display_version")]
+        public long displayVersion { get; set; }
+
+        [global::ProtoBuf.ProtoMember(7, Name = @"incremental")]
+        public bool incremental { get; set; }
+
+        [global::ProtoBuf.ProtoMember(8, Name = @"is_hidden")]
+        public bool isHidden { get; set; }
+
+        [global::ProtoBuf.ProtoMember(9, Name = @"total")]
+        public long total { get; set; }
+
+        [global::ProtoBuf.ProtoMember(10, Name = @"display_type")]
+        public long displayType { get; set; }
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public class ActivityEmojiGroupsMessage : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"common")]
+        public Common common { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"activity_emoji_groups")]
+        public global::System.Collections.Generic.List<EffectiveActivityEmojiGroup> activityEmojiGroups { get; } = new global::System.Collections.Generic.List<EffectiveActivityEmojiGroup>();
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public class EffectiveActivityEmojiGroup : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"start_time")]
+        public long startTime { get; set; }
+
+        [global::ProtoBuf.ProtoMember(3, Name = @"end_time")]
+        public long endTime { get; set; }
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public class RoomRankMessage : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"common")]
+        public Common common { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"ranks")]
+        public global::System.Collections.Generic.List<RoomRank> ranks { get; } = new global::System.Collections.Generic.List<RoomRank>();
+
+        [global::ProtoBuf.ProtoContract()]
+        public class RoomRank : global::ProtoBuf.IExtensible
+        {
+            private global::ProtoBuf.IExtension __pbn__extensionData;
+            global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+                => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+            [global::ProtoBuf.ProtoMember(1, Name = @"user")]
+            public User user { get; set; }
+
+            [global::ProtoBuf.ProtoMember(2, Name = @"score_str")]
+            [global::System.ComponentModel.DefaultValue("")]
+            public string scoreStr { get; set; } = "";
+
+            [global::ProtoBuf.ProtoMember(3, Name = @"profile_hidden")]
+            public bool profileHidden { get; set; }
+        }
+    }
+
+
 }
 
