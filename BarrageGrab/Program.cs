@@ -24,21 +24,36 @@ namespace BarrageGrab
         private static DanmakuDataManager dataManager = null;
         
         static void Main(string[] args)
-        {
-            var accessKey = args.FirstOrDefault() ?? string.Empty;
-            if (string.IsNullOrEmpty(accessKey))
+        { 
+            SetTitle("启动中...");
+            // 防止 Debug Hook
+            if (System.Diagnostics.Debugger.IsAttached)
             {
-                throw new NotImplementedException("未授权,请使用Danmaku启动此后端服务");
+                throw new NotImplementedException("内部错误,请使用Danmaku启动此后端服务");
             }
-            dataManager = new DanmakuDataManager(accessKey);
-            
+            // 检查访问密钥
+            if (args.Length != 2)
+            {
+                throw new NotImplementedException("参数错误,请使用Danmaku启动此后端服务");
+            }
             if (!mutex.WaitOne(TimeSpan.Zero, true))
             {
                 Console.WriteLine(@"另一个实例已在运行。");
                 Console.ReadKey();
                 return;
             }
-            SetTitle("启动中...");
+            // 读取参数
+            var accessKey = args[0] ?? string.Empty;
+            var roomId = args[1] ?? string.Empty;
+            if (string.IsNullOrEmpty(accessKey))
+            {
+                throw new NotImplementedException("未授权,请使用Danmaku启动此后端服务");
+            }
+            if (string.IsNullOrEmpty(roomId))
+            {
+                throw new NotImplementedException("参数错误,请使用Danmaku启动此后端服务");
+            }
+            dataManager = new DanmakuDataManager(accessKey, roomId);
             try
             {
                 Init();
@@ -51,22 +66,18 @@ namespace BarrageGrab
                 MessageBox.Show(ex.Message, "程序初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 exited = true;
             }
-
             while (!exited)
             {
                 Thread.Sleep(500);
             }
-
             if (!AppRuntime.WsServer.IsDisposed)
             {
                 AppRuntime.WsServer.Dispose();
             }
-
-            Logger.PrintColor("服务器已关闭...");
             WinApi.SetConsoleCtrlHandler(controlCtr, false);//反注册捕获控制台关闭            
         }
 
-        public static void Init()
+        private static void Init()
         {
             AppRuntime.Init();
             LiveCompanHelper.SwitchSetup();

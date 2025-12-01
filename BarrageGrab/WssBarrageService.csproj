@@ -287,6 +287,7 @@
   <ItemGroup>
     <Compile Include="AppRuntime.cs" />
     <Compile Include="AppSetting.cs" />
+    <Compile Include="Cloud\ClientOnlineBroadcast.cs" />
     <Compile Include="Cloud\DanmakuDataManager.cs" />
     <Compile Include="Cloud\EventLog.cs" />
     <Compile Include="Utility\DyApiHelper.cs" />
