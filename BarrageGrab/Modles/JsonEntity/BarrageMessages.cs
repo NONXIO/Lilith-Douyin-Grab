@@ -48,7 +48,8 @@ namespace BarrageGrab.Modles.JsonEntity
     public enum FansclubType
     {
         粉丝团升级 = 1,
-        加入粉丝团 = 2
+        加入粉丝团 = 2,
+        灭灯 = 6 //TODO: 待确定
     }
 
     /// <summary>
@@ -230,48 +231,44 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 弹幕ID
         /// </summary>
+        
+        [JsonProperty("mid")]
         public long MsgId { get; set; }
-
-        /// <summary>
-        /// 用户数据
-        /// </summary>
-        public MsgUser User { get; set; }
 
         /// <summary>
         /// 主播简要信息
         /// </summary>
+        [JsonProperty("anchor")]
         public RoomAnchorInfo Owner { get; set; }
-        public string Onwer { get; set; } = "该字段存在拼写错误，请修正为 ‘Owner’ 后使用";
 
         /// <summary>
         /// 消息内容
         /// </summary>
+        [JsonProperty("content")]
         public string Content { get; set; }
 
         /// <summary>
         /// 房间号
         /// </summary>
+        [JsonProperty("room_id")]
         public string RoomId { get; set; }
 
         /// <summary>
         /// web直播间ID
         /// </summary>
+        [JsonProperty("web_rid")]
         public string WebRoomId { get; set; }
-
+        
         /// <summary>
-        /// 房间标题
+        /// 用户数据
         /// </summary>
-        public string RoomTitle { get; set; }
-
-        /// <summary>
-        /// 是否是匿名直播间
-        /// </summary>
-        public bool IsAnonymous { get; set; }
-
-        /// <summary>
-        /// 用户使用的 Appid ，已知 1128，8663，2329 等
-        /// </summary>
-        public string Appid { get; set; }
+        [JsonProperty("user")]
+        public MsgUser User { get; set; }
+    }
+    
+    public class ChatMsg : Msg
+    {
+       
     }
 
     /// <summary>
@@ -314,26 +311,31 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 用户ID
         /// </summary>
+        [JsonProperty("uid")]
         public string UserId { get; set; }
 
         /// <summary>
         /// SecUid
         /// </summary>
+        [JsonProperty("sec_uid")]
         public string SecUid { get; set; }
 
         /// <summary>
         /// 昵称
         /// </summary>
+        [JsonProperty("username")]
         public string Nickname { get; set; }
 
         /// <summary>
         /// 头像地址
         /// </summary>
+        [JsonProperty("avatar")]
         public string HeadUrl { get; set; }
 
         /// <summary>
         /// 关注状态 0未关注,1已关注,...
         /// </summary>
+        [JsonProperty("follow_status")]
         public int FollowStatus { get; set; }
     }
 
@@ -515,16 +517,6 @@ namespace BarrageGrab.Modles.JsonEntity
         /// 累计直播间用户数量
         /// </summary>
         public long TotalUserCount { get; set; }
-
-        /// <summary>
-        /// 累计直播间用户数量 显示文本
-        /// </summary>
-        public string TotalUserCountStr { get; set; }
-
-        /// <summary>
-        /// 当前直播间用户数量 显示文本
-        /// </summary>
-        public string OnlineUserCountStr { get; set; }
     }
 
     /// <summary>
@@ -542,6 +534,20 @@ namespace BarrageGrab.Modles.JsonEntity
         /// </summary>
         public int Level { get; set; }
     }
+
+    
+    public class VIPEmojiMsg: Msg
+    {
+        public string EmojiUrl;
+        public long EmojiId;
+    }
+
+    public class VIPBuyMsg : Msg
+    {
+        public string Action;
+        public string Type;
+    }
+    
 
     /// <summary>
     /// 来了消息
@@ -587,5 +593,15 @@ namespace BarrageGrab.Modles.JsonEntity
         public MsgUser User { get; set; }
         public string ScoreStr { get; set; }
         public bool ProfileHidden { get; set; }
+    }
+    
+    public class RoomMsg : Msg
+    {
+        public string Content { get; set; }
+        public bool SupportLandscape { get; set; }
+        public int RoomMessageType { get; set; }
+        public bool SystemTopMsg { get; set; }
+        public bool ForcedGuarantee { get; set; }
+        public string BizScene { get; set; }
     }
 }

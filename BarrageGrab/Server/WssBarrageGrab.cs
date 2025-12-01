@@ -92,6 +92,11 @@ namespace BarrageGrab
         public event EventHandler<RoomMessageEventArgs<AudioChatMessage>> OnAudioChatMessage;
 
         /// <summary>
+        /// 房间消息
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<RoomMessage>> OnRoomMessage;
+
+        /// <summary>
         /// 代理
         /// </summary>
         public ISystemProxy Proxy { get { return proxy; } }
@@ -198,16 +203,12 @@ namespace BarrageGrab
             {
                 return;
             }
-
             msgIdList.Add(msg.msgId);
             //每种消息类型设置300容量应该足够,不太可能存在一条消息被挤出队列后再次出现
             while (msgIdList.Count > 300)
             {
                 msgIdList.RemoveAt(0);
             }
-            
-            //if (msg.Method != "WebcastFansclubMessage") return;
-
             try
             {
                 switch (msg.Method)
@@ -266,7 +267,6 @@ namespace BarrageGrab
                         {
                             var arg = Serializer.Deserialize<FansclubMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnFansclubMessage?.Invoke(this, new RoomMessageEventArgs<FansclubMessage>(processName, arg));
-                            Logger.LogInfo("粉丝团消息:" + new RoomMessageEventArgs<FansclubMessage>(processName, arg).Message.ToJson());
                             break;
                         }
                     //直播间统计
@@ -295,7 +295,6 @@ namespace BarrageGrab
                         {
                             var arg = Serializer.Deserialize<EmojiChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                             this.OnEmojiChatMessage?.Invoke(this, new RoomMessageEventArgs<EmojiChatMessage>(processName, arg));
-                            Logger.LogInfo("收到表情消息:" + new RoomMessageEventArgs<EmojiChatMessage>(processName, arg).Message.ToJson());
                             break;
                         }
                     //抽奖消息
@@ -312,7 +311,13 @@ namespace BarrageGrab
                             this.OnAudioChatMessage?.Invoke(this, new RoomMessageEventArgs<AudioChatMessage>(processName, arg));
                             break;
                         }
+                    // 房间通知消息，包含 会员开通信息
                     case "WebcastRoomMessage":
+                        {
+                            var arg = Serializer.Deserialize<RoomMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                            this.OnRoomMessage?.Invoke(this, new RoomMessageEventArgs<RoomMessage>(processName, arg));
+                            break;
+                        }
                     case "WebcastRoomIntroMessage":
                     case "WebcastResidentGuestMessage":
                     case "WebcastLowPcuGuideMessage":

@@ -14,24 +14,14 @@ namespace BarrageGrab.Modles.JsonEntity
     public enum CommandCode
     {
         /// <summary>
-        /// 空指令
+        /// 身份验证 Data:string
         /// </summary>
-        None = 0,
+        Auth = 0,
 
         /// <summary>
-        /// 安全关闭程序
+        /// 关闭程序
         /// </summary>
         Close = 1,
-
-        /// <summary>
-        /// 启用系统代理 Data:bool
-        /// </summary>
-        EnableProxy = 2,
-
-        /// <summary>
-        /// 是否显示控制台 Data:bool
-        /// </summary>
-        DisplayConsole = 3,
     }
 
     public class Command

@@ -86,6 +86,8 @@ namespace BarrageGrab
             this.grab.OnControlMessage += Grab_OnControlMessage;
             this.grab.OnRoomStatsMessage += Grab_OnRoomStatsMessage;
             this.grab.OnRoomRankMessage += Grab_OnRoomRankMessage;
+            this.grab.OnRoomMessage += Grab_OnRoomMessage;
+            this.grab.OnEmojiChatMessage += Grab_OnEmojiMessage;
 
             this.socketServer = socket;
             //dieout.Start();
@@ -121,11 +123,9 @@ namespace BarrageGrab
         private bool CheckRoomId(long roomid)
         {
             if (!AppSetting.Current.WebRoomIds.Any()) return true;
-
             var webrid = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid.ToString());
             if (webrid.IsNullOrWhiteSpace()) return true;
             if (webrid == "未知") return true;
-
             return AppSetting.Current.WebRoomIds.Contains(webrid);
         }
 
@@ -166,7 +166,7 @@ namespace BarrageGrab
                         user.IsVip = true;
                     }
                     // StarGuard (imageType 51)
-                    else if (badge.imageType == 51)
+                    else if (badge.imageType == 51 && badge.Uri.Contains("star_guard"))
                     {
                         user.StarGuard = new StarGuardInfo
                         {
@@ -176,7 +176,6 @@ namespace BarrageGrab
                     }
                 }
             }
-
             return user;
         }
 
@@ -195,33 +194,25 @@ namespace BarrageGrab
         {
             var roomid = msg.Common.roomId.ToString();
             RoomInfo roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
-
             //判断 Common 属性是否存在
             var hasUser = HasProperty(msg, nameof(msg.User));
-
             var enty = new T()
             {
                 MsgId = msg.Common?.msgId,
                 RoomId = roomid,
                 WebRoomId = roomInfo?.WebRoomId ?? "",
-                RoomTitle = roomInfo?.Title ?? "",
-                IsAnonymous = roomInfo?.IsAnonymous ?? false,
-                Appid = msg.Common.appId.ToString(),
                 User = hasUser ? GetUser(msg.User) : null,
             };
-
             //判断是否是直播间管理员
             if (enty.User != null && roomInfo != null && roomInfo.AdminUserIds.Any())
             {
                 enty.User.IsAdmin = roomInfo.AdminUserIds.Contains(enty.User.Id.ToString());
             }
-
             //判断是否是主播
             if (enty.User != null && roomInfo != null && roomInfo.Owner != null)
             {
                 enty.User.IsAnchor = enty.User.Id.ToString() == roomInfo.Owner.UserId;
             }
-
             return enty;
         }
 
@@ -230,66 +221,57 @@ namespace BarrageGrab
         {
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
             var roomName = (rinfo?.Owner?.Nickname ?? ((msg.WebRoomId.IsNullOrWhiteSpace() ? msg.RoomId.ToString() : msg.WebRoomId)));
-            var text = $"{DateTime.Now:HH:mm:ss} [{roomName}] [{barType}]";
-            
+            var text = $"{DateTime.Now:HH:mm:ss} [{roomName}][{barType}]";
             if (msg.User != null)
             {
                 if (msg.User.IsAnchor)
                 {
-                    text += " [主播]";
+                    text += "[主播]";
                 }
                 else if (msg.User.IsAdmin)
                 {
-                    text += " [管理员]";
+                    text += "[管理员]";
                 }
                 if (msg.User.IsVip)
                 {
-                    text += "[会员] ";
+                    text += "[会员]";
                 }
                 if (msg.User.StarGuard != null)
                 {
-                    text += "[星守护] ";
+                    text += "[星守护]";
                 }
                 if (msg.User.FansClub.Level > 0)
                 {
-                    text += $"[粉丝团|Lv. {msg.User.FansClub.Level}] ";
+                    text += $"[粉丝团|Lv.{msg.User.FansClub.Level}]";
                 }
-                text += $" [{msg.User?.GenderToString()}] ";
+                text += $"[{msg.User?.GenderToString()}]";
             }
-
             ConsoleColor color = AppSetting.Current.ColorMap[barType].Item1;
             var append = msg.Content;
             switch (barType)
             {
                 case PackMsgType.弹幕消息: append = $"{msg?.User?.Nickname}: {msg.Content}"; break;
                 case PackMsgType.下播: append = $"直播已结束"; break;
-                default: break;
             }
-
             text += append;
-
             if (AppSetting.Current.BarrageLog)
             {
                 Logger.LogBarrage(barType, msg);
             }
-
             if (!Appsetting.PrintBarrage) return;
             if (AppSetting.Current.PrintFilter.Any() && !AppSetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
-
             OnPrint?.Invoke(this, new PrintEventArgs()
             {
                 Color = color,
                 Message = text,
                 MsgType = barType
             });
-
             if (++printCount > 10000)
             {
                 Console.Clear();
                 Logger.PrintColor("控制台已清理");
                 printCount = 0;
             }
-            
             Logger.PrintColor(text + "\n", color);
         }
 
@@ -313,8 +295,6 @@ namespace BarrageGrab
             if (msg.WebRoomId.IsNullOrWhiteSpace())
             {
                 msg.WebRoomId = roomInfo.WebRoomId;
-                msg.RoomTitle = roomInfo.Title;
-                msg.IsAnonymous = roomInfo.IsAnonymous;
             }
         }
 
@@ -324,12 +304,17 @@ namespace BarrageGrab
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
             var enty = CreateMsg<FansclubMsg>(msg);
-
             enty.Content = msg.Content;
             enty.Type = (FansclubType)msg.Type;
             enty.Level = enty.User.FansClub.Level;
-
             var msgType = PackMsgType.粉丝团消息;
+            
+            if(msg.User.badgeImageListV2.Exists((image => image.Uri.Contains("star_guard"))))
+            {
+                Console.WriteLine($@"新守护相关");
+                Console.WriteLine(msg.ToJson());
+            }
+            
             AttachRoomInfo(enty);
             PrintMsg(enty, msgType);
             Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
@@ -340,19 +325,12 @@ namespace BarrageGrab
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-
             var enty = CreateMsg<UserSeqMsg>(msg);
             enty.OnlineUserCount = msg.Total;
             enty.TotalUserCount = msg.totalUser;
-            enty.TotalUserCountStr = msg.totalPvForAnchor;
-            enty.OnlineUserCountStr = msg.onlineUserForAnchor;
             enty.Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计直播间人数 {msg.totalPvForAnchor}";
-
-            var msgType = PackMsgType.直播间统计;
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
-            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
-            Broadcast(pack);
+            Broadcast(new BarrageMsgPack(enty.ToJson(), PackMsgType.直播间统计, e.Process));
         }
 
         //礼物
@@ -500,6 +478,12 @@ namespace BarrageGrab
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             var json = JsonConvert.SerializeObject(pack);
             Broadcast(pack);
+            
+            if(msg.User.badgeImageListV2.Exists((image => image.Uri.Contains("star_guard"))))
+            {
+                Console.WriteLine($@"新守护相关");
+                Console.WriteLine(msg.ToJson());
+            }
         }
 
         //点赞
@@ -535,6 +519,26 @@ namespace BarrageGrab
 
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
+            if(msg.User.badgeImageListV2.Exists((image => image.Uri.Contains("star_guard"))))
+            {
+                Console.WriteLine($@"新守护相关");
+                Console.WriteLine(msg.ToJson());
+            }
+        }
+        
+        //会员表情
+        private void Grab_OnEmojiMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<EmojiChatMessage> e)
+        {
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
+            var enty = CreateMsg<VIPEmojiMsg>(msg);
+            enty.EmojiId = msg.emojiId;
+            enty.EmojiUrl = msg.emojiContent.Pieces.First().imageValue.image.urlLists.First();
+            enty.Content = $"{msg.User.Nickname} 发送了会员表情";
+            var msgType = PackMsgType.会员表情;
+            AttachRoomInfo(enty);
+            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
+            Broadcast(pack);
         }
 
         //直播间状态变更
@@ -553,7 +557,6 @@ namespace BarrageGrab
                     RoomId = msg.Common.roomId.ToString(),
                     WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
                     User = null,
-                    Appid = e.Message.Common.appId.ToString()
                 };
 
                 var msgType = PackMsgType.下播;
@@ -578,6 +581,8 @@ namespace BarrageGrab
             enty.Incremental = msg.incremental;
             enty.Total = msg.total;
             enty.Content = $"直播间数据: {msg.displayLong} {msg.displayValue}";
+            
+            Console.WriteLine($@"直播间数据: {msg.displayLong} {msg.displayValue} (incremental { msg.incremental})");
 
             var msgType = PackMsgType.房间数据;
             AttachRoomInfo(enty);
@@ -606,6 +611,34 @@ namespace BarrageGrab
             Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
         }
 
+        //房间消息
+        private void Grab_OnRoomMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<RoomMessage> e)
+        {
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
+            Msg enty = null;
+            PackMsgType type = PackMsgType.无;
+            var displayText = msg.Common.displayText;
+            if (msg.Common.displayText.Key.Equals("subscribe_anchor_mvp_v2", StringComparison.CurrentCultureIgnoreCase))
+            {
+                enty = CreateMsg<VIPBuyMsg>(msg);
+                (enty as VIPBuyMsg).Action = displayText.Pieces[1].stringValue;
+                (enty as VIPBuyMsg).Type = displayText.Pieces[2].stringValue;
+                type = PackMsgType.会员开通;
+            }
+            if (enty != null)
+            {
+                enty.Content = msg.Content;
+                AttachRoomInfo(enty);
+                Broadcast(new BarrageMsgPack(enty.ToJson(), type, e.Process));
+            }
+            if(msg.Common.User.badgeImageListV2.Exists((image => image.Uri.Contains("star_guard"))))
+            {
+                Console.WriteLine($@"新守护相关");
+                Console.WriteLine(msg.ToJson());
+            }
+        }
+
         //监听用户连接
         private void Listen(IWebSocketConnection socket)
         {
@@ -614,7 +647,7 @@ namespace BarrageGrab
             if (!socketList.ContainsKey(clientUrl))
             {
                 socketList.Add(clientUrl, new UserState(socket));
-                Logger.PrintColor($"{DateTime.Now.ToLongTimeString()} 已经建立与[{clientUrl}]的连接", ConsoleColor.Green);
+                Logger.PrintColor($"{DateTime.Now.ToLongTimeString()}建立与[{socket.ConnectionInfo.Id}]的连接", ConsoleColor.Green);
             }
             else
             {
@@ -628,10 +661,20 @@ namespace BarrageGrab
                 {
                     var cmdPack = JsonConvert.DeserializeObject<Command>(message);
                     if (cmdPack == null) return;
+                    switch (cmdPack.Cmd)
+                    {
+                        case CommandCode.Close:
+                            if (cmdPack.Data is bool && (bool)cmdPack.Data == true)
+                            {
+                                Logger.PrintColor($"收到[{socket.ConnectionInfo.Id}]的关闭程序指令...", ConsoleColor.Yellow);
+                                Dispose();
+                                Environment.Exit(0);
+                            }
+                            break;
+                    }
                 }
                 catch (Exception) { }
             };
-
             socket.OnClose = () =>
             {
                 socketList.Remove(clientUrl);
@@ -720,6 +763,7 @@ namespace BarrageGrab
             {
 
             }
+            
             public UserState(IWebSocketConnection socket)
             {
                 Socket = socket;

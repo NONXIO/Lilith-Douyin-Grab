@@ -190,7 +190,6 @@ namespace BarrageGrab
         public void Save()
         {
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-
             config.AppSettings.Settings["wsListenPort"].Value = WsProt.ToString();
             config.AppSettings.Settings["printBarrage"].Value = PrintBarrage.ToString().ToLower();
             config.AppSettings.Settings["printFilter"].Value = string.Join("", PrintFilter);
@@ -200,7 +199,6 @@ namespace BarrageGrab
             config.AppSettings.Settings["listenAny"].Value = ListenAny.ToString().ToLower();
             config.AppSettings.Settings["hideConsole"].Value = HideConsole.ToString().ToLower();
             config.AppSettings.Settings["barrageFileLog"].Value = HideConsole.ToString().ToLower();
-
             config.Save(ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection(config.AppSettings.SectionInformation.Name);
         }
@@ -229,42 +227,42 @@ namespace BarrageGrab
         /// <summary>
         /// 过滤的进程
         /// </summary>
-        public string[] ProcessFilter { get; private set; }
+        public string[] ProcessFilter { get; private set; } = { "直播伴侣", "douyin", "chrome", "firefox"};
 
         /// <summary>
         /// 端口号
         /// </summary>
-        public int WsProt { get; set; } = 8888;
+        public int WsProt { get; set; } = 8880;
 
         /// <summary>
         /// true:监听在0.0.0.0，接受任意Ip连接，false:监听在127.0.0.1，仅接受本机连接
         /// </summary>
-        public bool ListenAny { get; set; } = true;
+        public bool ListenAny { get; set; } = false;
 
         /// <summary>
         /// 控制台打印消息开关
         /// </summary>
-        public bool PrintBarrage { get; set; }
+        public bool PrintBarrage { get; set; } = false;
 
         /// <summary>
         /// 代理端口
         /// </summary>
-        public int ProxyPort { get; private set; } = 8827;
+        public int ProxyPort { get; private set; } = 8123;
 
         /// <summary>
         /// 控制台输出过滤器
         /// </summary>
-        public int[] PrintFilter { get; set; }
+        public int[] PrintFilter { get; set; } = {1,2,3,4,5,6,7,8};
 
         /// <summary>
         /// 推送弹幕过滤器
         /// </summary>
-        public int[] PushFilter { get; set; }
+        public int[] PushFilter { get; set; } = {1,2,3,4,5,6,7,8};
 
         /// <summary>
         /// 弹幕日志过滤器
         /// </summary>
-        public int[] LogFilter { get; set; }
+        public int[] LogFilter { get; set; } = {1,2,3,4,5,6,7,8};
 
         /// <summary>
         /// 监听的房间号
@@ -322,24 +320,9 @@ namespace BarrageGrab
         public bool DisableLivePageScriptCache { get; private set; } = true;
 
         /// <summary>
-        /// 配置的串口
-        /// </summary>
-        public string ComPort { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 波特率
-        /// </summary>
-        public int ComBaudRate { get; set; } = 9600;
-
-        /// <summary>
-        /// 是否启用串口过滤器脚本
-        /// </summary>
-        public bool ComPortSwitch { get; set; } = false;
-
-        /// <summary>
         /// 直播伴侣文件位置
         /// </summary>
-        public string LiveCompanPath { get; set; } = string.Empty;
+        public string LiveCompanPath { get; set; } = "";
 
         /// <summary>
         /// hook直播伴侣代理开关

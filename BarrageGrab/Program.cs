@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using BarrageGrab.Cloud;
 using Jint.Runtime;
 
 namespace BarrageGrab
@@ -18,19 +19,26 @@ namespace BarrageGrab
         static bool exited = false;
         static bool formExited = false;
         static WinApi.ControlCtrlDelegate controlCtr = ControlCtrlHandle;
-        static Mutex mutex = new Mutex(false, "DyBarrageGrab");
+        static Mutex mutex = new Mutex(false, "DanmakuBackendServiceMutex");
 
+        private static DanmakuDataManager dataManager = null;
+        
         static void Main(string[] args)
         {
+            var accessKey = args.FirstOrDefault() ?? string.Empty;
+            if (string.IsNullOrEmpty(accessKey))
+            {
+                throw new NotImplementedException("未授权,请使用Danmaku启动此后端服务");
+            }
+            dataManager = new DanmakuDataManager(accessKey);
+            
             if (!mutex.WaitOne(TimeSpan.Zero, true))
             {
                 Console.WriteLine(@"另一个实例已在运行。");
                 Console.ReadKey();
                 return;
             }
-
             SetTitle("启动中...");
-
             try
             {
                 Init();
@@ -86,8 +94,8 @@ namespace BarrageGrab
                 uiThread.IsBackground = true;
                 uiThread.Start();
             }
+            
             AppRuntime.WsServer.StartListen();//启动WS以及代理服务
-            Logger.PrintColor($"{AppRuntime.WsServer.ServerLocation} 弹幕服务已启动，其他端可通过此地址获取到弹幕流信息", ConsoleColor.Green);
         }
 
         //检测设置控制台标题
@@ -111,7 +119,6 @@ namespace BarrageGrab
                     AppRuntime.WsServer.Dispose();
                     break;
                 case 2:
-                    Logger.PrintColor("2工具被强制关闭");//按控制台关闭按钮关闭
                     AppRuntime.WsServer.Dispose();
                     break;
             }
