@@ -1,27 +1,18 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Dynamic;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.WebSockets;
 using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
 using BarrageGrab.Modles;
 using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Modles.ProtoEntity;
 using Fleck;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using static BarrageGrab.Modles.ProtoEntity.Image;
-using static BarrageGrab.Modles.WebCastGift;
+using MemberMessage = BarrageGrab.Modles.ProtoEntity.MemberMessage;
 
-namespace BarrageGrab
+namespace BarrageGrab.Server
 {
     /// <summary>
     /// WsBarrageServer 包装消息事件委托
@@ -33,44 +24,22 @@ namespace BarrageGrab
     /// </summary>
     public class WsBarrageServer : IDisposable
     {
-        WebSocketServer socketServer; //Ws服务器对象
-        Dictionary<string, UserState> socketList = new Dictionary<string, UserState>(); //客户端列表
-        ConcurrentDictionary<string, Tuple<int, DateTime>> giftCountCache = new ConcurrentDictionary<string, Tuple<int, DateTime>>();//礼物计数缓存
-        Timer dieout = new Timer(10000);//离线客户端清理计时器
-        Timer giftCountTimer = new Timer(10000);//礼物缓存清理计时器
-        WssBarrageGrab grab = new WssBarrageGrab();//弹幕解析器核心
-        AppSetting Appsetting = AppSetting.Current;//全局配置文件实例
-        static int printCount = 0; //控制台输出计数，用于判断清理控制台
+        private static int printCount = 0; //控制台输出计数，用于判断清理控制台
+        private AppSetting Appsetting = AppSetting.Current; //全局配置文件实例
+        private Timer dieout = new Timer(10000); //离线客户端清理计时器
 
-        /// <summary>
-        /// WS服务器启动地址
-        /// </summary>
-        public string ServerLocation => socketServer.Location;
+        private ConcurrentDictionary<string, Tuple<int, DateTime>> giftCountCache =
+            new ConcurrentDictionary<string, Tuple<int, DateTime>>(); //礼物计数缓存
 
-        /// <summary>
-        /// 数据内核
-        /// </summary>
-        public WssBarrageGrab Grab => grab;
-
-        /// <summary>
-        /// 控制台打印事件
-        /// </summary>
-        public event EventHandler<PrintEventArgs> OnPrint;
-
-        /// <summary>
-        /// 是否已经释放资源
-        /// </summary>
-        public bool IsDisposed { get; private set; } = false;
-
-        /// <summary>
-        /// 服务关闭后触发
-        /// </summary>
-        public event EventHandler OnClose;
+        private Timer giftCountTimer = new Timer(10000); //礼物缓存清理计时器
+        private WssBarrageGrab grab = new WssBarrageGrab(); //弹幕解析器核心
+        private Dictionary<string, UserState> socketList = new Dictionary<string, UserState>(); //客户端列表
+        private WebSocketServer socketServer; //Ws服务器对象
 
         public WsBarrageServer()
         {
             var socket = new WebSocketServer($"ws://0.0.0.0:{Appsetting.WsProt}");
-            socket.RestartAfterListenError = true;//异常重启
+            socket.RestartAfterListenError = true; //异常重启
 
             dieout.Elapsed += Dieout_Elapsed;
             giftCountTimer.Elapsed += GiftCountTimer_Elapsed;
@@ -94,11 +63,50 @@ namespace BarrageGrab
             giftCountTimer.Start();
         }
 
+        /// <summary>
+        /// WS服务器启动地址
+        /// </summary>
+        public string ServerLocation => socketServer.Location;
+
+        /// <summary>
+        /// 数据内核
+        /// </summary>
+        public WssBarrageGrab Grab => grab;
+
+        /// <summary>
+        /// 是否已经释放资源
+        /// </summary>
+        public bool IsDisposed { get; private set; } = false;
+
+        /// <summary>
+        /// 关闭服务器连接，并关闭系统代理
+        /// </summary>
+        public void Dispose()
+        {
+            socketList.Values.ToList().ForEach(f => f.Socket.Close());
+            socketList.Clear();
+            socketServer.Dispose();
+            grab.Dispose();
+            IsDisposed = true;
+            OnClose?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// 控制台打印事件
+        /// </summary>
+        public event EventHandler<PrintEventArgs> OnPrint;
+
+        /// <summary>
+        /// 服务关闭后触发
+        /// </summary>
+        public event EventHandler OnClose;
+
         //礼物缓存清理计时器回调
         private void GiftCountTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             var now = DateTime.Now;
-            var timeOutKeys = giftCountCache.Where(w => w.Value.Item2 < now.AddSeconds(-10) || w.Value == null).Select(s => s.Key).ToList();
+            var timeOutKeys = giftCountCache.Where(w => w.Value.Item2 < now.AddSeconds(-10) || w.Value == null)
+                .Select(s => s.Key).ToList();
 
             //淘汰过期的礼物计数缓存
             lock (giftCountCache)
@@ -148,7 +156,7 @@ namespace BarrageGrab
                 FollowingCount = data.followInfo?.followingCount ?? -1,
                 FollowStatus = data.followInfo?.followStatus ?? -1,
             };
-            
+
             user.FansClub = new FansClubInfo
             {
                 ClubName = data.fansClub?.Data?.clubName ?? "",
@@ -170,12 +178,13 @@ namespace BarrageGrab
                     {
                         user.StarGuard = new StarGuardInfo
                         {
-                            Level = (int) badge.content.Level,
+                            Level = (int)badge.content.Level,
                             ClubName = badge.content.Name
                         };
                     }
                 }
             }
+
             return user;
         }
 
@@ -186,6 +195,7 @@ namespace BarrageGrab
             {
                 return ((IDictionary<string, object>)obj).ContainsKey(propertyName);
             }
+
             return obj.GetType().GetProperty(propertyName) != null;
         }
 
@@ -208,11 +218,13 @@ namespace BarrageGrab
             {
                 enty.User.IsAdmin = roomInfo.AdminUserIds.Contains(enty.User.Id.ToString());
             }
+
             //判断是否是主播
             if (enty.User != null && roomInfo != null && roomInfo.Owner != null)
             {
                 enty.User.IsAnchor = enty.User.Id.ToString() == roomInfo.Owner.UserId;
             }
+
             return enty;
         }
 
@@ -220,7 +232,8 @@ namespace BarrageGrab
         private void PrintMsg(Msg msg, PackMsgType barType)
         {
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
-            var roomName = (rinfo?.Owner?.Nickname ?? ((msg.WebRoomId.IsNullOrWhiteSpace() ? msg.RoomId.ToString() : msg.WebRoomId)));
+            var roomName = rinfo?.Owner?.Nickname ??
+                           (msg.WebRoomId.IsNullOrWhiteSpace() ? msg.RoomId.ToString() : msg.WebRoomId);
             var text = $"{DateTime.Now:HH:mm:ss} [{roomName}][{barType}]";
             if (msg.User != null)
             {
@@ -232,20 +245,25 @@ namespace BarrageGrab
                 {
                     text += "[管理员]";
                 }
+
                 if (msg.User.IsVip)
                 {
                     text += "[会员]";
                 }
+
                 if (msg.User.StarGuard != null)
                 {
                     text += "[星守护]";
                 }
+
                 if (msg.User.FansClub.Level > 0)
                 {
                     text += $"[粉丝团|Lv.{msg.User.FansClub.Level}]";
                 }
+
                 text += $"[{msg.User?.GenderToString()}]";
             }
+
             ConsoleColor color = AppSetting.Current.ColorMap[barType].Item1;
             var append = msg.Content;
             switch (barType)
@@ -253,13 +271,16 @@ namespace BarrageGrab
                 case PackMsgType.弹幕消息: append = $"{msg?.User?.Nickname}: {msg.Content}"; break;
                 case PackMsgType.下播: append = $"直播已结束"; break;
             }
+
             text += append;
             if (AppSetting.Current.BarrageLog)
             {
                 Logger.LogBarrage(barType, msg);
             }
+
             if (!Appsetting.PrintBarrage) return;
-            if (AppSetting.Current.PrintFilter.Any() && !AppSetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
+            if (AppSetting.Current.PrintFilter.Any() &&
+                !AppSetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
             OnPrint?.Invoke(this, new PrintEventArgs()
             {
                 Color = color,
@@ -272,6 +293,7 @@ namespace BarrageGrab
                 Logger.PrintColor("控制台已清理");
                 printCount = 0;
             }
+
             Logger.PrintColor(text + "\n", color);
         }
 
@@ -287,11 +309,11 @@ namespace BarrageGrab
                 {
                     Nickname = roomInfo.Owner.Nickname,
                     HeadUrl = roomInfo.Owner.HeadUrl,
-                    FollowStatus = roomInfo.Owner.FollowStatus,
                     SecUid = roomInfo.Owner.SecUid,
                     UserId = roomInfo.Owner.UserId
                 };
             }
+
             if (msg.WebRoomId.IsNullOrWhiteSpace())
             {
                 msg.WebRoomId = roomInfo.WebRoomId;
@@ -308,13 +330,13 @@ namespace BarrageGrab
             enty.Type = (FansclubType)msg.Type;
             enty.Level = enty.User.FansClub.Level;
             var msgType = PackMsgType.粉丝团消息;
-            
-            if(msg.User.badgeImageListV2.Exists((image => image.Uri.Contains("star_guard"))))
+
+            if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
                 Console.WriteLine($@"新守护相关");
                 Console.WriteLine(msg.ToJson());
             }
-            
+
             AttachRoomInfo(enty);
             PrintMsg(enty, msgType);
             Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
@@ -364,8 +386,10 @@ namespace BarrageGrab
                     Tuple<int, DateTime> _;
                     giftCountCache.TryRemove(key, out _);
                 }
+
                 return;
             }
+
             var backward = currCount <= lastCount;
             if (currCount <= 0) currCount = 1;
 
@@ -388,13 +412,15 @@ namespace BarrageGrab
                     giftCountCache.TryAdd(key, Tuple.Create(currCount, DateTime.Now));
                 }
             }
+
             //比上次小，则说明先后顺序出了问题，直接丢掉，应为比它大的消息已经处理过了
             if (backward) return;
 
             var count = currCount - lastCount;
 
             var enty = CreateMsg<GiftMsg>(msg);
-            enty.Content = $"{msg.User.Nickname} 送出 {msg.Gift.Name}{(msg.Gift.Combo ? "(可连击)" : "")} x {msg.repeatCount}个，增量{count}个";
+            enty.Content =
+                $"{msg.User.Nickname} 送出 {msg.Gift.Name}{(msg.Gift.Combo ? "(可连击)" : "")} x {msg.repeatCount}个，增量{count}个";
             enty.DiamondCount = msg.Gift.diamondCount;
             enty.RepeatCount = msg.repeatCount;
             enty.GiftCount = count;
@@ -461,7 +487,7 @@ namespace BarrageGrab
         }
 
         //来了
-        private void Grab_OnMemberMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<Modles.ProtoEntity.MemberMessage> e)
+        private void Grab_OnMemberMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<MemberMessage> e)
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
@@ -478,8 +504,8 @@ namespace BarrageGrab
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             var json = JsonConvert.SerializeObject(pack);
             Broadcast(pack);
-            
-            if(msg.User.badgeImageListV2.Exists((image => image.Uri.Contains("star_guard"))))
+
+            if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
                 Console.WriteLine($@"新守护相关");
                 Console.WriteLine(msg.ToJson());
@@ -509,29 +535,25 @@ namespace BarrageGrab
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-
-            var enty = CreateMsg<Msg>(msg);
+            var enty = CreateMsg<ChatMsg>(msg);
             enty.Content = msg.Content;
-
             var msgType = PackMsgType.弹幕消息;
             AttachRoomInfo(enty);
             PrintMsg(enty, msgType);
-
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
-            if(msg.User.badgeImageListV2.Exists((image => image.Uri.Contains("star_guard"))))
+            if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                Console.WriteLine($@"新守护相关");
-                Console.WriteLine(msg.ToJson());
+                AppRuntime.DanmakuManager.ReportEvent(msg.Common.Method, msg.ToJson(), "新守护相关");
             }
         }
-        
+
         //会员表情
         private void Grab_OnEmojiMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<EmojiChatMessage> e)
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-            var enty = CreateMsg<VIPEmojiMsg>(msg);
+            var enty = CreateMsg<VipEmojiMsg>(msg);
             enty.EmojiId = msg.emojiId;
             enty.EmojiUrl = msg.emojiContent.Pieces.First().imageValue.image.urlLists.First();
             enty.Content = $"{msg.User.Nickname} 发送了会员表情";
@@ -581,8 +603,8 @@ namespace BarrageGrab
             enty.Incremental = msg.incremental;
             enty.Total = msg.total;
             enty.Content = $"直播间数据: {msg.displayLong} {msg.displayValue}";
-            
-            Console.WriteLine($@"直播间数据: {msg.displayLong} {msg.displayValue} (incremental { msg.incremental})");
+
+            Console.WriteLine($@"直播间数据: {msg.displayLong} {msg.displayValue} (incremental {msg.incremental})");
 
             var msgType = PackMsgType.房间数据;
             AttachRoomInfo(enty);
@@ -600,9 +622,9 @@ namespace BarrageGrab
             enty.Ranks = msg.ranks.Select(r => new RoomRank
             {
                 User = GetUser(r.user),
-                ScoreStr = r.scoreStr,
-                ProfileHidden = r.profileHidden
+                ScoreStr = long.Parse(r.scoreStr)
             }).ToList();
+
             enty.Content = $"直播间排行榜更新: {enty.Ranks.Count}人";
 
             var msgType = PackMsgType.房间排行;
@@ -616,23 +638,26 @@ namespace BarrageGrab
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-            Msg enty = null;
+            VipBuyMsg enty = null;
             PackMsgType type = PackMsgType.无;
             var displayText = msg.Common.displayText;
             if (msg.Common.displayText.Key.Equals("subscribe_anchor_mvp_v2", StringComparison.CurrentCultureIgnoreCase))
             {
-                enty = CreateMsg<VIPBuyMsg>(msg);
-                (enty as VIPBuyMsg).Action = displayText.Pieces[1].stringValue;
-                (enty as VIPBuyMsg).Type = displayText.Pieces[2].stringValue;
+                enty = CreateMsg<VipBuyMsg>(msg);
+                enty.Action = displayText.Pieces[1].stringValue;
+                enty.IsAnnual = displayText.Pieces[2].stringValue
+                    .Equals("年度", StringComparison.CurrentCultureIgnoreCase);
                 type = PackMsgType.会员开通;
             }
+
             if (enty != null)
             {
                 enty.Content = msg.Content;
                 AttachRoomInfo(enty);
                 Broadcast(new BarrageMsgPack(enty.ToJson(), type, e.Process));
             }
-            if(msg.Common.User.badgeImageListV2.Exists((image => image.Uri.Contains("star_guard"))))
+
+            if (msg.Common.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
                 Console.WriteLine($@"新守护相关");
                 Console.WriteLine(msg.ToJson());
@@ -647,7 +672,8 @@ namespace BarrageGrab
             if (!socketList.ContainsKey(clientUrl))
             {
                 socketList.Add(clientUrl, new UserState(socket));
-                Logger.PrintColor($"{DateTime.Now.ToLongTimeString()}建立与[{socket.ConnectionInfo.Id}]的连接", ConsoleColor.Green);
+                Logger.PrintColor($"{DateTime.Now.ToLongTimeString()}建立与[{socket.ConnectionInfo.Id}]的连接",
+                    ConsoleColor.Green);
             }
             else
             {
@@ -670,10 +696,13 @@ namespace BarrageGrab
                                 Dispose();
                                 Environment.Exit(0);
                             }
+
                             break;
                     }
                 }
-                catch (Exception) { }
+                catch (Exception)
+                {
+                }
             };
             socket.OnClose = () =>
             {
@@ -695,9 +724,8 @@ namespace BarrageGrab
         public void Broadcast(BarrageMsgPack pack)
         {
             if (pack == null) return;
-            if (AppSetting.Current.PushFilter.Any() && !AppSetting.Current.PushFilter.Contains(pack.Type.GetHashCode())) return;
-
-            var offLines = new List<string>();
+            if (AppSetting.Current.PushFilter.Any() &&
+                !AppSetting.Current.PushFilter.Contains(pack.Type.GetHashCode())) return;
             foreach (var item in socketList)
             {
                 var state = item.Value;
@@ -707,11 +735,9 @@ namespace BarrageGrab
                 }
                 else
                 {
-                    offLines.Add(item.Key);
+                    socketList.Remove(item.Key);
                 }
             }
-            //删除掉线的套接字        
-            offLines.ForEach(key => socketList.Remove(key));
         }
 
         /// <summary>
@@ -722,7 +748,7 @@ namespace BarrageGrab
             try
             {
                 this.grab.Start(); //启动代理
-                this.socketServer.Start(Listen);//启动监听         
+                socketServer.Start(Listen); //启动监听         
             }
             catch (Exception)
             {
@@ -732,23 +758,19 @@ namespace BarrageGrab
         }
 
         /// <summary>
-        /// 关闭服务器连接，并关闭系统代理
-        /// </summary>
-        public void Dispose()
-        {
-            socketList.Values.ToList().ForEach(f => f.Socket.Close());
-            socketList.Clear();
-            socketServer.Dispose();
-            grab.Dispose();
-            this.IsDisposed = true;
-            this.OnClose?.Invoke(this, EventArgs.Empty);
-        }
-
-        /// <summary>
         /// 客户端套接字上下文
         /// </summary>
         class UserState
         {
+            public UserState()
+            {
+            }
+
+            public UserState(IWebSocketConnection socket)
+            {
+                Socket = socket;
+            }
+
             /// <summary>
             /// 套接字
             /// </summary>
@@ -758,16 +780,6 @@ namespace BarrageGrab
             /// 上次发起心跳包时间
             /// </summary>
             public DateTime LastPing { get; set; } = DateTime.Now;
-
-            public UserState()
-            {
-
-            }
-            
-            public UserState(IWebSocketConnection socket)
-            {
-                Socket = socket;
-            }
         }
 
         /// <summary>

@@ -82,6 +82,12 @@
     <Reference Include="Costura, Version=5.7.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.5.7.0\lib\netstandard1.0\Costura.dll</HintPath>
     </Reference>
+    <Reference Include="DeviceId, Version=6.9.0.0, Culture=neutral, PublicKeyToken=f755c371b5c59c52, processorArchitecture=MSIL">
+      <HintPath>..\packages\DeviceId.6.9.0\lib\net40\DeviceId.dll</HintPath>
+    </Reference>
+    <Reference Include="DeviceId.Windows, Version=6.9.0.0, Culture=neutral, PublicKeyToken=f755c371b5c59c52, processorArchitecture=MSIL">
+      <HintPath>..\packages\DeviceId.Windows.6.9.0\lib\net40\DeviceId.Windows.dll</HintPath>
+    </Reference>
     <Reference Include="Esprima, Version=3.0.4.0, Culture=neutral, PublicKeyToken=2e92ba9c8d81157f, processorArchitecture=MSIL">
       <HintPath>..\packages\Esprima.3.0.4\lib\net462\Esprima.dll</HintPath>
       <Private>True</Private>
@@ -288,8 +294,9 @@
     <Compile Include="AppRuntime.cs" />
     <Compile Include="AppSetting.cs" />
     <Compile Include="Cloud\ClientOnlineBroadcast.cs" />
-    <Compile Include="Cloud\DanmakuDataManager.cs" />
+    <Compile Include="Cloud\DanmakuManager.cs"/>
     <Compile Include="Cloud\EventLog.cs" />
+    <Compile Include="Cloud\OnlineClient.cs"/>
     <Compile Include="Utility\DyApiHelper.cs" />
     <Compile Include="Utility\EmbResource.cs" />
     <Compile Include="Forms\FormView.cs">

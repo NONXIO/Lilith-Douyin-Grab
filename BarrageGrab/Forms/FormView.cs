@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using BarrageGrab.Forms;
 using BarrageGrab.Forms.Models;
 using BarrageGrab.Modles.JsonEntity;
 using BarrageGrab.Proxy;
+using BarrageGrab.Proxy.ProxyEventArgs;
+using BarrageGrab.Server;
 
 namespace BarrageGrab
 {
@@ -65,16 +63,19 @@ namespace BarrageGrab
                             type = "ws";
                             ck.Checked = AppSetting.Current.PushFilter.Contains(label.Key);
                         }
+
                         if (page == this.tabPage_Console)
                         {
                             type = "console";
                             ck.Checked = AppSetting.Current.PrintFilter.Contains(label.Key);
                         }
+
                         if (page == this.tabPage_Log)
                         {
                             type = "log";
                             ck.Checked = AppSetting.Current.LogFilter.Contains(label.Key);
                         }
+
                         ck.Name = $"cbx_bartype_{type}_{label.Key}";
                         ck.CheckedChanged += Ck_CheckedChanged;
                         panel.Controls.Add(ck);
@@ -92,14 +93,17 @@ namespace BarrageGrab
             {
                 AppSetting.Current.PrintFilter = selected;
             }
+
             if (cbx.Parent.Parent == this.tabPage_Ws)
             {
                 AppSetting.Current.PushFilter = selected;
             }
+
             if (cbx.Parent.Parent == this.tabPage_Log)
             {
                 AppSetting.Current.LogFilter = selected;
             }
+
             AppSetting.Current.Save();
         }
 
@@ -115,6 +119,7 @@ namespace BarrageGrab
                     list.Add((int)cbk.Tag);
                 }
             }
+
             return list.OrderBy(o => o).ToArray();
         }
 
@@ -125,7 +130,8 @@ namespace BarrageGrab
             FieldInfo[] fields = enumType.GetFields(BindingFlags.Public | BindingFlags.Static);
             foreach (var field in fields)
             {
-                DescriptionAttribute attribute = (DescriptionAttribute)field.GetCustomAttribute(typeof(DescriptionAttribute), false);
+                var attribute =
+                    (DescriptionAttribute)field.GetCustomAttribute(typeof(DescriptionAttribute), false);
                 int value = (int)field.GetValue(null);
                 if (attribute != null && value > 0)
                 {
@@ -159,13 +165,10 @@ namespace BarrageGrab
             this.cbx_enableProxy.Checked = SystemProxy.ProxyIsOpen();
         }
 
-        private void Proxy_OnProxyStatus(object sender, Proxy.ProxyEventArgs.SystemProxyChangeEventArgs e)
+        private void Proxy_OnProxyStatus(object sender, SystemProxyChangeEventArgs e)
         {
             if (this.Disposing || this.IsDisposed) return;
-            this.Invoke(new Action(() =>
-            {
-                this.cbx_enableProxy.Checked = e.Open;
-            }));
+            Invoke(new Action(() => { cbx_enableProxy.Checked = e.Open; }));
         }
 
         private void WssService_OnPrint(object sender, WsBarrageServer.PrintEventArgs e)

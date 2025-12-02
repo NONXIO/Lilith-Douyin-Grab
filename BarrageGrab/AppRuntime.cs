@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
+using BarrageGrab.Cloud;
 using BarrageGrab.Modles;
+using BarrageGrab.Server;
 
 namespace BarrageGrab
 {
@@ -15,6 +13,10 @@ namespace BarrageGrab
     /// </summary>
     public static class AppRuntime
     {
+        static AppRuntime()
+        {
+        }
+
         /// <summary>
         /// Ws弹幕服务示例
         /// </summary>
@@ -28,11 +30,19 @@ namespace BarrageGrab
         /// <summary>
         /// 程序进程信息
         /// </summary>
-        public static Process CurrentProcess { get; private set; } = System.Diagnostics.Process.GetCurrentProcess();
+        public static Process CurrentProcess { get; private set; } = Process.GetCurrentProcess();
 
-        static AppRuntime()
+        public static DanmakuManager DanmakuManager { get; private set; } = null;
+
+        public static void PreInit(string[] args)
         {
+            var accessKey = args[0] ?? string.Empty;
+            var roomId = args[1] ?? string.Empty;
+            if (string.IsNullOrEmpty(accessKey)) throw new NotImplementedException("未授权,请使用Danmaku启动此后端服务");
 
+            if (string.IsNullOrEmpty(roomId)) throw new NotImplementedException("参数错误,请使用Danmaku启动此后端服务");
+
+            DanmakuManager = new DanmakuManager(accessKey, roomId);
         }
 
         public static void Init()
@@ -63,7 +73,8 @@ namespace BarrageGrab
             /// <summary>
             /// 房间ID - 房间信息映射缓存
             /// </summary>
-            public ConcurrentDictionary<string, RoomInfo> RoomInfoCache { get; } = new ConcurrentDictionary<string, RoomInfo>();
+            public ConcurrentDictionary<string, RoomInfo> RoomInfoCache { get; } =
+                new ConcurrentDictionary<string, RoomInfo>();
 
             /// <summary>
             /// 添加房间缓存时触发
