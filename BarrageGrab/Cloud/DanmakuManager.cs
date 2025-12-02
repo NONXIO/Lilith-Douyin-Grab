@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Timers;
 using System.Windows.Forms;
 using DeviceId;
 using Supabase;
 using Supabase.Realtime;
 using Client = Supabase.Client;
+using Constants = Supabase.Postgrest.Constants;
 using Timer = System.Timers.Timer;
 
 namespace BarrageGrab.Cloud
@@ -23,7 +22,7 @@ namespace BarrageGrab.Cloud
         public DanmakuManager(string accessKey, string roomId)
         {
             _roomId = roomId;
-            Console.WriteLine(@"正在连接到Danmaku云服务...");
+            Logger.LogInfo("正在连接到Danmaku云服务...");
             _client = new Client("https://kkuqbesyrhmobaxoespi.supabase.co", accessKey, new SupabaseOptions
             {
                 AutoConnectRealtime = true
@@ -31,7 +30,8 @@ namespace BarrageGrab.Cloud
             _client.InitializeAsync().Wait();
             _clientChannel = _client.Realtime.Channel("danmaku_apps");
             _clientBroadcast = _clientChannel.Register<ClientOnlineBroadcast>();
-            _clientChannel.Subscribe().Wait();
+            _clientChannel.Subscribe();
+            Logger.LogInfo("登记Danmaku信息...");
             _machineId = new DeviceIdBuilder()
                 .OnWindows(windows =>
                     windows
@@ -39,34 +39,21 @@ namespace BarrageGrab.Cloud
                         .AddMachineGuid()
                 )
                 .ToString();
-            UpdateUserSession().Wait();
-            StartHeartbeat();
+            UpdateUserSession();
             UpdateClientStatus(true);
-            Logger.PrintColor("已连接到Danmaku云服务", ConsoleColor.Green);
+            Logger.LogInfo("Danmaku云服务连接成功");
         }
 
-        private void StartHeartbeat()
-        {
-            _heartbeatTimer = new Timer(5 * 60 * 1000); // 5 minutes
-            _heartbeatTimer.Elapsed += HeartbeatCallback;
-            _heartbeatTimer.Start();
-        }
-
-        private void HeartbeatCallback(object sender, ElapsedEventArgs e)
-        {
-            UpdateUserSession().Wait();
-        }
-
-        private async Task UpdateUserSession()
+        private async void UpdateUserSession()
         {
             try
             {
-                var existingClients = await _client.From<OnlineClient>()
-                    .Where(c =>
-                        c.RoomId == _roomId &&
-                        c.MachineId != _machineId &&
-                        c.LastOnlineAt < DateTime.Now.AddMinutes(-1)
-                    )
+                var oneMinuteAgo = DateTime.Now.AddMinutes(-1);
+                var existingClients = await _client
+                    .From<OnlineClient>()
+                    .Filter("room_id", Constants.Operator.Equals, _roomId)
+                    .Filter("machine_id", Constants.Operator.NotEqual, _machineId)
+                    .Filter("last_online_at", Constants.Operator.LessThan, oneMinuteAgo.ToString("o"))
                     .Get();
                 if (existingClients.Models.Any())
                 {
@@ -86,16 +73,15 @@ namespace BarrageGrab.Cloud
                     LastOnlineAt = DateTime.Now
                 });
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                Logger.LogError("Failed to register client or send heartbeat: " + ex.Message);
-                throw new DanmakuException("无法连接到Danmaku云服务,请检查网络连接");
+                Logger.LogError("更新用户会话失败: " + e.Message);
             }
         }
 
         public void ReportEvent(string eventName, object body, string note = null)
         {
-            Console.WriteLine($@"报告事件<{eventName}>[{note}]: {body.ToJson()}");
+            Logger.LogInfo($@"报告事件<{eventName}>[{note}]: {body.ToJson()}");
             try
             {
                 _client.From<EventLog>().Insert(new EventLog
@@ -119,7 +105,7 @@ namespace BarrageGrab.Cloud
                 RoomId = _roomId,
                 MachineId = Environment.MachineName,
                 OnlineAt = DateTime.Now
-            }).Wait();
+            });
         }
 
         public void Destroy()

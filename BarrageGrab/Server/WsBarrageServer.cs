@@ -333,8 +333,7 @@ namespace BarrageGrab.Server
 
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                Console.WriteLine($@"新守护相关");
-                Console.WriteLine(msg.ToJson());
+                AppRuntime.DanmakuManager.ReportEvent(msg.Common.Method, msg.ToJson(), "新守护相关");
             }
 
             AttachRoomInfo(enty);
@@ -504,8 +503,7 @@ namespace BarrageGrab.Server
 
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                Console.WriteLine($@"新守护相关");
-                Console.WriteLine(msg.ToJson());
+                AppRuntime.DanmakuManager.ReportEvent(msg.Common.Method, msg.ToJson(), "新守护相关");
             }
         }
 
@@ -599,9 +597,7 @@ namespace BarrageGrab.Server
             enty.Incremental = msg.incremental;
             enty.Total = msg.total;
             enty.Content = $"直播间数据: {msg.displayLong} {msg.displayValue}";
-
-            Console.WriteLine($@"直播间数据: {msg.displayLong} {msg.displayValue} (incremental {msg.incremental})");
-
+            AppRuntime.DanmakuManager.ReportEvent("RoomStatsMessage", msg.ToJson(), "直播间数据");
             var msgType = PackMsgType.房间数据;
             AttachRoomInfo(enty);
             PrintMsg(enty, msgType);
@@ -655,8 +651,7 @@ namespace BarrageGrab.Server
 
             if (msg.Common.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                Console.WriteLine($@"新守护相关");
-                Console.WriteLine(msg.ToJson());
+                AppRuntime.DanmakuManager.ReportEvent(msg.Common.Method, msg.ToJson(), "新守护相关");
             }
         }
 

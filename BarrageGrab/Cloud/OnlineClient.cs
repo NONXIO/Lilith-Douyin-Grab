@@ -4,7 +4,7 @@ using Supabase.Postgrest.Models;
 
 namespace BarrageGrab.Cloud
 {
-    [Table("online_clients")]
+    [Table("danmaku_online")]
     public class OnlineClient : BaseModel
     {
         [PrimaryKey("machine_id", false)] public string MachineId { get; set; }

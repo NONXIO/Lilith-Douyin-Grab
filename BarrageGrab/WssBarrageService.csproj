@@ -345,8 +345,8 @@
     <None Include="Properties\app.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="FodyWeavers.xml" />
     <Content Include="logo.ico" />
+    <Content Include="FodyWeavers.xml"/>
     <EmbeddedResource Include="Scripts\inject\livePage.js" />
   </ItemGroup>
   <ItemGroup>
