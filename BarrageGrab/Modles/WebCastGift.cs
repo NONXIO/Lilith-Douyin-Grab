@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace BarrageGrab.Modles
+namespace BarrageGrab.Models
 {
     /// <summary>
     /// 礼物信息
@@ -11,78 +11,97 @@ namespace BarrageGrab.Modles
         /// 图片信息
         /// </summary>
         public GiftImage image { get; set; }
+
         /// <summary>
         /// 描述
         /// </summary>
         public string describe { get; set; }
+
         /// <summary>
         /// 是否通知
         /// </summary>
         public bool notify { get; set; }
+
         /// <summary>
         /// 持续时长
         /// </summary>
         public int duration { get; set; }
+
         /// <summary>
         /// ID
         /// </summary>
         public long id { get; set; }
+
         /// <summary>
         /// 用于连麦
         /// </summary>
         public bool for_linkmic { get; set; }
+
         /// <summary>
         /// 涂鸦
         /// </summary>
         public bool doodle { get; set; }
+
         /// <summary>
         /// 用于粉丝团
         /// </summary>
         public bool for_fansclub { get; set; }
+
         /// <summary>
         /// 是否是连击礼物
         /// </summary>
         public bool combo { get; set; }
+
         /// <summary>
         /// 类型
         /// </summary>
         public int type { get; set; }
+
         /// <summary>
         /// 钻石数量
         /// </summary>
         public int diamond_count { get; set; }
+
         /// <summary>
         /// 是否显示在礼物面板上
         /// </summary>
         public bool is_displayed_on_panel { get; set; }
+
         /// <summary>
         /// 主要效果 ID
         /// </summary>
         public int primary_effect_id { get; set; }
+
         /// <summary>
         /// 名称
         /// </summary>
         public string name { get; set; }
+
         /// <summary>
         /// 区域
         /// </summary>
         public string region { get; set; }
+
         /// <summary>
         /// 手动
         /// </summary>
         public string manual { get; set; }
+
         /// <summary>
         /// 是否为自定义礼物
         /// </summary>
         public bool for_custom { get; set; }
+
         /// <summary>
         /// 特殊效果
         /// </summary>
         public Dictionary<string, object> special_effects { get; set; }
+
         /// <summary>
         /// 图标信息
         /// </summary>
         public Icon icon { get; set; }
+
         /// <summary>
         /// 行为类型
         /// </summary>
@@ -299,47 +318,53 @@ namespace BarrageGrab.Modles
         public int gift_source { get; set; }
 
 
-
-
-
         public class GiftImage
         {
             /// <summary>
             /// 图片 URL 列表
             /// </summary>
             public List<string> url_list { get; set; }
+
             /// <summary>
             /// 图片 URI
             /// </summary>
             public string uri { get; set; }
+
             /// <summary>
             /// 图片高度
             /// </summary>
             public int height { get; set; }
+
             /// <summary>
             /// 图片宽度
             /// </summary>
             public int width { get; set; }
+
             /// <summary>
             /// 平均颜色
             /// </summary>
             public string avg_color { get; set; }
+
             /// <summary>
             /// 图片类型
             /// </summary>
             public int image_type { get; set; }
+
             /// <summary>
             /// 开放的网页 URL
             /// </summary>
             public string open_web_url { get; set; }
+
             /// <summary>
             /// 是否是动画
             /// </summary>
             public bool is_animated { get; set; }
+
             /// <summary>
             /// 弹性设置列表
             /// </summary>
             public List<object> flex_setting_list { get; set; }
+
             /// <summary>
             /// 文本设置列表
             /// </summary>
@@ -352,38 +377,47 @@ namespace BarrageGrab.Modles
             /// 图标 URL 列表
             /// </summary>
             public List<string> url_list { get; set; }
+
             /// <summary>
             /// 图标 URI
             /// </summary>
             public string uri { get; set; }
+
             /// <summary>
             /// 图标高度
             /// </summary>
             public int height { get; set; }
+
             /// <summary>
             /// 图标宽度
             /// </summary>
             public int width { get; set; }
+
             /// <summary>
             /// 平均颜色
             /// </summary>
             public string avg_color { get; set; }
+
             /// <summary>
             /// 图标类型
             /// </summary>
             public int image_type { get; set; }
+
             /// <summary>
             /// 开放的网页 URL
             /// </summary>
             public string open_web_url { get; set; }
+
             /// <summary>
             /// 是否是动画
             /// </summary>
             public bool is_animated { get; set; }
+
             /// <summary>
             /// 弹性设置列表
             /// </summary>
             public List<object> flex_setting_list { get; set; }
+
             /// <summary>
             /// 文本设置列表
             /// </summary>
@@ -396,14 +430,17 @@ namespace BarrageGrab.Modles
             /// 键
             /// </summary>
             public string key { get; set; }
+
             /// <summary>
             /// 默认模式
             /// </summary>
             public string default_pattern { get; set; }
+
             /// <summary>
             /// 片段列表
             /// </summary>
             public List<object> pieces { get; set; }
+
             /// <summary>
             /// 模式信息
             /// </summary>
@@ -424,14 +461,17 @@ namespace BarrageGrab.Modles
             /// 显示文本
             /// </summary>
             public GiftTipDisplayText display_text { get; set; }
+
             /// <summary>
             /// 背景颜色
             /// </summary>
             public string background_color { get; set; }
+
             /// <summary>
             /// 剩余时长
             /// </summary>
             public int remaining_duration { get; set; }
+
             /// <summary>
             /// 倒计时截止时间
             /// </summary>
@@ -444,18 +484,22 @@ namespace BarrageGrab.Modles
             /// 锁定状态
             /// </summary>
             public int lock_status { get; set; }
+
             /// <summary>
             /// 客户端阻止使用网页链接
             /// </summary>
             public bool client_block_use_scheme_url { get; set; }
+
             /// <summary>
             /// 阻止网页链接
             /// </summary>
             public string block_scheme_url { get; set; }
+
             /// <summary>
             /// 客户端检查剩余钻石
             /// </summary>
             public bool client_check_left_diamond { get; set; }
+
             /// <summary>
             /// 阻止提示
             /// </summary>
@@ -468,6 +512,7 @@ namespace BarrageGrab.Modles
             /// 组数量
             /// </summary>
             public int group_count { get; set; }
+
             /// <summary>
             /// 组文本
             /// </summary>
@@ -480,44 +525,52 @@ namespace BarrageGrab.Modles
             /// 图片 URL 列表
             /// </summary>
             public List<string> url_list { get; set; }
+
             /// <summary>
             /// 图片 URI
             /// </summary>
             public string uri { get; set; }
+
             /// <summary>
             /// 图片高度
             /// </summary>
             public int height { get; set; }
+
             /// <summary>
             /// 图片宽度
             /// </summary>
             public int width { get; set; }
+
             /// <summary>
             /// 平均颜色
             /// </summary>
             public string avg_color { get; set; }
+
             /// <summary>
             /// 图片类型
             /// </summary>
             public int image_type { get; set; }
+
             /// <summary>
             /// 开放的网页 URL
             /// </summary>
             public string open_web_url { get; set; }
+
             /// <summary>
             /// 是否是动画
             /// </summary>
             public bool is_animated { get; set; }
+
             /// <summary>
             /// 弹性设置列表
             /// </summary>
             public List<object> flex_setting_list { get; set; }
+
             /// <summary>
             /// 文本设置列表
             /// </summary>
             public List<object> text_setting_list { get; set; }
         }
-
     }
 
     /// <summary>
@@ -719,7 +772,6 @@ namespace BarrageGrab.Modles
             /// </summary>
             public object extra { get; set; }
         }
-
 
 
         public class MsgProcessFilter

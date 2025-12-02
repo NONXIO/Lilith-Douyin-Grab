@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace BarrageGrab.Modles
+namespace BarrageGrab.Models
 {
     [Serializable]
     public class RoomInfo
@@ -103,11 +101,186 @@ namespace BarrageGrab.Modles
             this.TotalUserCount = room["room_view_stats"]?["total_user_str"]?.Value<string>() ?? "0";
             this.LikeCount = room["like_count"]?.Value<long>() ?? 0;
             //this.QrcodeUrl = rootData["qrcode_url"]?.ToString() ?? "";
-            this.AuthInfo = room["room_auth"]?.ToObject<RoomInfo.RoomAuth>();
-            this.Cover = room["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? "";//下播情况下没有cover字段
+            AuthInfo = room["room_auth"]?.ToObject<RoomAuth>();
+            Cover = room["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? ""; //下播情况下没有cover字段
+            AuthInfo = room["room_auth"]?.ToObject<RoomAuth>();
+            Cover = room["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? ""; //下播情况下没有cover字段
+        }
 
-            this.AuthInfo = room["room_auth"]?.ToObject<RoomInfo.RoomAuth>();
-            this.Cover = room["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? "";//下播情况下没有cover字段
+
+        /// <summary>
+        /// 将 直播间页面元素 转为房间信息对象
+        /// </summary>
+        /// <param name="html"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        public static Tuple<int, string> TryParseRoomPageHtml(string html, out RoomInfo result)
+        {
+            result = null;
+            if (html.IsNullOrWhiteSpace()) return Tuple.Create(-1, "无效的页面数据");
+
+            //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,""a:)\[.+?\](?=\\n?""\]\)[\s\n\r]*?<\/script>)");
+            //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""0:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
+            //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""9:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
+            var roomDataReg =
+                new Regex(
+                    @"(?<=self\.__pace_f\.push\(\[\d,\s*""\w:.+)\{\\""state.+?\}(?=\]\\n""\]\)[\s\n\r]*?<\/script>)");
+            //字符串转义符号版本            
+
+            var match = roomDataReg.Match(html);
+            if (!match.Success)
+                //Logger.LogError("在通过正则匹配直播页房间信息时失败，可能是官方做了升级");
+                return Tuple.Create(1, "未能匹配到房间信息");
+
+            var matchData = Regex.Unescape(match.Value);
+
+            JObject jsonObject = null;
+            try
+            {
+                jsonObject = JObject.Parse(matchData);
+            }
+            catch (Exception ex)
+            {
+                return Tuple.Create(2, "匹配到的房间数据格式有错误");
+            }
+            //var root = jsonObject["children"][3];
+            //var roomInfo = root["initialState"]["roomStore"]["roomInfo"];
+            //var odin = root["initialState"]["userStore"]["odin"];
+            //var room = roomInfo["room"];
+            //var roomOwner = roomInfo["anchor"];
+
+            var roomInfo = jsonObject["state"]["roomStore"]["roomInfo"];
+            var odin = jsonObject["state"]["userStore"]["odin"];
+            var room = roomInfo["room"];
+            var roomOwner = roomInfo["anchor"];
+
+            if (room == null) return Tuple.Create(3, "房间信息为空，获取失败");
+
+            result = new RoomInfo();
+            result.Odin = odin?.ToObject<OdinData>();
+            result.WebRoomId = roomInfo["web_rid"]?.ToString() ?? "";
+            result.RoomId = roomInfo["roomId"]?.ToString() ?? "";
+            result.AdminUserIds = room["admin_user_ids_str"]?.Values<string>()?.ToList() ?? new List<string>();
+            result.IsLive = room["status"]?.Value<int>() == 2;
+            result.Title = room["title"]?.ToString() ?? "";
+            result.UserCount = room["room_view_stats"]?["display_value"]?.Value<long>() ?? 0;
+            result.TotalUserCount = room["stats"]?["total_user_str"]?.Value<string>() ?? "0";
+            result.LikeCount = room["like_count"]?.Value<long>() ?? 0;
+            result.QrcodeUrl = roomInfo["qrcode_url"]?.ToString() ?? "";
+            result.AuthInfo = room["room_auth"]?.ToObject<RoomAuth>();
+            result.Cover = room["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? ""; //下播情况下没有cover字段
+            if (roomOwner != null)
+                result.Owner = new RoomAnchor
+                {
+                    UserId = roomOwner["id_str"].ToString(),
+                    Nickname = roomOwner["nickname"].ToString(),
+                    SecUid = roomOwner["sec_uid"].ToString(),
+                    HeadUrl = roomOwner["avatar_thumb"]["url_list"].Values<string>()?.FirstOrDefault() ?? "",
+                    FollowStatus = roomOwner["follow_info"]["follow_status"].Value<int>()
+                };
+
+            return Tuple.Create(0, "succ");
+        }
+
+
+        /// <summary>
+        /// 从直播伴侣的直播创建回调中解析房间信息
+        /// </summary>
+        /// <param name="json"></param>
+        /// <param name="info"></param>
+        /// <param name="cache">缓存</param>
+        /// <returns></returns>
+        public static Tuple<int, string> TryParseStreamPusherCreate(string json, out RoomInfo info)
+        {
+            info = null;
+            JObject res;
+            try
+            {
+                res = JsonConvert.DeserializeObject<JObject>(json);
+            }
+            catch (Exception)
+            {
+                return Tuple.Create(4, "不是合法的json格式");
+            }
+
+            if (res == null) return Tuple.Create(1, "正文为空");
+
+            var rootData = res["data"];
+            var ownerInfo = rootData["owner"];
+
+            var dto = new RoomInfo();
+            dto.RoomId = rootData["id_str"]?.ToString() ?? "";
+            dto.AdminUserIds = rootData["admin_user_ids_str"]?.Values<string>().ToList() ?? new List<string>();
+            dto.IsLive = rootData["status"]?.Value<int>() == 2;
+            dto.Title = rootData["title"]?.ToString() ?? "";
+            dto.UserCount = long.Parse(rootData["room_view_stats"]?["display_value"]?.Value<string>() ?? "0");
+            dto.TotalUserCount = rootData["room_view_stats"]?["total_user_str"]?.Value<string>() ?? "0";
+            dto.LikeCount = rootData["like_count"]?.Value<long>() ?? 0;
+            dto.QrcodeUrl = $"https://live.douyin.com/{ownerInfo?["display_id"] ?? ""}";
+            dto.AuthInfo = rootData["room_auth"]?.ToObject<RoomAuth>();
+            dto.Cover = rootData["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? ""; //下播情况下没有cover字段
+            dto.WebRoomId = rootData["web_rid"]?.ToString() ?? ownerInfo?["display_id"]?.ToString() ?? "";
+            if (ownerInfo != null)
+                dto.Owner = new RoomAnchor
+                {
+                    UserId = ownerInfo["id_str"].ToString(),
+                    Nickname = ownerInfo["nickname"].ToString(),
+                    SecUid = ownerInfo["sec_uid"].ToString(),
+                    HeadUrl = ownerInfo["avatar_thumb"]?["url_list"]?.Values<string>()?.FirstOrDefault()?.ToString(),
+                    FollowStatus = ownerInfo["follow_info"]?["follow_status"]?.Value<int>() ?? 0
+                };
+
+
+            info = dto;
+
+            return Tuple.Create(0, "succ");
+        }
+
+        /// <summary>
+        /// 将 EnterRoom Response 转为房间信息对象
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        public static Tuple<int, string> TryParseRoomEnterResponse(string response, out RoomInfo info)
+        {
+            info = null;
+            JObject res;
+            try
+            {
+                res = JsonConvert.DeserializeObject<JObject>(response);
+            }
+            catch (Exception)
+            {
+                return Tuple.Create(4, "不是合法的json格式");
+            }
+
+            if (res == null) return Tuple.Create(1, "响应内容为空");
+
+            if (res["status_code"]?.Value<int>() != 0)
+                return Tuple.Create(2, res["status_msg"]?.ToString() ?? "响应状态失败");
+
+            var roomInfos = res["data"]?["data"]?.Values<JToken>().ToArray();
+            if (roomInfos == null || roomInfos.Length == 0) return Tuple.Create(3, "房间信息列表为空");
+            var rootData = res["data"];
+            var room = roomInfos[0]?.ToObject<JObject>();
+            var roomOwner = rootData?["user"] ?? room?["owner"];
+
+            var dto = new RoomInfo();
+            dto.SetData(room);
+            dto.QrcodeUrl = rootData["qrcode_url"]?.ToString() ?? "";
+            if (roomOwner != null)
+                dto.Owner = new RoomAnchor
+                {
+                    UserId = roomOwner["id_str"].ToString(),
+                    Nickname = roomOwner["nickname"].ToString(),
+                    SecUid = roomOwner["sec_uid"].ToString(),
+                    HeadUrl = roomOwner["avatar_thumb"]["url_list"].Values<string>()?.FirstOrDefault() ?? "",
+                    FollowStatus = roomOwner["follow_info"]["follow_status"].Value<int>()
+                };
+
+            info = dto;
+            return Tuple.Create(0, "succ");
         }
 
         public class RoomAnchor
@@ -525,197 +698,5 @@ namespace BarrageGrab.Modles
             public string user_is_login { get; set; }
             public string user_unique_id { get; set; }
         }
-
-
-        /// <summary>
-        /// 将 直播间页面元素 转为房间信息对象
-        /// </summary>
-        /// <param name="html"></param>
-        /// <param name="result"></param>
-        /// <returns></returns>
-        public static Tuple<int, string> TryParseRoomPageHtml(string html, out RoomInfo result)
-        {
-            result = null;
-            if (html.IsNullOrWhiteSpace())
-            {
-                return Tuple.Create(-1, "无效的页面数据");
-            }
-            //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,""a:)\[.+?\](?=\\n?""\]\)[\s\n\r]*?<\/script>)");
-            //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""0:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
-            //var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[1,\s*""9:)\[.+?\](?=\\n""?\]\)[\s\n\r]*?<\/script>)");
-            var roomDataReg = new Regex(@"(?<=self\.__pace_f\.push\(\[\d,\s*""\w:.+)\{\\""state.+?\}(?=\]\\n""\]\)[\s\n\r]*?<\/script>)");
-            //字符串转义符号版本            
-
-            var match = roomDataReg.Match(html);
-            if (!match.Success)
-            {
-                //Logger.LogError("在通过正则匹配直播页房间信息时失败，可能是官方做了升级");
-                return Tuple.Create(1, "未能匹配到房间信息");
-            }
-            var matchData = Regex.Unescape(match.Value);
-
-            JObject jsonObject = null;
-            try
-            {
-                jsonObject = JObject.Parse(matchData);
-            }
-            catch (Exception ex)
-            {
-                return Tuple.Create(2, "匹配到的房间数据格式有错误");
-            }
-            //var root = jsonObject["children"][3];
-            //var roomInfo = root["initialState"]["roomStore"]["roomInfo"];
-            //var odin = root["initialState"]["userStore"]["odin"];
-            //var room = roomInfo["room"];
-            //var roomOwner = roomInfo["anchor"];
-
-            var roomInfo = jsonObject["state"]["roomStore"]["roomInfo"];
-            var odin = jsonObject["state"]["userStore"]["odin"];
-            var room = roomInfo["room"];
-            var roomOwner = roomInfo["anchor"];
-
-            if (room == null)
-            {
-                return Tuple.Create(3, "房间信息为空，获取失败");
-            }
-
-            result = new RoomInfo();
-            result.Odin = odin?.ToObject<RoomInfo.OdinData>();
-            result.WebRoomId = roomInfo["web_rid"]?.ToString() ?? "";
-            result.RoomId = roomInfo["roomId"]?.ToString() ?? "";
-            result.AdminUserIds = room["admin_user_ids_str"]?.Values<string>()?.ToList() ?? new List<string>();
-            result.IsLive = room["status"]?.Value<int>() == 2;
-            result.Title = room["title"]?.ToString() ?? "";
-            result.UserCount = room["room_view_stats"]?["display_value"]?.Value<long>() ?? 0;
-            result.TotalUserCount = room["stats"]?["total_user_str"]?.Value<string>() ?? "0";
-            result.LikeCount = room["like_count"]?.Value<long>() ?? 0;
-            result.QrcodeUrl = roomInfo["qrcode_url"]?.ToString() ?? "";
-            result.AuthInfo = room["room_auth"]?.ToObject<RoomInfo.RoomAuth>();
-            result.Cover = room["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? "";//下播情况下没有cover字段
-            if (roomOwner != null)
-            {
-                result.Owner = new RoomInfo.RoomAnchor()
-                {
-                    UserId = roomOwner["id_str"].ToString(),
-                    Nickname = roomOwner["nickname"].ToString(),
-                    SecUid = roomOwner["sec_uid"].ToString(),
-                    HeadUrl = roomOwner["avatar_thumb"]["url_list"].Values<string>()?.FirstOrDefault() ?? "",
-                    FollowStatus = roomOwner["follow_info"]["follow_status"].Value<int>()
-                };
-            }
-            return Tuple.Create(0, "succ");
-        }
-
-
-        /// <summary>
-        /// 从直播伴侣的直播创建回调中解析房间信息
-        /// </summary>
-        /// <param name="json"></param>
-        /// <param name="info"></param>
-        /// <param name="cache">缓存</param>
-        /// <returns></returns>
-        public static Tuple<int, string> TryParseStreamPusherCreate(string json, out RoomInfo info)
-        {
-            info = null;
-            JObject res;
-            try
-            {
-                res = JsonConvert.DeserializeObject<JObject>(json);
-            }
-            catch (Exception)
-            {
-                return Tuple.Create(4, "不是合法的json格式");
-            }
-            if (res == null)
-            {
-                return Tuple.Create(1, "正文为空");
-            }
-
-            var rootData = res["data"];
-            var ownerInfo = rootData["owner"];
-
-            var dto = new RoomInfo();
-            dto.RoomId = rootData["id_str"]?.ToString() ?? "";
-            dto.AdminUserIds = rootData["admin_user_ids_str"]?.Values<string>().ToList() ?? new List<string>();
-            dto.IsLive = rootData["status"]?.Value<int>() == 2;
-            dto.Title = rootData["title"]?.ToString() ?? "";
-            dto.UserCount = long.Parse(rootData["room_view_stats"]?["display_value"]?.Value<string>() ?? "0");
-            dto.TotalUserCount = rootData["room_view_stats"]?["total_user_str"]?.Value<string>() ?? "0";
-            dto.LikeCount = rootData["like_count"]?.Value<long>() ?? 0;
-            dto.QrcodeUrl = $"https://live.douyin.com/{ownerInfo?["display_id"] ?? ""}";
-            dto.AuthInfo = rootData["room_auth"]?.ToObject<RoomInfo.RoomAuth>();
-            dto.Cover = rootData["cover"]?["url_list"]?.Values<string>().FirstOrDefault() ?? "";//下播情况下没有cover字段
-            dto.WebRoomId = rootData["web_rid"]?.ToString() ?? ownerInfo?["display_id"]?.ToString() ?? "";
-            if (ownerInfo != null)
-            {
-                dto.Owner = new RoomAnchor()
-                {
-                    UserId = ownerInfo["id_str"].ToString(),
-                    Nickname = ownerInfo["nickname"].ToString(),
-                    SecUid = ownerInfo["sec_uid"].ToString(),
-                    HeadUrl = ownerInfo["avatar_thumb"]?["url_list"]?.Values<string>()?.FirstOrDefault()?.ToString(),
-                    FollowStatus = ownerInfo["follow_info"]?["follow_status"]?.Value<int>() ?? 0
-                };
-            }
-
-
-
-            info = dto;
-
-            return Tuple.Create(0, "succ");
-        }
-
-        /// <summary>
-        /// 将 EnterRoom Response 转为房间信息对象
-        /// </summary>
-        /// <param name="response"></param>
-        /// <param name="info"></param>
-        /// <returns></returns>
-        public static Tuple<int, string> TryParseRoomEnterResponse(string response, out RoomInfo info)
-        {
-            info = null;
-            JObject res;
-            try
-            {
-                res = JsonConvert.DeserializeObject<JObject>(response);
-            }
-            catch (Exception)
-            {
-                return Tuple.Create(4, "不是合法的json格式");
-            }
-            if (res == null)
-            {
-                return Tuple.Create(1, "响应内容为空");
-            }
-            if (res["status_code"]?.Value<int>() != 0)
-            {
-                return Tuple.Create(2, (res["status_msg"]?.ToString() ?? "响应状态失败"));
-            }
-
-            var roomInfos = res["data"]?["data"]?.Values<JToken>().ToArray();
-            if (roomInfos == null || roomInfos.Length == 0) return Tuple.Create(3, "房间信息列表为空");
-            var rootData = res["data"];
-            var room = roomInfos[0]?.ToObject<JObject>();
-            var roomOwner = rootData?["user"] ?? room?["owner"];
-
-            var dto = new RoomInfo();
-            dto.SetData(room);
-            dto.QrcodeUrl = rootData["qrcode_url"]?.ToString() ?? "";
-            if (roomOwner != null)
-            {
-                dto.Owner = new RoomInfo.RoomAnchor()
-                {
-                    UserId = roomOwner["id_str"].ToString(),
-                    Nickname = roomOwner["nickname"].ToString(),
-                    SecUid = roomOwner["sec_uid"].ToString(),
-                    HeadUrl = roomOwner["avatar_thumb"]["url_list"].Values<string>()?.FirstOrDefault() ?? "",
-                    FollowStatus = roomOwner["follow_info"]["follow_status"].Value<int>()
-                };
-            }
-
-            info = dto;
-            return Tuple.Create(0, "succ");
-        }
-
     }
 }

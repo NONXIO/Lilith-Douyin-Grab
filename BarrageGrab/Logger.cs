@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms.VisualStyles;
-using BarrageGrab.Modles.JsonEntity;
+using BarrageGrab.Models.JsonEntity;
 using NLog;
+using NLog.Config;
 
 namespace BarrageGrab
 {
     public static class Logger
     {
-        private static NLog.Config.ISetupBuilder builder;
+        private static ISetupBuilder builder;
 
         private static NLog.Logger logger;
 
@@ -32,15 +30,16 @@ namespace BarrageGrab
         }
 
         public static void PrintColor(string message, ConsoleColor foreground = ConsoleColor.White)
-        {                      
+        {
             var color = Console.ForegroundColor;
             Console.ForegroundColor = foreground;
             Console.WriteLine(message);
             Console.ForegroundColor = color;
         }
-        
-        public static void PrintInlineColor(string message, ConsoleColor foreground = ConsoleColor.White, ConsoleColor background = ConsoleColor.Black)
-        {                      
+
+        public static void PrintInlineColor(string message, ConsoleColor foreground = ConsoleColor.White,
+            ConsoleColor background = ConsoleColor.Black)
+        {
             Console.ForegroundColor = foreground;
             Console.BackgroundColor = background;
             Console.Write(message);
@@ -101,7 +100,8 @@ namespace BarrageGrab
         {
             if (!AppSetting.Current.BarrageLog) return;
             if (type == PackMsgType.无) return;
-            if (AppSetting.Current.LogFilter.Any() && !AppSetting.Current.LogFilter.Contains(type.GetHashCode())) return;
+            if (AppSetting.Current.LogFilter.Any() &&
+                !AppSetting.Current.LogFilter.Contains(type.GetHashCode())) return;
 
             try
             {
@@ -115,11 +115,13 @@ namespace BarrageGrab
                 {
                     Directory.CreateDirectory(dir);
                 }
+
                 var path = Path.Combine(dir, type + ".txt");
                 if (!File.Exists(path))
                 {
                     File.Create(path).Close();
                 }
+
                 var writer = new StreamWriter(path, true, Encoding.UTF8);
                 var line = LogText(msg, type);
                 writer.WriteLine(line);
@@ -144,7 +146,8 @@ namespace BarrageGrab
                 return input;
 
             // 文件系统中不允许的字符
-            char[] invalidChars = Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).Distinct().ToArray();
+            var invalidChars =
+                Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).Distinct().ToArray();
 
             StringBuilder result = new StringBuilder(input.Length);
             foreach (char c in input)
@@ -154,7 +157,6 @@ namespace BarrageGrab
 
             return result.ToString();
         }
-
 
 
         private static string LogText(Msg msg, PackMsgType barType)
@@ -206,6 +208,7 @@ namespace BarrageGrab
                     filename = $"{name}({count}).bin";
                     fullPath = Path.Combine(dir, filename);
                 }
+
                 File.WriteAllBytes(fullPath, buff);
 
                 if (++count > maxCount)
@@ -217,7 +220,7 @@ namespace BarrageGrab
             }
             catch (Exception ex)
             {
-                Logger.LogWarn("写入包日志时失败，错误信息:" + ex.Message);
+                LogWarn("写入包日志时失败，错误信息:" + ex.Message);
             }
         }
     }

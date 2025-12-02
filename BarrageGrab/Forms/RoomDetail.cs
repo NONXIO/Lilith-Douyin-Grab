@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using BarrageGrab.Modles;
+using BarrageGrab.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace BarrageGrab.Forms
 {
@@ -20,7 +14,7 @@ namespace BarrageGrab.Forms
             //小驼峰
             var json = JsonConvert.SerializeObject(info, Formatting.Indented, new JsonSerializerSettings()
             {
-                ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
 
             this.textBox1.Text = json;
@@ -28,7 +22,6 @@ namespace BarrageGrab.Forms
 
         private void RoomDetail_Load(object sender, EventArgs e)
         {
-
         }
 
         private void button1_Click(object sender, EventArgs e)

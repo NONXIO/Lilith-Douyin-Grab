@@ -14,7 +14,6 @@ namespace BarrageGrab
         private static bool formExited;
         static WinApi.ControlCtrlDelegate controlCtr = ControlCtrlHandle;
         static Mutex mutex = new Mutex(false, "DanmakuBackendServiceMutex");
-
         private static DanmakuManager _manager = null;
 
         static void Main(string[] args)
@@ -22,7 +21,7 @@ namespace BarrageGrab
             // 防止 Debug Hook
             if (Debugger.IsAttached)
             {
-                throw new NotImplementedException("内部错误,请使用Danmaku启动此后端服务");
+                throw new DanmakuException("内部错误,请使用Danmaku启动此后端服务");
             }
 
             if (!mutex.WaitOne(TimeSpan.Zero, true))
@@ -35,7 +34,7 @@ namespace BarrageGrab
             // 检查访问密钥以及房间
             if (args.Length != 2)
             {
-                throw new NotImplementedException("参数错误,请使用Danmaku启动此后端服务");
+                throw new DanmakuException("参数错误,请使用Danmaku启动此后端服务");
             }
 
             SetTitle("启动中...");

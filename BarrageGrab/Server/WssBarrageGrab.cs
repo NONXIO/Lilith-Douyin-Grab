@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BarrageGrab.Modles.ProtoEntity;
+using BarrageGrab.Models.ProtoEntity;
 using BarrageGrab.Proxy;
 using BarrageGrab.Proxy.ProxyEventArgs;
 using ProtoBuf;
@@ -17,9 +15,29 @@ namespace BarrageGrab
     /// </summary>
     public class WssBarrageGrab : IDisposable
     {
+        private AppSetting appsetting = AppSetting.Current;
+
+        //用于缓存接收过的消息ID，判断是否重复接收
+        private Dictionary<string, List<long>> msgDic = new Dictionary<string, List<long>>();
+
         //ISystemProxy proxy = new FiddlerProxy();
         ISystemProxy proxy = new TitaniumProxy();
-        AppSetting appsetting = AppSetting.Current;
+
+        public WssBarrageGrab()
+        {
+            proxy.OnWebSocketData += Proxy_OnWebSocketData;
+            proxy.OnFetchResponse += Proxy_OnFetchResponse;
+        }
+
+        /// <summary>
+        /// 代理
+        /// </summary>
+        public ISystemProxy Proxy => proxy;
+
+        public void Dispose()
+        {
+            proxy.Dispose();
+        }
 
         /// <summary>
         /// 进入直播间
@@ -96,25 +114,9 @@ namespace BarrageGrab
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<RoomMessage>> OnRoomMessage;
 
-        /// <summary>
-        /// 代理
-        /// </summary>
-        public ISystemProxy Proxy { get { return proxy; } }
-
-        public WssBarrageGrab()
-        {
-            proxy.OnWebSocketData += Proxy_OnWebSocketData;
-            proxy.OnFetchResponse += Proxy_OnFetchResponse;
-        }
-
         public void Start()
         {
             proxy.Start();
-        }
-
-        public void Dispose()
-        {
-            proxy.Dispose();
         }
 
 
@@ -133,6 +135,7 @@ namespace BarrageGrab
                 else
                     outBuffer.Write(block, 0, bytesRead);
             }
+
             compressedzipStream.Close();
             return outBuffer.ToArray();
         }
@@ -177,14 +180,8 @@ namespace BarrageGrab
 
             var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(payload));
 
-            response.Messages.ForEach(f =>
-            {
-                DoMessage(f, e.ProcessName);
-            });
+            response.Messages.ForEach(f => { DoMessage(f, e.ProcessName); });
         }
-
-        //用于缓存接收过的消息ID，判断是否重复接收
-        Dictionary<string, List<long>> msgDic = new Dictionary<string, List<long>>();
 
         //发送事件
         private void DoMessage(Message msg, string processName)
@@ -199,125 +196,137 @@ namespace BarrageGrab
                 msgIdList = new List<long>(320);
                 msgDic.Add(msg.Method, msgIdList);
             }
+
             if (msgIdList.Contains(msg.msgId))
             {
                 return;
             }
+
             msgIdList.Add(msg.msgId);
             //每种消息类型设置300容量应该足够,不太可能存在一条消息被挤出队列后再次出现
             while (msgIdList.Count > 300)
             {
                 msgIdList.RemoveAt(0);
             }
+
             try
             {
                 switch (msg.Method)
                 {
                     //来了
                     case "WebcastMemberMessage":
-                        {
-                            var arg = Serializer.Deserialize<MemberMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnMemberMessage?.Invoke(this, new RoomMessageEventArgs<MemberMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<MemberMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnMemberMessage?.Invoke(this, new RoomMessageEventArgs<MemberMessage>(processName, arg));
+                        break;
+                    }
                     //关注
                     case "WebcastSocialMessage":
-                        {
-                            var arg = Serializer.Deserialize<SocialMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnSocialMessage?.Invoke(this, new RoomMessageEventArgs<SocialMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<SocialMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnSocialMessage?.Invoke(this, new RoomMessageEventArgs<SocialMessage>(processName, arg));
+                        break;
+                    }
                     //消息
                     case "WebcastChatMessage":
-                        {
-                            var arg = Serializer.Deserialize<ChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnChatMessage?.Invoke(this, new RoomMessageEventArgs<ChatMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<ChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnChatMessage?.Invoke(this, new RoomMessageEventArgs<ChatMessage>(processName, arg));
+                        break;
+                    }
                     //点赞
                     case "WebcastLikeMessage":
-                        {
-                            var arg = Serializer.Deserialize<LikeMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnLikeMessage?.Invoke(this, new RoomMessageEventArgs<LikeMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<LikeMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnLikeMessage?.Invoke(this, new RoomMessageEventArgs<LikeMessage>(processName, arg));
+                        break;
+                    }
                     //礼物
                     case "WebcastGiftMessage":
-                        {
-                            var arg = Serializer.Deserialize<GiftMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnGiftMessage?.Invoke(this, new RoomMessageEventArgs<GiftMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<GiftMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnGiftMessage?.Invoke(this, new RoomMessageEventArgs<GiftMessage>(processName, arg));
+                        break;
+                    }
                     //直播间统计
                     case "WebcastRoomUserSeqMessage":
-                        {
-                            var arg = Serializer.Deserialize<RoomUserSeqMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnRoomUserSeqMessage?.Invoke(this, new RoomMessageEventArgs<RoomUserSeqMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<RoomUserSeqMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnRoomUserSeqMessage?.Invoke(this,
+                            new RoomMessageEventArgs<RoomUserSeqMessage>(processName, arg));
+                        break;
+                    }
                     //直播间状态变更
                     case "WebcastControlMessage":
-                        {
-                            var arg = Serializer.Deserialize<ControlMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnControlMessage?.Invoke(this, new RoomMessageEventArgs<ControlMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<ControlMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnControlMessage?.Invoke(this, new RoomMessageEventArgs<ControlMessage>(processName, arg));
+                        break;
+                    }
                     //粉丝团消息
                     case "WebcastFansclubMessage":
-                        {
-                            var arg = Serializer.Deserialize<FansclubMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnFansclubMessage?.Invoke(this, new RoomMessageEventArgs<FansclubMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<FansclubMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnFansclubMessage?.Invoke(this,
+                            new RoomMessageEventArgs<FansclubMessage>(processName, arg));
+                        break;
+                    }
                     //直播间统计
                     case "WebcastRoomStatsMessage":
-                        {
-                            var arg = Serializer.Deserialize<RoomStatsMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnRoomStatsMessage?.Invoke(this, new RoomMessageEventArgs<RoomStatsMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<RoomStatsMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnRoomStatsMessage?.Invoke(this,
+                            new RoomMessageEventArgs<RoomStatsMessage>(processName, arg));
+                        break;
+                    }
                     //直播间排行榜
                     case "WebcastRoomRankMessage":
-                        {
-                            var arg = Serializer.Deserialize<RoomRankMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnRoomRankMessage?.Invoke(this, new RoomMessageEventArgs<RoomRankMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<RoomRankMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnRoomRankMessage?.Invoke(this,
+                            new RoomMessageEventArgs<RoomRankMessage>(processName, arg));
+                        break;
+                    }
                     //活动红心
                     case "WebcastActivityEmojiGroupsMessage":
-                        {
-                            var arg = Serializer.Deserialize<ActivityEmojiGroupsMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnActivityEmojiGroupsMessage?.Invoke(this, new RoomMessageEventArgs<ActivityEmojiGroupsMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<ActivityEmojiGroupsMessage>(
+                            new ReadOnlyMemory<byte>(msg.Payload));
+                        OnActivityEmojiGroupsMessage?.Invoke(this,
+                            new RoomMessageEventArgs<ActivityEmojiGroupsMessage>(processName, arg));
+                        break;
+                    }
                     //表情消息
                     case "WebcastEmojiChatMessage":
-                        {
-                            var arg = Serializer.Deserialize<EmojiChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnEmojiChatMessage?.Invoke(this, new RoomMessageEventArgs<EmojiChatMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<EmojiChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnEmojiChatMessage?.Invoke(this,
+                            new RoomMessageEventArgs<EmojiChatMessage>(processName, arg));
+                        break;
+                    }
                     //抽奖消息
                     case "WebcastLotteryEventMessage":
-                        {
-                            var arg = Serializer.Deserialize<LotteryEventMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnLotteryEventMessage?.Invoke(this, new RoomMessageEventArgs<LotteryEventMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<LotteryEventMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnLotteryEventMessage?.Invoke(this,
+                            new RoomMessageEventArgs<LotteryEventMessage>(processName, arg));
+                        break;
+                    }
                     //语音消息
                     case "WebcastAudioChatMessage":
-                        {
-                            var arg = Serializer.Deserialize<AudioChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnAudioChatMessage?.Invoke(this, new RoomMessageEventArgs<AudioChatMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<AudioChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnAudioChatMessage?.Invoke(this,
+                            new RoomMessageEventArgs<AudioChatMessage>(processName, arg));
+                        break;
+                    }
                     // 房间通知消息，包含 会员开通信息
                     case "WebcastRoomMessage":
-                        {
-                            var arg = Serializer.Deserialize<RoomMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                            this.OnRoomMessage?.Invoke(this, new RoomMessageEventArgs<RoomMessage>(processName, arg));
-                            break;
-                        }
+                    {
+                        var arg = Serializer.Deserialize<RoomMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnRoomMessage?.Invoke(this, new RoomMessageEventArgs<RoomMessage>(processName, arg));
+                        break;
+                    }
                     case "WebcastRoomIntroMessage":
                     case "WebcastResidentGuestMessage":
                     case "WebcastLowPcuGuideMessage":
@@ -325,10 +334,10 @@ namespace BarrageGrab
                     case "WebcastInRoomBannerMessage":
                     case "WebcastRoomStreamAdaptationMessage":
                     case "WebcastHotRoomMessage":
-                        {
-                            //不处理
-                            break;
-                        }
+                    {
+                        //不处理
+                        break;
+                    }
                     default:
                         Logger.LogInfo("未处理的消息类型:" + msg.Method);
                         break;
@@ -342,6 +351,16 @@ namespace BarrageGrab
 
         public class RoomMessageEventArgs<T> : EventArgs where T : class
         {
+            public RoomMessageEventArgs()
+            {
+            }
+
+            public RoomMessageEventArgs(string process, T data)
+            {
+                Process = process;
+                Message = data;
+            }
+
             /// <summary>
             /// 进程名
             /// </summary>
@@ -351,18 +370,6 @@ namespace BarrageGrab
             /// 消息
             /// </summary>
             public T Message { get; set; }
-
-
-            public RoomMessageEventArgs()
-            {
-
-            }
-
-            public RoomMessageEventArgs(string process, T data)
-            {
-                this.Process = process;
-                this.Message = data;
-            }
         }
     }
 }

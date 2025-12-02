@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using BarrageGrab.Modles;
-using BarrageGrab.Modles.ProtoEntity;
+using BarrageGrab.Models;
 using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Asn1.Cmp;
-using Org.BouncyCastle.Asn1.Crmf;
 
 namespace BarrageGrab
 {
@@ -26,8 +24,8 @@ namespace BarrageGrab
             var url = "https://live.douyin.com/webcast/gift/list/";
             var qparam = new Dictionary<string, string>()
             {
-                {"device_platform","webapp"},
-                {"aid","6383"},
+                { "device_platform", "webapp" },
+                { "aid", "6383" }
             };
 
             var client = new HttpClient();
@@ -45,6 +43,7 @@ namespace BarrageGrab
                     Logger.LogError($"响应失败: {response.StatusCode}");
                     return null;
                 }
+
                 var json = await response.Content.ReadAsStringAsync();
                 var jobj = JObject.Parse(json);
                 var data = jobj?["data"].ToObject<WebCastGiftPack>();
@@ -98,11 +97,12 @@ namespace BarrageGrab
             request.Headers.Add("Cache-Control", "no-cache");
             request.Headers.Add("Referer", $"https://live.douyin.com/{webRoomid}");
             request.Headers.Add("Host", "live.douyin.com");
-            request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0");
+            request.Headers.Add("User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0");
             request.Headers.Add("Cookie", cookie);
 
             var rsp = await client.SendAsync(request);
-            if (rsp == null || rsp.StatusCode != System.Net.HttpStatusCode.OK)
+            if (rsp == null || rsp.StatusCode != HttpStatusCode.OK)
             {
                 return null;
             }

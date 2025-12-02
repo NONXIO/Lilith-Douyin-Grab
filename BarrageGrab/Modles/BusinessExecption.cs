@@ -1,16 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BarrageGrab.Modles
+namespace BarrageGrab.Models
 {
     /// <summary>
     /// 业务异常
     /// </summary>
     public class BusinessExecption : Exception
     {
+        public BusinessExecption()
+        {
+        }
+
+        public BusinessExecption(string msg) : base(msg)
+        {
+            Code = -1;
+        }
+
+        public BusinessExecption(string msg, object data) : base(msg)
+        {
+            ErrorTarget = data;
+        }
+
+        public BusinessExecption(string msg, int code) : this(msg)
+        {
+            Code = code;
+        }
+
         /// <summary>
         /// 错误码
         /// </summary>
@@ -20,25 +35,5 @@ namespace BarrageGrab.Modles
         /// 异常附加数据
         /// </summary>
         public object ErrorTarget { get; set; } = null;
-
-        public BusinessExecption()
-        {
-
-        }
-
-        public BusinessExecption(string msg) : base(msg)
-        {
-            this.Code = -1;
-        }
-
-        public BusinessExecption(string msg, object data) : base(msg)
-        {
-            this.ErrorTarget = data;
-        }
-
-        public BusinessExecption(string msg, int code) : this(msg)
-        {
-            this.Code = code;
-        }
     }
 }

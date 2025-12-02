@@ -5,12 +5,12 @@ using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Timers;
-using BarrageGrab.Modles;
-using BarrageGrab.Modles.JsonEntity;
-using BarrageGrab.Modles.ProtoEntity;
+using BarrageGrab.Models;
+using BarrageGrab.Models.JsonEntity;
+using BarrageGrab.Models.ProtoEntity;
 using Fleck;
 using Newtonsoft.Json;
-using MemberMessage = BarrageGrab.Modles.ProtoEntity.MemberMessage;
+using MemberMessage = BarrageGrab.Models.ProtoEntity.MemberMessage;
 
 namespace BarrageGrab.Server
 {
@@ -146,7 +146,7 @@ namespace BarrageGrab.Server
                 DisplayId = data.displayId,
                 ShortId = data.shortId,
                 Gender = data.Gender,
-                Id = data.Id,
+                UserId = data.Id,
                 Level = data.Level,
                 PayLevel = (int)(data.payGrade?.Level ?? -1),
                 Nickname = data.Nickname ?? "用户" + data.displayId,
@@ -216,13 +216,13 @@ namespace BarrageGrab.Server
             //判断是否是直播间管理员
             if (enty.User != null && roomInfo != null && roomInfo.AdminUserIds.Any())
             {
-                enty.User.IsAdmin = roomInfo.AdminUserIds.Contains(enty.User.Id.ToString());
+                enty.User.IsAdmin = roomInfo.AdminUserIds.Contains(enty.User.UserId.ToString());
             }
 
             //判断是否是主播
             if (enty.User != null && roomInfo != null && roomInfo.Owner != null)
             {
-                enty.User.IsAnchor = enty.User.Id.ToString() == roomInfo.Owner.UserId;
+                enty.User.IsAnchor = enty.User.UserId.ToString() == roomInfo.Owner.UserId;
             }
 
             return enty;
@@ -308,9 +308,9 @@ namespace BarrageGrab.Server
                 msg.Owner = new RoomAnchorInfo()
                 {
                     Nickname = roomInfo.Owner.Nickname,
-                    HeadUrl = roomInfo.Owner.HeadUrl,
+                    HeadImgUrl = roomInfo.Owner.HeadUrl,
                     SecUid = roomInfo.Owner.SecUid,
-                    UserId = roomInfo.Owner.UserId
+                    UserId = long.Parse(roomInfo.Owner.UserId)
                 };
             }
 
@@ -449,14 +449,11 @@ namespace BarrageGrab.Server
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
             if (msg.Action != 1) return;
-            var enty = CreateMsg<Msg>(msg);
+            var enty = CreateMsg<FollowMsg>(msg);
             enty.Content = $"{msg.User.Nickname} 关注了主播";
-
             var msgType = PackMsgType.关注消息;
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
-            var json = JsonConvert.SerializeObject(pack);
             Broadcast(pack);
         }
 
@@ -472,7 +469,7 @@ namespace BarrageGrab.Server
                 type = (ShareType)int.Parse(msg.shareTarget);
             }
 
-            var enty = CreateMsg<ShareMessage>(msg);
+            var enty = CreateMsg<ShareMsg>(msg);
             enty.Content = $"{msg.User.Nickname} 分享了直播间到{type}";
             enty.ShareType = type;
 
@@ -493,7 +490,7 @@ namespace BarrageGrab.Server
             if (!CheckRoomId(msg.Common.roomId)) return;
 
             var enterType = e.Message.userEnterTipType;
-            var enty = CreateMsg<Modles.JsonEntity.MemberMessage>(msg);
+            var enty = CreateMsg<MemberMsg>(msg);
             enty.Content = $"{msg.User.Nickname} ${(enterType == 6 ? " 通过分享" : "")}来了 直播间人数:{msg.memberCount}";
             enty.CurrentCount = msg.memberCount;
             enty.EnterTipType = enterType;
@@ -554,7 +551,6 @@ namespace BarrageGrab.Server
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
             var enty = CreateMsg<VipEmojiMsg>(msg);
-            enty.EmojiId = msg.emojiId;
             enty.EmojiUrl = msg.emojiContent.Pieces.First().imageValue.image.urlLists.First();
             enty.Content = $"{msg.User.Nickname} 发送了会员表情";
             var msgType = PackMsgType.会员表情;
@@ -645,8 +641,8 @@ namespace BarrageGrab.Server
             {
                 enty = CreateMsg<VipBuyMsg>(msg);
                 enty.Action = displayText.Pieces[1].stringValue;
-                enty.IsAnnual = displayText.Pieces[2].stringValue
-                    .Equals("年度", StringComparison.CurrentCultureIgnoreCase);
+                enty.Unit = displayText.Pieces[2].stringValue;
+                enty.IsAnnual = enty.Unit.Equals("年度", StringComparison.CurrentCultureIgnoreCase);
                 type = PackMsgType.会员开通;
             }
 

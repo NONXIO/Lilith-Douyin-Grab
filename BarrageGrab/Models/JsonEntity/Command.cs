@@ -1,16 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BarrageGrab.Modles.JsonEntity
+﻿namespace BarrageGrab.Models.JsonEntity
 {
-    /*
-     * 例如发送 {"Cmd":1,"Data":true} 到ws连接地址 关闭程序
-     * 前往 http://wstool.jackxiang.com/ 在线ws测试
-     */
-
     public enum CommandCode
     {
         /// <summary>

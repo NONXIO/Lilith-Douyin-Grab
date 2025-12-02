@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Newtonsoft.Json;
 
-namespace BarrageGrab.Modles.JsonEntity
+namespace BarrageGrab.Models.JsonEntity
 {
     /// <summary>
     /// 弹幕消息类型
@@ -58,6 +58,151 @@ namespace BarrageGrab.Modles.JsonEntity
         正常进入 = 0,
         通过分享进入 = 6,
         //...其他暂时未知
+    }
+
+    /// <summary>
+    /// 粉丝团消息
+    /// </summary>
+    public class FansClubInfo
+    {
+        /// <summary>
+        /// 粉丝团名称
+        /// </summary>
+        [JsonProperty("name")]
+        public string ClubName { get; set; }
+
+        /// <summary>
+        /// 粉丝团等级，没加入则0
+        /// </summary>
+        [JsonProperty("level")]
+        public int Level { get; set; }
+    }
+
+    /// <summary>
+    /// 星守护信息
+    /// </summary>
+    public class StarGuardInfo : FansClubInfo
+    {
+    }
+
+    /// <summary>
+    /// 直播间主播信息
+    /// </summary>
+    public class RoomAnchorInfo
+    {
+        /// <summary>
+        /// 用户ID
+        /// </summary>
+        [JsonProperty("uid")]
+        public long UserId { get; set; }
+
+        /// <summary>
+        /// SecUid
+        /// </summary>
+        [JsonProperty("sec_uid")]
+        public string SecUid { get; set; }
+
+        /// <summary>
+        /// 昵称
+        /// </summary>
+        [JsonProperty("nickname")]
+        public string Nickname { get; set; }
+
+        /// <summary>
+        /// 头像地址
+        /// </summary>
+        [JsonProperty("avatar")]
+        public string HeadImgUrl { get; set; }
+    }
+
+    /// <summary>
+    /// 用户弹幕信息
+    /// </summary>
+    public class MsgUser : RoomAnchorInfo
+    {
+        /// <summary>
+        /// 是否是直播间管理员
+        /// </summary>
+        [JsonProperty("is_admin")]
+        public bool IsAdmin { get; set; }
+
+        /// <summary>
+        /// 是否是主播自己
+        /// </summary>
+        [JsonProperty("is_anchor")]
+        public bool IsAnchor { get; set; }
+
+        /// <summary>
+        /// 是否是VIP会员
+        /// </summary>
+        [JsonProperty("is_vip")]
+        public bool IsVip { get; set; }
+
+        /// <summary>
+        /// ShortId
+        /// </summary>
+        [JsonProperty("short_id")]
+        public long ShortId { get; set; }
+
+        /// <summary>
+        /// 自定义ID
+        /// </summary>
+        [JsonProperty("display_id")]
+        public string DisplayId { get; set; }
+
+        /// <summary>
+        /// 未知
+        /// </summary>
+        [JsonProperty("level")]
+        public int Level { get; set; }
+
+        /// <summary>
+        /// 支付等级
+        /// </summary>
+        [JsonProperty("pay_level")]
+        public int PayLevel { get; set; }
+
+        /// <summary>
+        /// 性别 1男 2女
+        /// </summary>
+        [JsonProperty("gender")]
+        public int Gender { get; set; }
+
+        /// <summary>
+        /// 粉丝团信息
+        /// </summary>
+        [JsonProperty("fans_club")]
+        public FansClubInfo FansClub { get; set; }
+
+        /// <summary>
+        /// 星守护信息
+        /// </summary>
+        [JsonProperty("star_guard")]
+        public StarGuardInfo StarGuard { get; set; }
+
+        /// <summary>
+        /// 粉丝数
+        /// </summary>
+        [JsonProperty("follower_count")]
+        public long FollowerCount { get; set; }
+
+        /// <summary>
+        ///   关注数
+        /// </summary>
+        [JsonProperty("following_count")]
+        public long FollowingCount { get; set; }
+
+        /// <summary>
+        /// 关注状态 0 未关注 1 已关注 2,不明
+        /// </summary>
+        [JsonProperty("follow_status")]
+        public long FollowStatus { get; set; }
+
+
+        public string GenderToString()
+        {
+            return Gender == 1 ? "男" : Gender == 2 ? "女" : "妖";
+        }
     }
 
     /// <summary>
@@ -155,175 +300,6 @@ namespace BarrageGrab.Modles.JsonEntity
     }
 
     /// <summary>
-    /// 粉丝团消息
-    /// </summary>
-    public class FansClubInfo
-    {
-        /// <summary>
-        /// 粉丝团名称
-        /// </summary>
-        [JsonProperty("name")]
-        public string ClubName { get; set; }
-
-        /// <summary>
-        /// 粉丝团等级，没加入则0
-        /// </summary>
-        [JsonProperty("level")]
-        public int Level { get; set; }
-    }
-
-    /// <summary>
-    /// 星守护信息
-    /// </summary>
-    public class StarGuardInfo : FansClubInfo
-    {
-    }
-
-    /// <summary>
-    /// 直播间主播信息
-    /// </summary>
-    public class RoomAnchorInfo
-    {
-        /// <summary>
-        /// 用户ID
-        /// </summary>
-        [JsonProperty("uid")]
-        public string UserId { get; set; }
-
-        /// <summary>
-        /// SecUid
-        /// </summary>
-        [JsonProperty("sec_uid")]
-        public string SecUid { get; set; }
-
-        /// <summary>
-        /// 昵称
-        /// </summary>
-        [JsonProperty("nickname")]
-        public string Nickname { get; set; }
-
-        /// <summary>
-        /// 头像地址
-        /// </summary>
-        [JsonProperty("avatar")]
-        public string HeadUrl { get; set; }
-    }
-
-    /// <summary>
-    /// 用户弹幕信息
-    /// </summary>
-    public class MsgUser
-    {
-        /// <summary>
-        /// 真实ID
-        /// </summary>
-        [JsonProperty("uid")]
-        public long Id { get; set; }
-
-        /// <summary>
-        /// 是否是直播间管理员
-        /// </summary>
-        [JsonProperty("is_admin")]
-        public bool IsAdmin { get; set; }
-
-        /// <summary>
-        /// 是否是主播自己
-        /// </summary>
-        [JsonProperty("is_anchor")]
-        public bool IsAnchor { get; set; }
-
-        /// <summary>
-        /// 是否是VIP会员
-        /// </summary>
-        [JsonProperty("is_vip")]
-        public bool IsVip { get; set; }
-
-        /// <summary>
-        /// ShortId
-        /// </summary>
-        [JsonProperty("short_id")]
-        public long ShortId { get; set; }
-
-        /// <summary>
-        /// 自定义ID
-        /// </summary>
-        [JsonProperty("display_id")]
-        public string DisplayId { get; set; }
-
-        /// <summary>
-        /// 昵称
-        /// </summary>
-        [JsonProperty("nickname")]
-        public string Nickname { get; set; }
-
-        /// <summary>
-        /// 未知
-        /// </summary>
-        [JsonProperty("level")]
-        public int Level { get; set; }
-
-        /// <summary>
-        /// 支付等级
-        /// </summary>
-        [JsonProperty("pay_level")]
-        public int PayLevel { get; set; }
-
-        /// <summary>
-        /// 性别 1男 2女
-        /// </summary>
-        [JsonProperty("gender")]
-        public int Gender { get; set; }
-
-        /// <summary>
-        /// 头像地址
-        /// </summary>
-        [JsonProperty("avatar")]
-        public string HeadImgUrl { get; set; }
-
-        /// <summary>
-        /// 用户主页地址
-        /// </summary>
-        [JsonProperty("profile_id")]
-        public string SecUid { get; set; }
-
-        /// <summary>
-        /// 粉丝团信息
-        /// </summary>
-        [JsonProperty("fans_club")]
-        public FansClubInfo FansClub { get; set; }
-
-        /// <summary>
-        /// 星守护信息
-        /// </summary>
-        [JsonProperty("star_guard")]
-        public StarGuardInfo StarGuard { get; set; }
-
-        /// <summary>
-        /// 粉丝数
-        /// </summary>
-        [JsonProperty("follower_count")]
-        public long FollowerCount { get; set; }
-
-        /// <summary>
-        ///   关注数
-        /// </summary>
-        [JsonProperty("following_count")]
-        public long FollowingCount { get; set; }
-
-        /// <summary>
-        /// 关注状态 0 未关注 1 已关注 2,不明
-        /// </summary>
-        [JsonProperty("follow_status")]
-        public long FollowStatus { get; set; }
-
-
-        public string GenderToString()
-        {
-            return Gender == 1 ? "男" : Gender == 2 ? "女" : "妖";
-        }
-    }
-
-    /// <summary>
     /// 礼物消息
     /// </summary>
     public class GiftMsg : Msg
@@ -372,13 +348,13 @@ namespace BarrageGrab.Modles.JsonEntity
         /// <summary>
         /// 该礼物是否可连击
         /// </summary>
-        [JsonProperty("is_combo")]
+        [JsonProperty("can_combo")]
         public bool Combo { get; set; }
 
         /// <summary>
         /// 礼物图片地址
         /// </summary>
-        [JsonProperty("img")]
+        [JsonProperty("gift_image")]
         public string ImgUrl { get; set; }
 
         /// <summary>
@@ -463,11 +439,6 @@ namespace BarrageGrab.Modles.JsonEntity
     public class VipEmojiMsg : Msg
     {
         /// <summary>
-        /// 会员表情ID
-        /// </summary>
-        [JsonProperty("eid")] public long EmojiId;
-
-        /// <summary>
         /// 会员表情URL
         /// </summary>
         [JsonProperty("emoji")] public string EmojiUrl;
@@ -497,13 +468,18 @@ namespace BarrageGrab.Modles.JsonEntity
         /// 消息类型
         /// </summary>
         [JsonProperty("_type")] public string MsgType = "vip";
+
+        /// <summary>
+        /// 会员类型
+        /// </summary>
+        [JsonProperty("unit")] public string Unit;
     }
 
 
     /// <summary>
     /// 来了消息
     /// </summary>
-    public class MemberMessage : Msg
+    public class MemberMsg : Msg
     {
         /// <summary>
         /// 消息类型
@@ -526,7 +502,7 @@ namespace BarrageGrab.Modles.JsonEntity
     /// <summary>
     /// 直播间分享
     /// </summary>
-    public class ShareMessage : Msg
+    public class ShareMsg : Msg
     {
         /// <summary>
         /// 消息类型
@@ -554,6 +530,13 @@ namespace BarrageGrab.Modles.JsonEntity
     }
 
     /// <summary>
+    /// 关注消息
+    /// </summary>
+    public class FollowMsg : Msg
+    {
+    }
+
+    /// <summary>
     /// 房间排行消息
     /// </summary>
     public class RoomRankMsg : Msg
@@ -574,28 +557,5 @@ namespace BarrageGrab.Modles.JsonEntity
         [JsonProperty("user")] public MsgUser User { get; set; }
 
         [JsonProperty("score")] public long ScoreStr { get; set; }
-    }
-
-    /// <summary>
-    /// 直播间消息
-    /// </summary>
-    public class RoomMsg : Msg
-    {
-        /// <summary>
-        /// 消息类型
-        /// </summary>
-        [JsonProperty("_type")] public string MsgType = "announce";
-
-        /// <summary>
-        /// 消息内容
-        /// </summary>
-        [JsonProperty("content")]
-        public new string Content { get; set; }
-
-        [JsonProperty("type")] public int RoomMessageType { get; set; }
-
-        [JsonProperty("system_msg")] public bool SystemTopMsg { get; set; }
-
-        [JsonProperty("scene")] public string BizScene { get; set; }
     }
 }

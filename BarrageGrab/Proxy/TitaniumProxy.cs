@@ -1,29 +1,22 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Policy;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using BarrageGrab.Modles;
-using BarrageGrab.Modles.JsonEntity;
+using BarrageGrab.Models;
 using BarrageGrab.Proxy.ProxyEventArgs;
-using BrotliSharpLib;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NLog.LayoutRenderers;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
 using Titanium.Web.Proxy.Http;
 using Titanium.Web.Proxy.Models;
+using Titanium.Web.Proxy.Network;
 using Titanium.Web.Proxy.StreamExtended.Network;
 using HtmlDocument = HtmlAgilityPack.HtmlDocument;
 
@@ -31,11 +24,6 @@ namespace BarrageGrab.Proxy
 {
     internal class TitaniumProxy : SystemProxy
     {
-        ProxyServer proxyServer = null;
-        ExplicitProxyEndPoint explicitEndPoint = null;
-        ExternalProxy upStreamProxy = null;
-        List<string> rinfoRequestings = new List<string>();
-
         const string SCRIPT_HOST = "lf-cdn-tos.bytescm.com";
         const string LIVE_HOST = "live.douyin.com";
         const string DOUYIN_HOST = "www.douyin.com";
@@ -44,18 +32,21 @@ namespace BarrageGrab.Proxy
         const string LIVE_SCRIPT_PATH = "/obj/static/webcast/douyin_live";
         const string WEBCAST_AMEMV_HOST = "webcast.amemv.com";
         private readonly Regex webcastBarrageReg = new Regex(@"webcast\d+-ws-web-\w+\.(douyin|amemv)\.com");
-
-        public override string HttpUpstreamProxy { get { return proxyServer?.UpStreamHttpProxy?.ToString() ?? ""; } }
-
-        public override string HttpsUpstreamProxy { get { return proxyServer?.UpStreamHttpsProxy?.ToString() ?? ""; } }
+        private ExplicitProxyEndPoint explicitEndPoint = null;
+        private ProxyServer proxyServer = null;
+        private List<string> rinfoRequestings = new List<string>();
+        private ExternalProxy upStreamProxy = null;
 
         static TitaniumProxy()
         {
             // 设置代理过滤规则
-            string[] bypassList = { "localhost", "127.*", "10.*", "172.16.*", "172.17.*", "172.18.*", "172.19.*",
-                                "172.20.*", "172.21.*", "172.22.*", "172.23.*", "172.24.*", "172.25.*",
-                                "172.26.*", "172.27.*", "172.28.*", "172.29.*", "172.30.*", "172.31.*",
-                                "192.168.*" };
+            string[] bypassList =
+            {
+                "localhost", "127.*", "10.*", "172.16.*", "172.17.*", "172.18.*", "172.19.*",
+                "172.20.*", "172.21.*", "172.22.*", "172.23.*", "172.24.*", "172.25.*",
+                "172.26.*", "172.27.*", "172.28.*", "172.29.*", "172.30.*", "172.31.*",
+                "192.168.*"
+            };
 
             // 创建WebProxy对象，并设置代理过滤规则
             WebProxy proxy = new WebProxy
@@ -90,7 +81,7 @@ namespace BarrageGrab.Proxy
 
             proxyServer.CertificateManager.CertificateValidDays = 365 * 10;
             proxyServer.CertificateManager.SaveFakeCertificates = true;
-            proxyServer.CertificateManager.CertificateEngine = Titanium.Web.Proxy.Network.CertificateEngine.DefaultWindows;
+            proxyServer.CertificateManager.CertificateEngine = CertificateEngine.DefaultWindows;
             proxyServer.CertificateManager.OverwritePfxFile = false;
             proxyServer.CertificateManager.RootCertificate = GetCert();
             if (proxyServer.CertificateManager.RootCertificate == null)
@@ -98,6 +89,7 @@ namespace BarrageGrab.Proxy
                 Logger.PrintColor("正在进行证书安装，需要信任该证书才可进行https解密，若有提示请确定");
                 proxyServer.CertificateManager.CreateRootCertificate();
             }
+
             proxyServer.CertificateManager.TrustRootCertificate(true);
 
             //https://github.com/justcoding121/titanium-web-proxy/issues/828
@@ -111,6 +103,10 @@ namespace BarrageGrab.Proxy
             explicitEndPoint.BeforeTunnelConnectRequest += ExplicitEndPoint_BeforeTunnelConnectRequest;
             proxyServer.AddEndPoint(explicitEndPoint);
         }
+
+        public override string HttpUpstreamProxy => proxyServer?.UpStreamHttpProxy?.ToString() ?? "";
+
+        public override string HttpsUpstreamProxy => proxyServer?.UpStreamHttpsProxy?.ToString() ?? "";
 
         private X509Certificate2 GetCert()
         {
@@ -179,6 +175,7 @@ namespace BarrageGrab.Proxy
             {
                 throw new Exception("上游代理地址格式不正确，必须为ip:port格式");
             }
+
             //设置上游代理地址
             //var upstreamProxyAddr = Appsetting.Current.UpstreamProxy;
             if (!upstreamProxyAddr.IsNullOrWhiteSpace())
@@ -196,7 +193,8 @@ namespace BarrageGrab.Proxy
 
         private bool CheckBrowser(string processName)
         {
-            return AppSetting.Current.ProcessFilter.Contains(processName) && processName != "直播伴侣" && processName != "douyin";
+            return AppSetting.Current.ProcessFilter.Contains(processName) && processName != "直播伴侣" &&
+                   processName != "douyin";
         }
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
@@ -279,7 +277,7 @@ namespace BarrageGrab.Proxy
             if (
                 e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
                 webcastBarrageReg.IsMatch(uri)
-               )
+            )
             {
                 e.DataReceived += WebSocket_DataReceived;
                 var urix = new Uri(uri);
@@ -365,8 +363,8 @@ namespace BarrageGrab.Proxy
                 //注入上下文变量;
                 var scriptContext = BuildContext(new Dictionary<string, string>()
                 {
-                    {"PROCESS_NAME","'{processName}'"},
-                    {"AUTOPAUSE",AppSetting.Current.AutoPause.ToString().ToLower()}
+                    { "PROCESS_NAME", "'{processName}'" },
+                    { "AUTOPAUSE", AppSetting.Current.AutoPause.ToString().ToLower() }
                 });
                 liveRoomInjectScript = scriptContext + liveRoomInjectScript;
                 var html = await e.GetResponseBodyAsString();
@@ -404,12 +402,12 @@ namespace BarrageGrab.Proxy
                                 UserId = "-1"
                             };
                         }
+
                         AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                     }
 
                     try
                     {
-
                         //找到body标签,在尾部注入script标签
                         var body = doc.DocumentNode.SelectSingleNode("//body");
                         if (body != null)
@@ -447,8 +445,8 @@ namespace BarrageGrab.Proxy
                 //注入上下文变量;
                 var scriptContext = BuildContext(new Dictionary<string, string>()
                 {
-                    {"PROCESS_NAME","'{processName}'"},
-                    {"AUTOPAUSE",AppSetting.Current.AutoPause.ToString().ToLower()}
+                    { "PROCESS_NAME", "'{processName}'" },
+                    { "AUTOPAUSE", AppSetting.Current.AutoPause.ToString().ToLower() }
                 });
                 liveHoomInjectScript = scriptContext + liveHoomInjectScript;
 
@@ -457,7 +455,7 @@ namespace BarrageGrab.Proxy
                 {
                     //利用 HtmlAgilityPack 在尾部注入script 标签
                     var html = await e.GetResponseBodyAsString();
-                    var doc = new HtmlAgilityPack.HtmlDocument();
+                    var doc = new HtmlDocument();
                     doc.LoadHtml(html);
                     //找到body标签,在尾部注入script标签
                     var body = doc.DocumentNode.SelectSingleNode("//body");
@@ -500,19 +498,17 @@ namespace BarrageGrab.Proxy
                     {
                         src += "?_t=" + ticks;
                     }
+
                     script.Attributes["src"].Value = src;
                 }
-
             }
         }
 
         //生成注入上下文
         private string BuildContext(IDictionary<string, string> constVals)
         {
-            var scriptContext = string.Join("\r\n", constVals.Select(s =>
-            {
-                return "const " + s.Key + " = " + s.Value + ";";
-            }));
+            var scriptContext = string.Join("\r\n",
+                constVals.Select(s => { return "const " + s.Key + " = " + s.Value + ";"; }));
             return scriptContext;
         }
 
@@ -535,8 +531,8 @@ namespace BarrageGrab.Proxy
             //https://lf-webcast-platform.bytetos.com/obj/webcast-platform-cdn/webcast/douyin_live/chunks/island_a74ce.b55095a0.js
             //判断响应内容是否为js application/javascript
             if (processName != "直播伴侣" && processName != "douyin"
-                && fileName.StartsWith("island")
-                )
+                                      && fileName.StartsWith("island")
+               )
             {
                 var js = await e.GetResponseBodyAsString();
                 var reg = new Regex(@"if\(!\(\d{1,},\w{1,}\.DJ\)\(\).+\w{1,}\.includes\(""live""\)\)\)\{");
@@ -579,6 +575,7 @@ namespace BarrageGrab.Proxy
             {
                 e.IsValid = true;
             }
+
             return Task.CompletedTask;
         }
 
@@ -609,7 +606,7 @@ namespace BarrageGrab.Proxy
             {
                 SCRIPT_HOST,
                 LIVE_HOST,
-                WEBCAST_AMEMV_HOST , //直播伴侣开播请求地址
+                WEBCAST_AMEMV_HOST, //直播伴侣开播请求地址
                 "*-webcast-platform.bytetos.com", //新的脚本地址
                 "*webcast*" //所有带webcast的域名
             };
@@ -682,7 +679,6 @@ namespace BarrageGrab.Proxy
             {
                 // 没有收到 WebSocket 帧的结束帧，抛出异常或者进行处理
             }
-
         }
 
 
@@ -695,6 +691,7 @@ namespace BarrageGrab.Proxy
             {
                 proxyServer.Stop();
             }
+
             proxyServer.Dispose();
             if (AppSetting.Current.UsedProxy)
             {

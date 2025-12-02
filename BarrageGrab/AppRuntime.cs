@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using BarrageGrab.Cloud;
-using BarrageGrab.Modles;
+using BarrageGrab.Models;
 using BarrageGrab.Server;
 
 namespace BarrageGrab
@@ -38,9 +38,9 @@ namespace BarrageGrab
         {
             var accessKey = args[0] ?? string.Empty;
             var roomId = args[1] ?? string.Empty;
-            if (string.IsNullOrEmpty(accessKey)) throw new NotImplementedException("未授权,请使用Danmaku启动此后端服务");
+            if (string.IsNullOrEmpty(accessKey)) throw new DanmakuException("未授权,请使用Danmaku启动此后端服务");
 
-            if (string.IsNullOrEmpty(roomId)) throw new NotImplementedException("参数错误,请使用Danmaku启动此后端服务");
+            if (string.IsNullOrEmpty(roomId)) throw new DanmakuException("参数错误,请使用Danmaku启动此后端服务");
 
             DanmakuManager = new DanmakuManager(accessKey, roomId);
         }

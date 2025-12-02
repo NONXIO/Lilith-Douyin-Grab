@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BarrageGrab.Modles;
+﻿using BarrageGrab.Models;
 
 namespace BarrageGrab.Forms.Models
 {
@@ -13,6 +8,7 @@ namespace BarrageGrab.Forms.Models
         {
             this.RoomInfo = info;
         }
+
         /// <summary>
         /// 数据对象
         /// </summary>

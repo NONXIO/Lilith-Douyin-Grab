@@ -89,7 +89,7 @@ namespace BarrageGrab.Cloud
             catch (Exception ex)
             {
                 Logger.LogError("Failed to register client or send heartbeat: " + ex.Message);
-                throw new NotImplementedException("无法连接到Danmaku云服务,请检查网络连接");
+                throw new DanmakuException("无法连接到Danmaku云服务,请检查网络连接");
             }
         }
 

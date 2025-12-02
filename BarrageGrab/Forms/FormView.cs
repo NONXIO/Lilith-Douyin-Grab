@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Windows.Forms;
 using BarrageGrab.Forms;
 using BarrageGrab.Forms.Models;
-using BarrageGrab.Modles.JsonEntity;
+using BarrageGrab.Models.JsonEntity;
 using BarrageGrab.Proxy;
 using BarrageGrab.Proxy.ProxyEventArgs;
 using BarrageGrab.Server;
