@@ -40,6 +40,8 @@ namespace BarrageGrab.Server
 
         public WsBarrageServer()
         {
+            // 配置 Fleck 日志输出
+            FleckLog.Level = LogLevel.Debug;
             var socket = new WebSocketServer($"ws://0.0.0.0:{Appsetting.WsProt}");
             socket.RestartAfterListenError = true; //异常重启
 
@@ -668,44 +670,55 @@ namespace BarrageGrab.Server
         //监听用户连接
         private void Listen(IWebSocketConnection socket)
         {
+            // 添加错误处理
+            socket.OnError = (error) =>
+            {
+                Logger.LogError($"WebSocket 连接错误: {error.Message}");
+                Logger.LogError($"Stack Trace: {error.StackTrace}");
+            };
+
             //客户端url
             string clientUrl = socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort;
-            if (!socketList.ContainsKey(clientUrl))
-            {
-                var userState = new UserState(socket);
-                socketList.Add(clientUrl, userState);
-                Logger.LogInfo($"{DateTime.Now.ToLongTimeString()}建立与[{socket.ConnectionInfo.Id}]的连接");
 
-                // 发送 ServerHello 消息
-                var serverHello = new ServerHello
-                {
-                    MachineId = AppRuntime.DanmakuManager.MachineId,
-                    TimeoutSeconds = 10
-                };
-                var helloCommand = new Command
-                {
-                    Cmd = CommandCode.Auth,
-                    Data = serverHello
-                };
-                socket.Send(JsonConvert.SerializeObject(helloCommand));
-                // 启动10秒认证超时计时器
-                userState.AuthTimer = new Timer(10000);
-                userState.AuthTimer.Elapsed += (sender, e) =>
-                {
-                    if (!userState.IsAuthenticated)
-                    {
-                        Logger.LogInfo($"客户端[{clientUrl}]认证超时，断开连接");
-                        userState.AuthTimer?.Stop();
-                        socket.Close();
-                    }
-                };
-                userState.AuthTimer.AutoReset = false;
-                userState.AuthTimer.Start();
-            }
-            else
+            socket.OnOpen = () =>
             {
-                socketList[clientUrl].Socket = socket;
-            }
+                if (!socketList.TryGetValue(clientUrl, out var client))
+                {
+                    var userState = new UserState(socket);
+                    socketList.Add(clientUrl, userState);
+                    Logger.LogInfo($"建立与[{socket.ConnectionInfo.Id}]的握手，等待认证...");
+                    // 发送 ServerHello 消息
+                    var serverHello = new ServerHello
+                    {
+                        MachineId = AppRuntime.DanmakuManager.MachineId,
+                        TimeoutSeconds = 10
+                    };
+                    var helloCommand = new Command
+                    {
+                        Cmd = CommandCode.Auth,
+                        Data = serverHello
+                    };
+                    socket.Send(JsonConvert.SerializeObject(helloCommand));
+                    // 启动10秒认证超时计时器
+                    userState.AuthTimer = new Timer(10000);
+                    userState.AuthTimer.Elapsed += (sender, e) =>
+                    {
+                        if (!userState.IsAuthenticated)
+                        {
+                            Logger.LogWarn($"客户端[{clientUrl}]认证超时，断开连接");
+                            userState.AuthTimer?.Stop();
+                            socket.Close();
+                            socketList.Remove(clientUrl);
+                        }
+                    };
+                    userState.AuthTimer.AutoReset = false;
+                    userState.AuthTimer.Start();
+                }
+                else
+                {
+                    client.Socket = socket;
+                }
+            };
 
             //接收指令
             socket.OnMessage = (message) =>
@@ -725,7 +738,6 @@ namespace BarrageGrab.Server
                             {
                                 Logger.LogInfo("关闭程序...");
                                 Dispose();
-
                                 Environment.Exit(0);
                             }
 
@@ -740,7 +752,7 @@ namespace BarrageGrab.Server
             socket.OnClose = () =>
             {
                 socketList.Remove(clientUrl);
-                Logger.LogInfo($"{DateTime.Now.ToLongTimeString()} 已经关闭与[{clientUrl}]的连接");
+                Logger.LogInfo($"关闭与[{clientUrl}]的连接");
             };
             socket.OnPing = (data) =>
             {
@@ -758,15 +770,14 @@ namespace BarrageGrab.Server
         {
             try
             {
-                if (!socketList.ContainsKey(clientUrl))
+                if (!socketList.TryGetValue(clientUrl, out var userState))
                 {
                     Logger.LogError($"未找到客户端: {clientUrl}");
                     return;
                 }
 
-                var userState = socketList[clientUrl];
-
                 // 反序列化认证请求
+                Logger.LogDebug("处理认证请求数据: " + data.ToString());
                 var authRequest = JsonConvert.DeserializeObject<AuthRequest>(data.ToString());
                 if (authRequest == null)
                 {
@@ -776,19 +787,15 @@ namespace BarrageGrab.Server
                 }
 
                 Logger.LogInfo($"收到认证请求 - RoomId: {authRequest.RoomId}, SessionId: {authRequest.SessionId}");
-
                 // 验证 session
                 var isValid = await AppRuntime.DanmakuManager.ValidateSessionAsync(authRequest.SessionId);
-
                 if (isValid)
                 {
                     // 认证成功
                     userState.IsAuthenticated = true;
                     userState.SessionId = authRequest.SessionId;
                     userState.AuthTimer?.Stop();
-
-                    Logger.LogInfo($"客户端[{clientUrl}]认证成功");
-
+                    Logger.LogInfo($"客户端[{userState.SessionId}]认证成功");
                     // 发送认证成功响应
                     var response = new Command
                     {
@@ -800,8 +807,7 @@ namespace BarrageGrab.Server
                 else
                 {
                     // 认证失败
-                    Logger.LogInfo($"客户端[{clientUrl}]认证失败，断开连接");
-
+                    Logger.LogWarn($"客户端[{userState.SessionId}]认证失败，断开连接");
                     var response = new Command
                     {
                         Cmd = CommandCode.Auth,
@@ -809,6 +815,7 @@ namespace BarrageGrab.Server
                     };
                     userState.Socket.Send(JsonConvert.SerializeObject(response));
                     userState.Socket.Close();
+                    socketList[clientUrl].Socket.Close();
                 }
             }
             catch (Exception ex)

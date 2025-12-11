@@ -118,7 +118,7 @@ namespace BarrageGrab.Cloud
                     .From<OnlineClient>()
                     .Filter("machine_id", Constants.Operator.Equals, _machineId)
                     .Filter("session_id", Constants.Operator.Equals, sessionId)
-                    .Filter("banned", Constants.Operator.Equals, false)
+                    .Filter("banned", Constants.Operator.Equals, "false")
                     .Get();
 
                 if (!result.Models.Any())
