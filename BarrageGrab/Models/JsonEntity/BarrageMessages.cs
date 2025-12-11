@@ -23,7 +23,8 @@ namespace BarrageGrab.Models.JsonEntity
         [Description("会员表情")] 会员表情 = 10,
         [Description("会员开通")] 会员开通 = 11,
         [Description("房间数据")] 房间数据 = 12,
-        [Description("房间排行")] 房间排行 = 13
+        [Description("房间排行")] 房间排行 = 13,
+        [Description("焦点")] 焦点事件 = 14
     }
 
     /// <summary>

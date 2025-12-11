@@ -67,7 +67,7 @@
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>logo.ico</ApplicationIcon>
+    <ApplicationIcon>favicon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Acornima, Version=1.1.0.0, Culture=neutral, PublicKeyToken=496b38436bb9edeb, processorArchitecture=MSIL">
@@ -296,6 +296,7 @@
     <Compile Include="Cloud\ClientOnlineBroadcast.cs" />
     <Compile Include="Cloud\DanmakuManager.cs"/>
     <Compile Include="Cloud\EventLog.cs" />
+    <Compile Include="Cloud\LicenceShutdownBroadcast.cs"/>
     <Compile Include="Cloud\OnlineClient.cs"/>
     <Compile Include="DanmakuException.cs"/>
     <Compile Include="Models\JsonEntity\BarrageMessages.cs"/>
@@ -345,7 +346,7 @@
     <None Include="Properties\app.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="logo.ico" />
+    <Content Include="favicon.ico"/>
     <Content Include="FodyWeavers.xml"/>
     <EmbeddedResource Include="Scripts\inject\livePage.js" />
   </ItemGroup>

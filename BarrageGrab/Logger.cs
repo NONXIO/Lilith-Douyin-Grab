@@ -4,8 +4,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using BarrageGrab.Models.JsonEntity;
+using Fleck;
 using NLog;
 using NLog.Config;
+using LogLevel = Fleck.LogLevel;
 
 namespace BarrageGrab
 {
@@ -27,6 +29,30 @@ namespace BarrageGrab
 
             builder = LogManager.Setup().LoadConfigurationFromAssemblyResource(assembly, resourceName);
             logger = builder.GetLogger("*");
+
+
+            // 配置 Fleck 日志输出，使用统一的 Logger
+            FleckLog.LogAction = (level, message, ex) =>
+            {
+                switch (level)
+                {
+                    case LogLevel.Debug:
+                        // 不输出 Debug 日志
+                        break;
+                    case LogLevel.Info:
+                        LogInfo(message);
+                        break;
+                    case LogLevel.Warn:
+                        LogWarn(message);
+                        break;
+                    case LogLevel.Error:
+                        if (ex != null)
+                            LogError(ex, message);
+                        else
+                            LogError(message);
+                        break;
+                }
+            };
         }
 
         public static void PrintColor(string message, ConsoleColor foreground = ConsoleColor.White)

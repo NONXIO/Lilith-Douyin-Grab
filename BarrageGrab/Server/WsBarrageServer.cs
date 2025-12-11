@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 using BarrageGrab.Models;
 using BarrageGrab.Models.JsonEntity;
@@ -20,7 +22,7 @@ namespace BarrageGrab.Server
     public delegate void PackMessageEventHandler(WsBarrageServer sender, WsBarrageServer.PackMsgEventArgs e);
 
     /// <summary>
-    /// 弹幕服务
+    /// 弹幕服务 
     /// </summary>
     public class WsBarrageServer : IDisposable
     {
@@ -83,6 +85,14 @@ namespace BarrageGrab.Server
         /// </summary>
         public void Dispose()
         {
+            // 清理所有客户端的认证计时器
+            foreach (var client in socketList.Values)
+                if (client.AuthTimer != null)
+                {
+                    client.AuthTimer.Stop();
+                    client.AuthTimer.Dispose();
+                }
+
             socketList.Values.ToList().ForEach(f => f.Socket.Close());
             socketList.Clear();
             socketServer.Dispose();
@@ -662,9 +672,35 @@ namespace BarrageGrab.Server
             string clientUrl = socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort;
             if (!socketList.ContainsKey(clientUrl))
             {
-                socketList.Add(clientUrl, new UserState(socket));
-                Logger.PrintColor($"{DateTime.Now.ToLongTimeString()}建立与[{socket.ConnectionInfo.Id}]的连接",
-                    ConsoleColor.Green);
+                var userState = new UserState(socket);
+                socketList.Add(clientUrl, userState);
+                Logger.LogInfo($"{DateTime.Now.ToLongTimeString()}建立与[{socket.ConnectionInfo.Id}]的连接");
+
+                // 发送 ServerHello 消息
+                var serverHello = new ServerHello
+                {
+                    MachineId = AppRuntime.DanmakuManager.MachineId,
+                    TimeoutSeconds = 10
+                };
+                var helloCommand = new Command
+                {
+                    Cmd = CommandCode.Auth,
+                    Data = serverHello
+                };
+                socket.Send(JsonConvert.SerializeObject(helloCommand));
+                // 启动10秒认证超时计时器
+                userState.AuthTimer = new Timer(10000);
+                userState.AuthTimer.Elapsed += (sender, e) =>
+                {
+                    if (!userState.IsAuthenticated)
+                    {
+                        Logger.LogInfo($"客户端[{clientUrl}]认证超时，断开连接");
+                        userState.AuthTimer?.Stop();
+                        socket.Close();
+                    }
+                };
+                userState.AuthTimer.AutoReset = false;
+                userState.AuthTimer.Start();
             }
             else
             {
@@ -680,38 +716,128 @@ namespace BarrageGrab.Server
                     if (cmdPack == null) return;
                     switch (cmdPack.Cmd)
                     {
+                        case CommandCode.Auth:
+                            // 处理认证请求
+                            HandleAuthenticationAsync(clientUrl, cmdPack.Data).Wait();
+                            break;
                         case CommandCode.Close:
                             if (cmdPack.Data is bool && (bool)cmdPack.Data == true)
                             {
-                                Logger.PrintColor($"收到[{socket.ConnectionInfo.Id}]的关闭程序指令...", ConsoleColor.Yellow);
+                                Logger.LogInfo("关闭程序...");
                                 Dispose();
+
                                 Environment.Exit(0);
                             }
 
                             break;
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Logger.LogError($"处理命令时出错: {ex.Message}");
                 }
             };
             socket.OnClose = () =>
             {
                 socketList.Remove(clientUrl);
-                Logger.PrintColor($"{DateTime.Now.ToLongTimeString()} 已经关闭与[{clientUrl}]的连接", ConsoleColor.Red);
+                Logger.LogInfo($"{DateTime.Now.ToLongTimeString()} 已经关闭与[{clientUrl}]的连接");
             };
-
             socket.OnPing = (data) =>
             {
                 socketList[clientUrl].LastPing = DateTime.Now;
-                socket.SendPong(Encoding.UTF8.GetBytes("pong"));
+                socket.SendPong(Encoding.UTF8.GetBytes(AppRuntime.DanmakuManager.SessionId));
             };
+        }
+
+        /// <summary>
+        /// 处理客户端认证请求
+        /// </summary>
+        /// <param name="clientUrl">客户端URL</param>
+        /// <param name="data">认证数据</param>
+        private async Task HandleAuthenticationAsync(string clientUrl, object data)
+        {
+            try
+            {
+                if (!socketList.ContainsKey(clientUrl))
+                {
+                    Logger.LogError($"未找到客户端: {clientUrl}");
+                    return;
+                }
+
+                var userState = socketList[clientUrl];
+
+                // 反序列化认证请求
+                var authRequest = JsonConvert.DeserializeObject<AuthRequest>(data.ToString());
+                if (authRequest == null)
+                {
+                    Logger.LogError("认证请求格式错误");
+                    userState.Socket.Close();
+                    return;
+                }
+
+                Logger.LogInfo($"收到认证请求 - RoomId: {authRequest.RoomId}, SessionId: {authRequest.SessionId}");
+
+                // 验证 session
+                var isValid = await AppRuntime.DanmakuManager.ValidateSessionAsync(authRequest.SessionId);
+
+                if (isValid)
+                {
+                    // 认证成功
+                    userState.IsAuthenticated = true;
+                    userState.SessionId = authRequest.SessionId;
+                    userState.AuthTimer?.Stop();
+
+                    Logger.LogInfo($"客户端[{clientUrl}]认证成功");
+
+                    // 发送认证成功响应
+                    var response = new Command
+                    {
+                        Cmd = CommandCode.Auth,
+                        Data = new { success = true, message = "认证成功" }
+                    };
+                    userState.Socket.Send(JsonConvert.SerializeObject(response));
+                }
+                else
+                {
+                    // 认证失败
+                    Logger.LogInfo($"客户端[{clientUrl}]认证失败，断开连接");
+
+                    var response = new Command
+                    {
+                        Cmd = CommandCode.Auth,
+                        Data = new { success = false, message = "认证失败" }
+                    };
+                    userState.Socket.Send(JsonConvert.SerializeObject(response));
+                    userState.Socket.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"处理认证请求时出错: {ex.Message}");
+                if (socketList.ContainsKey(clientUrl)) socketList[clientUrl].Socket.Close();
+            }
+        }
+
+        /// <summary>
+        /// 广播简单事件
+        /// </summary>
+        /// <param name="eventType">事件类型</param>
+        public void BroadcastEvent(PackMsgType eventType)
+        {
+            var eventMsg = new Msg
+            {
+                Content = eventType.ToString(),
+                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            };
+
+            var pack = new BarrageMsgPack(eventMsg.ToJson(), eventType, Process.GetCurrentProcess().ProcessName);
+            Broadcast(pack);
         }
 
         /// <summary>
         /// 广播消息
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="pack">弹幕数据包</param>
         public void Broadcast(BarrageMsgPack pack)
         {
             if (pack == null) return;
@@ -719,12 +845,13 @@ namespace BarrageGrab.Server
                 !AppSetting.Current.PushFilter.Contains(pack.Type.GetHashCode())) return;
             foreach (var item in socketList)
             {
-                var state = item.Value;
-                if (item.Value.Socket.IsAvailable)
+                var client = item.Value;
+                // 只向已认证的客户端发送消息
+                if (client.IsAuthenticated && client.Socket.IsAvailable)
                 {
-                    state.Socket.Send(pack.ToJson());
+                    client.Socket.Send(pack.ToJson());
                 }
-                else
+                else if (!client.Socket.IsAvailable)
                 {
                     socketList.Remove(item.Key);
                 }
@@ -771,6 +898,21 @@ namespace BarrageGrab.Server
             /// 上次发起心跳包时间
             /// </summary>
             public DateTime LastPing { get; set; } = DateTime.Now;
+
+            /// <summary>
+            /// 是否已认证
+            /// </summary>
+            public bool IsAuthenticated { get; set; } = false;
+
+            /// <summary>
+            /// 认证超时计时器
+            /// </summary>
+            public Timer AuthTimer { get; set; }
+
+            /// <summary>
+            /// 客户端会话ID
+            /// </summary>
+            public string SessionId { get; set; }
         }
 
         /// <summary>

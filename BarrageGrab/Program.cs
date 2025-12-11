@@ -18,12 +18,7 @@ namespace BarrageGrab
 
         static void Main(string[] args)
         {
-            // 防止 Debug Hook
-            if (Debugger.IsAttached)
-            {
-                throw new DanmakuException("内部错误,请使用Danmaku启动此后端服务");
-            }
-
+            if (Debugger.IsAttached) throw new DanmakuException("内部错误,请使用Danmaku启动此后端服务");
             if (!mutex.WaitOne(TimeSpan.Zero, true))
             {
                 Console.WriteLine(@"另一个实例已在运行。");
@@ -32,13 +27,11 @@ namespace BarrageGrab
             }
 
             // 检查访问密钥以及房间
-            if (args.Length != 2)
-            {
-                throw new DanmakuException("参数错误,请使用Danmaku启动此后端服务");
-            }
+            if (args.Length != 2) throw new DanmakuException("参数错误,请使用Danmaku启动此后端服务");
 
             SetTitle("启动中...");
             AppRuntime.PreInit(args);
+
             try
             {
                 Init();
@@ -52,16 +45,18 @@ namespace BarrageGrab
                 exited = true;
             }
 
-            while (!exited)
+            // 如果使用窗体模式，使用 Application.Run 启动消息循环
+            if (AppSetting.Current.ShowWindow && !exited)
             {
-                Thread.Sleep(500);
+                Application.Run();
+            }
+            else
+            {
+                // 控制台模式，使用传统的循环等待
+                while (!exited) Thread.Sleep(500);
             }
 
-            if (!AppRuntime.WsServer.IsDisposed)
-            {
-                OnClose();
-            }
-
+            if (!AppRuntime.WsServer.IsDisposed) OnClose();
             WinApi.SetConsoleCtrlHandler(controlCtr, false); //反注册捕获控制台关闭            
         }
 
@@ -71,30 +66,33 @@ namespace BarrageGrab
             LiveCompanHelper.SwitchSetup();
             WinApi.SetConsoleCtrlHandler(controlCtr, true); //捕获控制台关闭
             // WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
-            AppRuntime.DisplayConsole(!AppSetting.Current.HideConsole); //控制控制台可见
-            AppRuntime.WsServer.Grab.Proxy.SetUpstreamProxy(AppSetting.Current.UpstreamProxy); //设置上游代理
-            AppRuntime.WsServer.OnClose += (s, e) => { exited = true; };
 
-            //显示窗体
+            // 如果启用窗口显示，则创建窗体（但不显示，通过托盘图标显示）
             if (AppSetting.Current.ShowWindow)
             {
-                var uiThread = new Thread(new ThreadStart(() =>
-                {
-                    mainForm = new FormView();
-                    //开启消息循环
-                    Application.Run(mainForm);
-                    formExited = true;
-                    AppRuntime.WsServer.Dispose(); //Close后自动释放资源
-                }));
-                uiThread.SetApartmentState(ApartmentState.STA);
-                uiThread.IsBackground = true;
-                uiThread.Start();
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                mainForm = new FormView();
+                // 不调用 Show()，窗体将通过托盘图标显示
             }
 
+            AppRuntime.DisplayConsole(!AppSetting.Current.HideConsole); //控制控制台可见
+            AppRuntime.WsServer.Grab.Proxy.SetUpstreamProxy(AppSetting.Current.UpstreamProxy); //设置上游代理
+            AppRuntime.WsServer.OnClose += (s, e) =>
+            {
+                AppRuntime.DanmakuManager.Destroy();
+                exited = true;
+
+                // 如果有窗体，关闭窗体
+                if (mainForm != null && !mainForm.IsDisposed)
+                {
+                    mainForm.Invoke(new Action(() => Application.Exit()));
+                }
+            };
             AppRuntime.WsServer.StartListen(); //启动WS以及代理服务
         }
 
-        //检测设置控制台标题
+        //设置控制台标题
         private static void SetTitle(string title)
         {
             var version = Assembly.GetAssembly(typeof(Program)).GetName().Version;

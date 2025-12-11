@@ -20,7 +20,12 @@ namespace BarrageGrab
 
         WsBarrageServer barServer = AppRuntime.WsServer;
         WssBarrageGrab grab = AppRuntime.WsServer.Grab;
+        private bool isExiting = false;
         ISystemProxy proxy = AppRuntime.WsServer.Grab.Proxy;
+
+        // 系统托盘相关
+        private NotifyIcon trayIcon;
+        private ContextMenuStrip trayMenu;
 
         public FormView()
         {
@@ -28,6 +33,15 @@ namespace BarrageGrab
             barServer.OnPrint += WssService_OnPrint;
             barServer.Grab.Proxy.OnProxyStatus += Proxy_OnProxyStatus;
             AppRuntime.RoomCaches.OnCache += RoomCaches_OnCache;
+
+            // 初始化系统托盘
+            InitializeTrayIcon();
+
+            // 窗体关闭时最小化到托盘而不是退出
+            FormClosing += FormView_FormClosing;
+
+            // 强制创建窗口句柄，以便 Invoke 调用能够正常工作
+            var handle = Handle;
         }
 
         private void InitTabPages()
@@ -144,15 +158,16 @@ namespace BarrageGrab
 
         private void RoomCaches_OnCache(object sender, AppRuntime.RoomCacheManager.RoomCacheEventArgs e)
         {
-            this.Invoke(new Action(() =>
-            {
-                if (e.Model == 0)
+            if (IsHandleCreated && !Disposing && !IsDisposed)
+                Invoke(new Action(() =>
                 {
-                    var item = new RoomCacheItem(e.RoomInfo);
-                    this.label3.Text = $"房间缓存列表({AppRuntime.RoomCaches.RoomInfoCache.Count})";
-                    list_roomCaches.Items.Add(item);
-                }
-            }));
+                    if (e.Model == 0)
+                    {
+                        var item = new RoomCacheItem(e.RoomInfo);
+                        label3.Text = $"房间缓存列表({AppRuntime.RoomCaches.RoomInfoCache.Count})";
+                        list_roomCaches.Items.Add(item);
+                    }
+                }));
         }
 
         private void FormView_Load(object sender, EventArgs e)
@@ -167,7 +182,7 @@ namespace BarrageGrab
 
         private void Proxy_OnProxyStatus(object sender, SystemProxyChangeEventArgs e)
         {
-            if (this.Disposing || this.IsDisposed) return;
+            if (Disposing || IsDisposed || !IsHandleCreated) return;
             Invoke(new Action(() => { cbx_enableProxy.Checked = e.Open; }));
         }
 
@@ -178,19 +193,22 @@ namespace BarrageGrab
             Color color = AppSetting.Current.ColorMap[e.MsgType].Item2;
             string msg = e.Message;
 
-            this.Invoke(new Action(() =>
+            if (IsHandleCreated && !Disposing && !IsDisposed)
             {
-                //输出到richTextBox
-                this.rich_output.SelectionColor = color;
-                this.rich_output.AppendText(msg + "\n");
-                this.rich_output.ScrollToCaret();
-
-                if (++printCount > 10000)
+                Invoke(new Action(() =>
                 {
-                    this.rich_output.Clear();
-                    printCount = 0;
-                }
-            }));
+                    //输出到richTextBox
+                    rich_output.SelectionColor = color;
+                    rich_output.AppendText(msg + "\n");
+                    rich_output.ScrollToCaret();
+
+                    if (++printCount > 10000)
+                    {
+                        rich_output.Clear();
+                        printCount = 0;
+                    }
+                }));
+            }
         }
 
         private void cbx_enableProxy_CheckedChanged(object sender, EventArgs e)
@@ -238,5 +256,80 @@ namespace BarrageGrab
             AppSetting.Current.BarrageLog = checker.Checked;
             AppSetting.Current.Save();
         }
+
+        #region 系统托盘功能
+
+        /// <summary>
+        /// 初始化系统托盘图标
+        /// </summary>
+        private void InitializeTrayIcon()
+        {
+            // 创建托盘图标
+            trayIcon = new NotifyIcon();
+            // 使用程序图标，如果没有则使用默认图标
+            try
+            {
+                var iconPath = Assembly.GetExecutingAssembly().Location;
+                trayIcon.Icon = Icon.ExtractAssociatedIcon(iconPath);
+            }
+            catch
+            {
+                // 如果提取图标失败，使用默认图标
+                trayIcon.Icon = SystemIcons.Application;
+            }
+
+            // NotifyIcon.Text 不支持 \n 换行，并且最大长度为63个字符
+            // 使用简短的单行文本作为 tooltip
+            trayIcon.Text = "Danmaku 弹幕后端服务 v" + Application.ProductVersion;
+            trayIcon.Visible = true;
+
+            // 添加左键点击事件 - 发送焦点事件
+            trayIcon.MouseClick += TrayIcon_MouseClick;
+
+            // 创建右键菜单 - 只显示退出选项
+            trayMenu = new ContextMenuStrip();
+            trayMenu.Items.Add("退出", null, ExitApplication_Click);
+            trayIcon.ContextMenuStrip = trayMenu;
+        }
+
+        /// <summary>
+        /// 托盘图标鼠标点击事件
+        /// </summary>
+        private void TrayIcon_MouseClick(object sender, MouseEventArgs e)
+        {
+            // 只处理左键点击
+            if (e.Button == MouseButtons.Left)
+                // 发送焦点事件到所有WebSocket客户端
+                barServer.BroadcastEvent(PackMsgType.焦点事件);
+        }
+
+        /// <summary>
+        /// 右键菜单 - 退出程序
+        /// </summary>
+        private void ExitApplication_Click(object sender, EventArgs e)
+        {
+            isExiting = true;
+
+            // 清理托盘图标
+            if (trayIcon != null)
+            {
+                trayIcon.Visible = false;
+                trayIcon.Dispose();
+            }
+
+            // 关闭应用程序
+            Application.Exit();
+        }
+
+        /// <summary>
+        /// 窗体关闭事件
+        /// </summary>
+        private void FormView_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // 窗体不应该被显示，但保留此处理以防万一
+            if (!isExiting) e.Cancel = true;
+        }
+
+        #endregion
     }
 }
