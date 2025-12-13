@@ -140,13 +140,15 @@ namespace BarrageGrab.Server
         }
 
         //判断Rommid是否符合拦截规则
-        private bool CheckRoomId(long roomid)
+        internal bool CheckRoomId(long roomid)
         {
-            if (!AppSetting.Current.WebRoomIds.Any()) return true;
+            //TODO： Remove it when in production
+            return true;
             var webrid = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid.ToString());
             if (webrid.IsNullOrWhiteSpace()) return true;
             if (webrid == "未知") return true;
-            return AppSetting.Current.WebRoomIds.Contains(webrid);
+            if (!AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(webrid))) return false;
+            return true;
         }
 
         //解析用户
@@ -243,10 +245,11 @@ namespace BarrageGrab.Server
         //打印消息        
         private void PrintMsg(Msg msg, PackMsgType barType)
         {
+            return;
             var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
             var roomName = rinfo?.Owner?.Nickname ??
                            (msg.WebRoomId.IsNullOrWhiteSpace() ? msg.RoomId.ToString() : msg.WebRoomId);
-            var text = $"{DateTime.Now:HH:mm:ss} [{roomName}][{barType}]";
+            var text = $"[{roomName}][{barType}]";
             if (msg.User != null)
             {
                 if (msg.User.IsAnchor)
@@ -306,7 +309,7 @@ namespace BarrageGrab.Server
                 printCount = 0;
             }
 
-            Logger.PrintColor(text + "\n", color);
+            Logger.LogDebug(text);
         }
 
         //附加房间信息
@@ -345,7 +348,7 @@ namespace BarrageGrab.Server
 
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                AppRuntime.DanmakuManager.ReportEvent(msg.Common.Method, msg.ToJson(), "新守护相关");
+                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
             }
 
             AttachRoomInfo(enty);
@@ -358,11 +361,10 @@ namespace BarrageGrab.Server
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-            var enty = CreateMsg<UserSeqMsg>(msg);
-            enty.OnlineUserCount = msg.Total;
-            enty.TotalUserCount = msg.totalUser;
-            enty.Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计直播间人数 {msg.totalPvForAnchor}";
-            AttachRoomInfo(enty);
+            var enty = CreateMsg<OnlineViewStatsMsg>(msg);
+            enty.Online = msg.Total;
+            enty.Viewed = msg.totalUser;
+            enty.Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计观看人数 {msg.totalPvForAnchor}";
             Broadcast(new BarrageMsgPack(enty.ToJson(), PackMsgType.直播间统计, e.Process));
         }
 
@@ -499,23 +501,16 @@ namespace BarrageGrab.Server
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-
             var enterType = e.Message.userEnterTipType;
             var enty = CreateMsg<MemberMsg>(msg);
-            enty.Content = $"{msg.User.Nickname} ${(enterType == 6 ? " 通过分享" : "")}来了 直播间人数:{msg.memberCount}";
+            enty.Content = $"{msg.User.Nickname} ${(enterType == 6 ? " 通过分享" : "")}来了 | 直播间人数:{msg.memberCount}";
             enty.CurrentCount = msg.memberCount;
             enty.EnterTipType = enterType;
-
-            var msgType = PackMsgType.进直播间;
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
-            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
-            var json = JsonConvert.SerializeObject(pack);
-            Broadcast(pack);
-
+            Broadcast(new BarrageMsgPack(enty.ToJson(), PackMsgType.进直播间, e.Process));
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                AppRuntime.DanmakuManager.ReportEvent(msg.Common.Method, msg.ToJson(), "新守护相关");
+                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
             }
         }
 
@@ -551,7 +546,7 @@ namespace BarrageGrab.Server
             Broadcast(pack);
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                AppRuntime.DanmakuManager.ReportEvent(msg.Common.Method, msg.ToJson(), "新守护相关");
+                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
             }
         }
 
@@ -562,11 +557,9 @@ namespace BarrageGrab.Server
             if (!CheckRoomId(msg.Common.roomId)) return;
             var enty = CreateMsg<VipEmojiMsg>(msg);
             enty.EmojiUrl = msg.emojiContent.Pieces.First().imageValue.image.urlLists.First();
-            enty.Content = $"{msg.User.Nickname} 发送了会员表情";
-            var msgType = PackMsgType.会员表情;
+            enty.Content = $"[会员表情]";
             AttachRoomInfo(enty);
-            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
-            Broadcast(pack);
+            Broadcast(new BarrageMsgPack(enty.ToJson(), PackMsgType.会员表情, e.Process));
         }
 
         //直播间状态变更
@@ -599,20 +592,16 @@ namespace BarrageGrab.Server
             }
         }
 
-        //直播间数据
+        //在线人数数据
         private void Grab_OnRoomStatsMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<RoomStatsMessage> e)
         {
             var msg = e.Message;
-            if (!CheckRoomId(msg.common.roomId)) return;
-            var enty = CreateMsg<RoomStatsMsg>(msg);
-            enty.DisplayValue = msg.displayValue;
-            enty.Incremental = msg.incremental;
-            enty.Total = msg.total;
-            enty.Content = $"直播间数据: {msg.displayLong} {msg.displayValue}";
-            AppRuntime.DanmakuManager.ReportEvent("RoomStatsMessage", msg.ToJson(), "直播间数据");
+            if (!CheckRoomId(msg.Common.roomId)) return;
+            var enty = CreateMsg<OnlineStatsMsg>(msg);
+            enty.Online = msg.displayValue;
+            enty.Content = msg.displayLong;
             var msgType = PackMsgType.房间数据;
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
             Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
         }
 
@@ -620,13 +609,13 @@ namespace BarrageGrab.Server
         private void Grab_OnRoomRankMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<RoomRankMessage> e)
         {
             var msg = e.Message;
-            if (!CheckRoomId(msg.common.roomId)) return;
+            if (!CheckRoomId(msg.Common.roomId)) return;
 
             var enty = CreateMsg<RoomRankMsg>(msg);
             enty.Ranks = msg.ranks.Select(r => new RoomRank
             {
                 User = GetUser(r.user),
-                ScoreStr = long.Parse(r.scoreStr)
+                ScoreStr = long.TryParse(r.scoreStr, out var s) ? s : 0
             }).ToList();
 
             enty.Content = $"直播间排行榜更新: {enty.Ranks.Count}人";
@@ -641,17 +630,22 @@ namespace BarrageGrab.Server
         private void Grab_OnRoomMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<RoomMessage> e)
         {
             var msg = e.Message;
+            if (msg.Common == null) return;
             if (!CheckRoomId(msg.Common.roomId)) return;
             VipBuyMsg enty = null;
             PackMsgType type = PackMsgType.无;
             var displayText = msg.Common.displayText;
-            if (msg.Common.displayText.Key.Equals("subscribe_anchor_mvp_v2", StringComparison.CurrentCultureIgnoreCase))
+            if (displayText != null && displayText.Key != null && displayText.Key.Equals("subscribe_anchor_mvp_v2",
+                    StringComparison.CurrentCultureIgnoreCase))
             {
-                enty = CreateMsg<VipBuyMsg>(msg);
-                enty.Action = displayText.Pieces[1].stringValue;
-                enty.Unit = displayText.Pieces[2].stringValue;
-                enty.IsAnnual = enty.Unit.Equals("年度", StringComparison.CurrentCultureIgnoreCase);
-                type = PackMsgType.会员开通;
+                if (displayText.Pieces != null && displayText.Pieces.Count > 2)
+                {
+                    enty = CreateMsg<VipBuyMsg>(msg);
+                    enty.Action = displayText.Pieces[1].stringValue;
+                    enty.Unit = displayText.Pieces[2].stringValue;
+                    enty.IsAnnual = enty.Unit.Equals("年度", StringComparison.CurrentCultureIgnoreCase);
+                    type = PackMsgType.会员开通;
+                }
             }
 
             if (enty != null)
@@ -661,22 +655,16 @@ namespace BarrageGrab.Server
                 Broadcast(new BarrageMsgPack(enty.ToJson(), type, e.Process));
             }
 
-            if (msg.Common.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
+            if (msg.Common.User != null && msg.Common.User.badgeImageListV2 != null &&
+                msg.Common.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                AppRuntime.DanmakuManager.ReportEvent(msg.Common.Method, msg.ToJson(), "新守护相关");
+                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
             }
         }
 
         //监听用户连接
         private void Listen(IWebSocketConnection socket)
         {
-            // 添加错误处理
-            socket.OnError = (error) =>
-            {
-                Logger.LogError($"WebSocket 连接错误: {error.Message}");
-                Logger.LogError($"Stack Trace: {error.StackTrace}");
-            };
-
             //客户端url
             string clientUrl = socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort;
 
@@ -705,7 +693,7 @@ namespace BarrageGrab.Server
                     {
                         if (!userState.IsAuthenticated)
                         {
-                            Logger.LogWarn($"客户端[{clientUrl}]认证超时，断开连接");
+                            Logger.LogWarn($"客户端认证超时，断开连接");
                             userState.AuthTimer?.Stop();
                             socket.Close();
                             socketList.Remove(clientUrl);
@@ -772,12 +760,11 @@ namespace BarrageGrab.Server
             {
                 if (!socketList.TryGetValue(clientUrl, out var userState))
                 {
-                    Logger.LogError($"未找到客户端: {clientUrl}");
+                    Logger.LogError($"无效客户端");
                     return;
                 }
 
                 // 反序列化认证请求
-                Logger.LogDebug("处理认证请求数据: " + data.ToString());
                 var authRequest = JsonConvert.DeserializeObject<AuthRequest>(data.ToString());
                 if (authRequest == null)
                 {
@@ -786,7 +773,6 @@ namespace BarrageGrab.Server
                     return;
                 }
 
-                Logger.LogInfo($"收到认证请求 - RoomId: {authRequest.RoomId}, SessionId: {authRequest.SessionId}");
                 // 验证 session
                 var isValid = await AppRuntime.DanmakuManager.ValidateSessionAsync(authRequest.SessionId);
                 if (isValid)
@@ -795,7 +781,7 @@ namespace BarrageGrab.Server
                     userState.IsAuthenticated = true;
                     userState.SessionId = authRequest.SessionId;
                     userState.AuthTimer?.Stop();
-                    Logger.LogInfo($"客户端[{userState.SessionId}]认证成功");
+                    Logger.LogInfo($"客户端[{userState.Socket.ConnectionInfo.Id}]认证成功");
                     // 发送认证成功响应
                     var response = new Command
                     {
@@ -807,7 +793,7 @@ namespace BarrageGrab.Server
                 else
                 {
                     // 认证失败
-                    Logger.LogWarn($"客户端[{userState.SessionId}]认证失败，断开连接");
+                    Logger.LogWarn($"客户端[{userState.Socket.ConnectionInfo.Id}]认证失败，断开连接");
                     var response = new Command
                     {
                         Cmd = CommandCode.Auth,

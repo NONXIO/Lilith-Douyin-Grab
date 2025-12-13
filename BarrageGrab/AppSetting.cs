@@ -118,7 +118,7 @@ namespace BarrageGrab
         /// <summary>
         /// 监听的房间号
         /// </summary>
-        public string[] WebRoomIds { get; private set; } = new string[0];
+        public string[] WebRoomIds { get; internal set; } = new string[0];
 
         /// <summary>
         /// 使用域名过滤

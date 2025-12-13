@@ -86,7 +86,7 @@ namespace BarrageGrab.Proxy
             proxyServer.CertificateManager.RootCertificate = GetCert();
             if (proxyServer.CertificateManager.RootCertificate == null)
             {
-                Logger.LogInfo("正在进行证书安装，需要信任该证书才可进行https解密，若有提示请确定");
+                Logger.LogInfo("进行证书安装，若有提示弹窗请确定");
                 proxyServer.CertificateManager.CreateRootCertificate();
             }
 
@@ -282,7 +282,7 @@ namespace BarrageGrab.Proxy
                 e.DataReceived += WebSocket_DataReceived;
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
-                Logger.LogInfo($"订阅到新的弹幕流地址，roomid:{roomid}");
+                Logger.LogInfo($"[直播间 {roomid}]订阅到新的弹幕流地址");
             }
 
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
@@ -381,7 +381,7 @@ namespace BarrageGrab.Proxy
 
                     if (code == 0)
                     {
-                        Logger.LogInfo($"直播页{webrid} [{roominfo.Owner.Nickname}]的直播间，房间信息已采集到缓存");
+                        Logger.LogInfo($"已连接 <{webrid}> - [{roominfo.Owner.Nickname}]的直播间");
                         roominfo.WebRoomId = webrid;
                         roominfo.LiveUrl = url;
                         AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
@@ -416,7 +416,7 @@ namespace BarrageGrab.Proxy
                             script.InnerHtml = liveRoomInjectScript;
                             body.AppendChild(script);
                             html = doc.DocumentNode.OuterHtml;
-                            Logger.LogTrace($"直播页{urlNoQuery},用户脚本已成功注入!\n");
+                            Logger.LogDebug($"直播页{urlNoQuery},用户脚本已成功注入!\n");
                         }
                     }
                     catch (Exception ex)
@@ -466,7 +466,7 @@ namespace BarrageGrab.Proxy
                         body.AppendChild(script);
                         var newHtml = doc.DocumentNode.OuterHtml;
                         e.SetResponseBodyString(newHtml);
-                        Logger.PrintColor($"直播首页{urlNoQuery},用户脚本已成功注入!\n", ConsoleColor.Green);
+                        Logger.LogDebug($"直播首页{urlNoQuery},用户脚本已成功注入!\n");
                     }
                 }
             }
@@ -709,7 +709,7 @@ namespace BarrageGrab.Proxy
             if (AppSetting.Current.UsedProxy)
             {
                 base.RegisterSystemProxy();
-                Logger.LogInfo($"系统代理代理已启动，127.0.0.1:{base.ProxyPort}");
+                Logger.LogInfo($"系统代理代理已启动 端口:{ProxyPort}");
                 //使用其自带的系统代理设置可能会导致格式问题
                 //proxyServer.SetAsSystemHttpProxy(explicitEndPoint);
                 //proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);

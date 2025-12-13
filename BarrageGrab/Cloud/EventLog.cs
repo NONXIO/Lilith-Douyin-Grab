@@ -9,7 +9,7 @@ namespace BarrageGrab.Cloud
     {
         [PrimaryKey("id", false)] public int Id { get; set; }
 
-        [Column("room_id")] public string RoomId { get; set; }
+        [Column("room_id")] public long RoomId { get; set; }
 
         [Column("event_name")] public string EventName { get; set; }
 

@@ -756,7 +756,7 @@ namespace BarrageGrab.Models.ProtoEntity
         /// <summary>
         /// 升级1 加入2
         /// </summary>
-        [global::ProtoBuf.ProtoMember(2, Name = @"type")]
+        [global::ProtoBuf.ProtoMember(2, Name = @"action")]
         public int Type { get; set; }
 
         [global::ProtoBuf.ProtoMember(3, Name = @"content")]
@@ -765,6 +765,9 @@ namespace BarrageGrab.Models.ProtoEntity
 
         [global::ProtoBuf.ProtoMember(4, Name = @"user")]
         public User User { get; set; }
+        
+        [global::ProtoBuf.ProtoMember(7, Name = @"left_diamond")]
+        public long LeftDiamond { get; set; }
 
     }
 
@@ -2233,7 +2236,7 @@ namespace BarrageGrab.Models.ProtoEntity
             => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
 
         [global::ProtoBuf.ProtoMember(1, Name = @"common")]
-        public Common common { get; set; }
+        public Common Common { get; set; }
 
         [global::ProtoBuf.ProtoMember(2, Name = @"display_short")]
         [global::System.ComponentModel.DefaultValue("")]
@@ -2302,7 +2305,7 @@ namespace BarrageGrab.Models.ProtoEntity
             => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
 
         [global::ProtoBuf.ProtoMember(1, Name = @"common")]
-        public Common common { get; set; }
+        public Common Common { get; set; }
 
         [global::ProtoBuf.ProtoMember(2, Name = @"ranks")]
         public global::System.Collections.Generic.List<RoomRank> ranks { get; } = new global::System.Collections.Generic.List<RoomRank>();
@@ -2367,6 +2370,36 @@ namespace BarrageGrab.Models.ProtoEntity
         public RoomMsgExtra Extra { get; set; }
 
     }
+
+    [global::ProtoBuf.ProtoContract()]
+    public partial class ExhibitionChatMessage : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"common")]
+        public Common Common { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"display_text")]
+        public Text display_text { get; set; }
+
+        [global::ProtoBuf.ProtoMember(3)]
+        public int unlighted_item { get; set; }
+
+        [global::ProtoBuf.ProtoMember(4)]
+        public int lighted_item { get; set; }
+
+        [global::ProtoBuf.ProtoMember(5)]
+        public int biz_type { get; set; }
+
+        [global::ProtoBuf.ProtoMember(6)]
+        public int app_id { get; set; }
+
+        [global::ProtoBuf.ProtoMember(7)]
+        public PublicAreaCommon publicAreaCommon { get; set; }
+    }
+
 
     [global::ProtoBuf.ProtoContract()]
     public partial class RoomMsgExtra : global::ProtoBuf.IExtensible

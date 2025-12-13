@@ -19,7 +19,7 @@ namespace BarrageGrab.Cloud
         private readonly RealtimeBroadcast<LicenceShutdownBroadcast> _licenceBroadcast;
         private readonly RealtimeChannel _licenceChannel;
         private readonly string _machineId;
-        private readonly string _roomId;
+        private readonly long _roomId;
 
         /// <summary>
         /// 会话ID（格式：machineId:roomId）
@@ -30,7 +30,7 @@ namespace BarrageGrab.Cloud
 
         public DanmakuManager(string accessKey, string roomId)
         {
-            _roomId = roomId;
+            _roomId = long.Parse(roomId);
             Logger.LogInfo("正在连接到Danmaku云服务...");
             _client = new Client("https://kkuqbesyrhmobaxoespi.supabase.co", accessKey, new SupabaseOptions
             {
@@ -70,14 +70,20 @@ namespace BarrageGrab.Cloud
         /// </summary>
         public string ValidatedSessionId { get; private set; }
 
-        public void ReportEvent(string eventName, object body, string note = null)
+        public bool IsAnchorRoom(long roomId)
         {
-            Logger.LogInfo($@"报告事件<{eventName}>[{note}]: {body.ToJson()}");
+            return _roomId == roomId;
+        }
+
+        public async void ReportEvent(long room_id, string eventName, object body, string note = null)
+        {
+            Logger.LogWarn($@"报告事件<{eventName}> {note}");
             try
             {
-                _client.From<EventLog>().Insert(new EventLog
+                await _client.From<EventLog>().Insert(new EventLog
                 {
                     EventName = eventName,
+                    RoomId = room_id,
                     Body = body,
                     Timestamp = DateTime.Now,
                     Note = note
@@ -91,7 +97,7 @@ namespace BarrageGrab.Cloud
 
         private void OnLicenceShutdown()
         {
-            Logger.LogError("收到授权关闭事件，程序即将退出");
+            Logger.LogError("未授权，程序即将退出");
             MessageBox.Show(
                 @"未授权",
                 @"未授权",
@@ -110,8 +116,6 @@ namespace BarrageGrab.Cloud
         {
             try
             {
-                Logger.LogInfo($"验证会话: {sessionId}");
-
                 // 查询 danmaku_online 表
                 var thirtySecondsAgo = DateTime.Now.AddSeconds(-30);
                 var result = await _client
@@ -121,24 +125,18 @@ namespace BarrageGrab.Cloud
                     .Filter("banned", Constants.Operator.Equals, "false")
                     .Get();
 
-                if (!result.Models.Any())
-                {
-                    Logger.LogError("会话验证失败: 未找到匹配记录");
-                    return false;
-                }
-
+                if (!result.Models.Any()) return false;
                 var client = result.Models.First();
 
                 // 检查 last_online_at 是否在30秒内
                 if (client.LastOnlineAt < thirtySecondsAgo)
                 {
-                    Logger.LogError($"会话验证失败: 上次在线时间过期 ({client.LastOnlineAt})");
+                    Logger.LogDebug($"验证失败: 会话过期");
                     return false;
                 }
 
                 // 验证成功，保存 session_id
                 ValidatedSessionId = sessionId;
-                Logger.LogInfo($"会话验证成功: {sessionId}");
                 return true;
             }
             catch (Exception e)

@@ -114,6 +114,11 @@ namespace BarrageGrab
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<RoomMessage>> OnRoomMessage;
 
+        /// <summary>
+        /// 展馆聊天消息
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<ExhibitionChatMessage>> OnExhibitionChatMessage;
+
         public void Start()
         {
             proxy.Start();
@@ -327,17 +332,31 @@ namespace BarrageGrab
                         OnRoomMessage?.Invoke(this, new RoomMessageEventArgs<RoomMessage>(processName, arg));
                         break;
                     }
+                    // 展馆聊天消息
+                    case "WebcastExhibitionChatMessage":
+                    {
+                        var arg = Serializer.Deserialize<ExhibitionChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        OnExhibitionChatMessage?.Invoke(this,
+                            new RoomMessageEventArgs<ExhibitionChatMessage>(processName, arg));
+                        break;
+                    }
+                    /* 无关事件 */
                     case "WebcastRoomIntroMessage":
-                    case "WebcastResidentGuestMessage":
                     case "WebcastLowPcuGuideMessage":
+                    case "WebcastLowPcuGuideChatMessage":
                     case "WebcastRoomDataSyncMessage":
                     case "WebcastInRoomBannerMessage":
                     case "WebcastRoomStreamAdaptationMessage":
                     case "WebcastHotRoomMessage":
-                    {
-                        //不处理
-                        break;
-                    }
+                    case "WebcastRanklistHourEntranceMessage":
+                    case "WebcastGiftSortMessage":
+                    /* 未来可能需要处理的事件 */
+                    case "WebcastResidentGuestMessage": // 常驻嘉宾事件
+                    case "WebcastGiftEffectGameMessage": // 礼物特效小游戏事件
+                    case "WebcastChatLikeMessage": // 聊天点赞事件?
+                    case "WebcastGrowthTaskMessage": // 成长任务事件
+                    case "WebcastLotteryEventNewMessage": // 新抽奖事件
+                        break; //不处理
                     default:
                         Logger.LogInfo("未处理的消息类型:" + msg.Method);
                         break;
@@ -345,7 +364,7 @@ namespace BarrageGrab
             }
             catch (Exception ex)
             {
-                return;
+                Logger.LogError($"处理消息<{msg.Method}>时出错:" + ex.Message + "\n" + ex.StackTrace);
             }
         }
 

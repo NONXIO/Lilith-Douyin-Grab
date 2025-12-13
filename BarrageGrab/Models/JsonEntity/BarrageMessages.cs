@@ -389,29 +389,6 @@ namespace BarrageGrab.Models.JsonEntity
     }
 
     /// <summary>
-    /// 直播间统计消息
-    /// </summary>
-    public class UserSeqMsg : Msg
-    {
-        /// <summary>
-        /// 消息类型
-        /// </summary>
-        [JsonProperty("_type")] public string MsgType = "stats";
-
-        /// <summary>
-        /// 当前直播间用户数量
-        /// </summary>
-        [JsonProperty("online_count")]
-        public long OnlineUserCount { get; set; }
-
-        /// <summary>
-        /// 累计直播间用户数量
-        /// </summary>
-        [JsonProperty("total_viewed")]
-        public long TotalUserCount { get; set; }
-    }
-
-    /// <summary>
     /// 粉丝团消息
     /// </summary>
     public class FansclubMsg : Msg
@@ -517,17 +494,32 @@ namespace BarrageGrab.Models.JsonEntity
         public ShareType ShareType { get; set; }
     }
 
-    public class RoomStatsMsg : Msg
+    public class OnlineStatsMsg : Msg
     {
+        /// <summary>
+        /// 消息类型
+        /// </summary>
+        [JsonProperty("_type")] public string MsgType = "online";
+
+        /// <summary>
+        ///  在线观众
+        /// </summary>
+        [JsonProperty("online")]
+        public long Online { get; set; }
+    }
+
+    public class OnlineViewStatsMsg : OnlineStatsMsg
+    {
+        /// <summary>
+        /// 消息类型
+        /// </summary>
+        [JsonProperty("_type")] public string MsgType = "online_view";
+
         /// <summary>
         ///  显示数值
         /// </summary>
-        [JsonProperty("display")]
-        public long DisplayValue { get; set; }
-
-        [JsonProperty("incremental")] public bool Incremental { get; set; }
-
-        [JsonProperty("total")] public long Total { get; set; }
+        [JsonProperty("viewed")]
+        public long Viewed { get; set; }
     }
 
     /// <summary>
@@ -535,6 +527,10 @@ namespace BarrageGrab.Models.JsonEntity
     /// </summary>
     public class FollowMsg : Msg
     {
+        /// <summary>
+        /// 消息类型
+        /// </summary>
+        [JsonProperty("_type")] public string MsgType = "follow";
     }
 
     /// <summary>
