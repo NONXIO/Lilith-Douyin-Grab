@@ -304,8 +304,9 @@ namespace BarrageGrab
                     case "WebcastExhibitionChatMessage":
                     {
                         var arg = Serializer.Deserialize<ExhibitionChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                        Logger.LogInfo("收到展馆聊天消息:\n" + new RoomMessageEventArgs<ExhibitionChatMessage>(processName, arg)
-                            .Message.ToJson());
+                        var message = new RoomMessageEventArgs<ExhibitionChatMessage>(processName, arg).Message;
+                        AppRuntime.DanmakuManager.ReportEvent(message.Common.roomId, message.Common.Method,
+                            message.ToJson(), "展馆聊天消息");
                         break;
                     }
                     /* 无关事件 */

@@ -349,9 +349,6 @@ namespace BarrageGrab.Server
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
                 AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
-            }else if (msg.Content.IsNullOrEmpty())
-            {
-                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "粉丝团空值事件");
             }
 
             AttachRoomInfo(enty);
