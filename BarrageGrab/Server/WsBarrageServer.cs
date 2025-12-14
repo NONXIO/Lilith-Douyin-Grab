@@ -164,8 +164,8 @@ namespace BarrageGrab.Server
                 Level = data.Level,
                 PayLevel = (int)(data.payGrade?.Level ?? -1),
                 Nickname = data.Nickname ?? "用户" + data.displayId,
-                HeadImgUrl = data.avatarThumb?.urlLists?.FirstOrDefault() ?? "",
-                SecUid = data.sec_uid,
+                HeadImgUrl = data.avatarThumb?.urlList?.FirstOrDefault() ?? "",
+                SecUid = data.Sec_uid,
                 FollowerCount = data.followInfo?.followerCount ?? -1,
                 FollowingCount = data.followInfo?.followingCount ?? -1,
                 FollowStatus = data.followInfo?.followStatus ?? -1,
@@ -192,8 +192,8 @@ namespace BarrageGrab.Server
                     {
                         user.StarGuard = new StarGuardInfo
                         {
-                            Level = (int)badge.content.Level,
-                            ClubName = badge.content.Name
+                            Level = (int)badge.Content.Level,
+                            ClubName = badge.Content.Name
                         };
                     }
                 }
@@ -342,7 +342,7 @@ namespace BarrageGrab.Server
             if (!CheckRoomId(msg.Common.roomId)) return;
             var enty = CreateMsg<FansclubMsg>(msg);
             enty.Content = msg.Content;
-            enty.Type = (FansclubType)msg.Type;
+            enty.Type = (FansclubType)msg.Action;
             enty.Level = enty.User.FansClub.Level;
             var msgType = PackMsgType.粉丝团消息;
 
@@ -441,7 +441,7 @@ namespace BarrageGrab.Server
             enty.GiftId = msg.giftId;
             enty.GiftName = msg.Gift.Name;
             enty.Combo = msg.Gift.Combo;
-            enty.ImgUrl = msg.Gift.Image?.urlLists?.FirstOrDefault() ?? "";
+            enty.ImgUrl = msg.Gift.Image?.urlList?.FirstOrDefault() ?? "";
             enty.ToUser = GetUser(msg.toUser);
 
             if (enty.ToUser != null)
@@ -556,7 +556,7 @@ namespace BarrageGrab.Server
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
             var enty = CreateMsg<VipEmojiMsg>(msg);
-            enty.EmojiUrl = msg.emojiContent.Pieces.First().imageValue.image.urlLists.First();
+            enty.EmojiUrl = msg.emojiContent.Pieces.First().imageValue.Image.urlList.First();
             enty.Content = $"[会员表情]";
             AttachRoomInfo(enty);
             Broadcast(new BarrageMsgPack(enty.ToJson(), PackMsgType.会员表情, e.Process));
@@ -597,9 +597,10 @@ namespace BarrageGrab.Server
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-            var enty = CreateMsg<OnlineStatsMsg>(msg);
-            enty.Online = msg.displayValue;
-            enty.Content = msg.displayLong;
+            var enty = CreateMsg<OnlineViewStatsMsg>(msg);
+            enty.Online = msg.displaValue;
+            enty.Content = msg.Display;
+            enty.Viewed = msg.Total;
             var msgType = PackMsgType.房间数据;
             AttachRoomInfo(enty);
             Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
@@ -612,10 +613,10 @@ namespace BarrageGrab.Server
             if (!CheckRoomId(msg.Common.roomId)) return;
 
             var enty = CreateMsg<RoomRankMsg>(msg);
-            enty.Ranks = msg.ranks.Select(r => new RoomRank
+            enty.Ranks = msg.Ranks.Select(r => new RoomRank
             {
-                User = GetUser(r.user),
-                ScoreStr = long.TryParse(r.scoreStr, out var s) ? s : 0
+                User = GetUser(r.User),
+                ScoreStr = long.TryParse(r.Score, out var s) ? s : 0
             }).ToList();
 
             enty.Content = $"直播间排行榜更新: {enty.Ranks.Count}人";

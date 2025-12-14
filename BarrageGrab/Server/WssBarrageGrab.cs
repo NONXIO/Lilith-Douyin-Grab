@@ -90,19 +90,9 @@ namespace BarrageGrab
         public event EventHandler<RoomMessageEventArgs<RoomRankMessage>> OnRoomRankMessage;
 
         /// <summary>
-        /// 活动红心
-        /// </summary>
-        public event EventHandler<RoomMessageEventArgs<ActivityEmojiGroupsMessage>> OnActivityEmojiGroupsMessage;
-
-        /// <summary>
         /// 表情消息
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<EmojiChatMessage>> OnEmojiChatMessage;
-
-        /// <summary>
-        /// 抽奖消息
-        /// </summary>
-        public event EventHandler<RoomMessageEventArgs<LotteryEventMessage>> OnLotteryEventMessage;
 
         /// <summary>
         /// 语音消息
@@ -113,11 +103,6 @@ namespace BarrageGrab
         /// 房间消息
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<RoomMessage>> OnRoomMessage;
-
-        /// <summary>
-        /// 展馆聊天消息
-        /// </summary>
-        public event EventHandler<RoomMessageEventArgs<ExhibitionChatMessage>> OnExhibitionChatMessage;
 
         public void Start()
         {
@@ -292,29 +277,12 @@ namespace BarrageGrab
                             new RoomMessageEventArgs<RoomRankMessage>(processName, arg));
                         break;
                     }
-                    //活动红心
-                    case "WebcastActivityEmojiGroupsMessage":
-                    {
-                        var arg = Serializer.Deserialize<ActivityEmojiGroupsMessage>(
-                            new ReadOnlyMemory<byte>(msg.Payload));
-                        OnActivityEmojiGroupsMessage?.Invoke(this,
-                            new RoomMessageEventArgs<ActivityEmojiGroupsMessage>(processName, arg));
-                        break;
-                    }
                     //表情消息
                     case "WebcastEmojiChatMessage":
                     {
                         var arg = Serializer.Deserialize<EmojiChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
                         OnEmojiChatMessage?.Invoke(this,
                             new RoomMessageEventArgs<EmojiChatMessage>(processName, arg));
-                        break;
-                    }
-                    //抽奖消息
-                    case "WebcastLotteryEventMessage":
-                    {
-                        var arg = Serializer.Deserialize<LotteryEventMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                        OnLotteryEventMessage?.Invoke(this,
-                            new RoomMessageEventArgs<LotteryEventMessage>(processName, arg));
                         break;
                     }
                     //语音消息
@@ -336,8 +304,8 @@ namespace BarrageGrab
                     case "WebcastExhibitionChatMessage":
                     {
                         var arg = Serializer.Deserialize<ExhibitionChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                        OnExhibitionChatMessage?.Invoke(this,
-                            new RoomMessageEventArgs<ExhibitionChatMessage>(processName, arg));
+                        Logger.LogInfo("收到展馆聊天消息:\n" + new RoomMessageEventArgs<ExhibitionChatMessage>(processName, arg)
+                            .Message.ToJson());
                         break;
                     }
                     /* 无关事件 */
@@ -356,6 +324,8 @@ namespace BarrageGrab
                     case "WebcastChatLikeMessage": // 聊天点赞事件?
                     case "WebcastGrowthTaskMessage": // 成长任务事件
                     case "WebcastLotteryEventNewMessage": // 新抽奖事件
+                    case "WebcastLotteryEventMessage": // 新抽奖事件
+                    case "WebcastActivityEmojiGroupsMessage": // 活动表情包消息
                         break; //不处理
                     default:
                         Logger.LogInfo("未处理的消息类型:" + msg.Method);
