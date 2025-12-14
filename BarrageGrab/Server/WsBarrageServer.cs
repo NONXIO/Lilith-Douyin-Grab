@@ -349,6 +349,9 @@ namespace BarrageGrab.Server
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
                 AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
+            }else if (msg.Content.IsNullOrEmpty())
+            {
+                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "粉丝团空值事件");
             }
 
             AttachRoomInfo(enty);
@@ -835,12 +838,9 @@ namespace BarrageGrab.Server
         public void Broadcast(BarrageMsgPack pack)
         {
             if (pack == null) return;
-            if (AppSetting.Current.PushFilter.Any() &&
-                !AppSetting.Current.PushFilter.Contains(pack.Type.GetHashCode())) return;
             foreach (var item in socketList)
             {
                 var client = item.Value;
-                // 只向已认证的客户端发送消息
                 if (client.IsAuthenticated && client.Socket.IsAvailable)
                 {
                     client.Socket.Send(pack.ToJson());

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeviceId;
@@ -75,7 +76,7 @@ namespace BarrageGrab.Cloud
             return _roomId == roomId;
         }
 
-        public async void ReportEvent(long room_id, string eventName, object body, string note = null)
+        public async void ReportEvent(long roomId, string eventName, object body, string note = null)
         {
             Logger.LogWarn($@"报告事件<{eventName}> {note}");
             try
@@ -83,7 +84,7 @@ namespace BarrageGrab.Cloud
                 await _client.From<EventLog>().Insert(new EventLog
                 {
                     EventName = eventName,
-                    RoomId = room_id,
+                    RoomId = roomId,
                     Body = body,
                     Timestamp = DateTime.Now,
                     Note = note

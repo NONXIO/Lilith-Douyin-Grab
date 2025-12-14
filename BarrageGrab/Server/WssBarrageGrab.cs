@@ -318,7 +318,12 @@ namespace BarrageGrab
                     case "WebcastHotRoomMessage":
                     case "WebcastRanklistHourEntranceMessage":
                     case "WebcastGiftSortMessage":
+                    case "WebcastInRoomBannerRefreshMessage":
+                    case "WebcastPrivilegeScreenChatMessage":
+                    case "WebcastBindingGiftMessage":
+                    case "WebcastAssetEffectUtilMessage":
                     /* 未来可能需要处理的事件 */
+                    case "WebcastHotChatMessage":
                     case "WebcastResidentGuestMessage": // 常驻嘉宾事件
                     case "WebcastGiftEffectGameMessage": // 礼物特效小游戏事件
                     case "WebcastChatLikeMessage": // 聊天点赞事件?
