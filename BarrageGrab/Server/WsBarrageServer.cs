@@ -214,7 +214,7 @@ namespace BarrageGrab.Server
         }
 
         //创建消息对象
-        private T CreateMsg<T>(dynamic msg) where T : Msg, new()
+        private T CreateMsg<T>(dynamic msg, User user = null) where T : Msg, new()
         {
             var roomid = msg.Common.roomId.ToString();
             RoomInfo roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
@@ -225,7 +225,7 @@ namespace BarrageGrab.Server
                 MsgId = msg.Common?.msgId,
                 RoomId = roomid,
                 WebRoomId = roomInfo?.WebRoomId ?? "",
-                User = hasUser ? GetUser(msg.User) : null,
+                User = hasUser ? GetUser(msg.User) : user
             };
             //判断是否是直播间管理员
             if (enty.User != null && roomInfo != null && roomInfo.AdminUserIds.Any())
@@ -641,7 +641,7 @@ namespace BarrageGrab.Server
             {
                 if (displayText.Pieces != null && displayText.Pieces.Count > 2)
                 {
-                    enty = CreateMsg<VipBuyMsg>(msg);
+                    enty = CreateMsg<VipBuyMsg>(msg, displayText.Pieces[0].userValue.User);
                     enty.Action = displayText.Pieces[1].stringValue;
                     enty.Unit = displayText.Pieces[2].stringValue;
                     enty.IsAnnual = enty.Unit.Equals("年度", StringComparison.CurrentCultureIgnoreCase);
