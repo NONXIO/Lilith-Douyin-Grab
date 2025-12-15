@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeviceId;
@@ -55,7 +54,7 @@ namespace BarrageGrab.Cloud
             _licenceBroadcast = _licenceChannel.Register<LicenceShutdownBroadcast>();
             _licenceBroadcast.AddBroadcastEventHandler((sender, broadcast) =>
             {
-                if (broadcast?.Event == "shutdown") OnLicenceShutdown();
+                if (broadcast?.Event == "shutdown") OnLicenceShutdown(broadcast.Payload?["message"]?.ToString());
             });
             _licenceChannel.Subscribe();
             Logger.LogInfo("Danmaku云服务连接成功");
@@ -96,15 +95,16 @@ namespace BarrageGrab.Cloud
             }
         }
 
-        private void OnLicenceShutdown()
+        private void OnLicenceShutdown(string reason = null)
         {
             Logger.LogError("未授权，程序即将退出");
             MessageBox.Show(
-                @"未授权",
+                $@"原因: {reason ?? "授权已被终止，程序即将退出"}",
                 @"未授权",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning
             );
+            AppRuntime.WsServer.Dispose();
             Environment.Exit(0);
         }
 

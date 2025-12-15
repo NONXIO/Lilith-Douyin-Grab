@@ -142,8 +142,6 @@ namespace BarrageGrab.Server
         //判断Rommid是否符合拦截规则
         internal bool CheckRoomId(long roomid)
         {
-            //TODO： Remove it when in production
-            return true;
             var webrid = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid.ToString());
             if (webrid.IsNullOrWhiteSpace()) return true;
             if (webrid == "未知") return true;
@@ -242,76 +240,6 @@ namespace BarrageGrab.Server
             return enty;
         }
 
-        //打印消息        
-        private void PrintMsg(Msg msg, PackMsgType barType)
-        {
-            return;
-            var rinfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
-            var roomName = rinfo?.Owner?.Nickname ??
-                           (msg.WebRoomId.IsNullOrWhiteSpace() ? msg.RoomId.ToString() : msg.WebRoomId);
-            var text = $"[{roomName}][{barType}]";
-            if (msg.User != null)
-            {
-                if (msg.User.IsAnchor)
-                {
-                    text += "[主播]";
-                }
-                else if (msg.User.IsAdmin)
-                {
-                    text += "[管理员]";
-                }
-
-                if (msg.User.IsVip)
-                {
-                    text += "[会员]";
-                }
-
-                if (msg.User.StarGuard != null)
-                {
-                    text += "[星守护]";
-                }
-
-                if (msg.User.FansClub.Level > 0)
-                {
-                    text += $"[粉丝团|Lv.{msg.User.FansClub.Level}]";
-                }
-
-                text += $"[{msg.User?.GenderToString()}]";
-            }
-
-            ConsoleColor color = AppSetting.Current.ColorMap[barType].Item1;
-            var append = msg.Content;
-            switch (barType)
-            {
-                case PackMsgType.弹幕消息: append = $"{msg?.User?.Nickname}: {msg.Content}"; break;
-                case PackMsgType.下播: append = $"直播已结束"; break;
-            }
-
-            text += append;
-            if (AppSetting.Current.BarrageLog)
-            {
-                Logger.LogBarrage(barType, msg);
-            }
-
-            if (!Appsetting.PrintBarrage) return;
-            if (AppSetting.Current.PrintFilter.Any() &&
-                !AppSetting.Current.PrintFilter.Contains(barType.GetHashCode())) return;
-            OnPrint?.Invoke(this, new PrintEventArgs()
-            {
-                Color = color,
-                Message = text,
-                MsgType = barType
-            });
-            if (++printCount > 10000)
-            {
-                Console.Clear();
-                Logger.PrintColor("控制台已清理");
-                printCount = 0;
-            }
-
-            Logger.LogDebug(text);
-        }
-
         //附加房间信息
         private void AttachRoomInfo(Msg msg)
         {
@@ -352,7 +280,6 @@ namespace BarrageGrab.Server
             }
 
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
             Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
         }
 
@@ -451,7 +378,6 @@ namespace BarrageGrab.Server
 
             var msgType = PackMsgType.礼物消息;
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.礼物消息, e.Process);
             Broadcast(pack);
         }
@@ -488,7 +414,6 @@ namespace BarrageGrab.Server
 
             var msgType = PackMsgType.直播间分享;
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
 
             //shareTarget: (112:好友),(1微信)(2朋友圈)(3微博)(5:qq)(4:qq空间),shareType: 1            
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
@@ -527,7 +452,6 @@ namespace BarrageGrab.Server
 
             var msgType = PackMsgType.点赞消息;
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
         }
@@ -541,7 +465,6 @@ namespace BarrageGrab.Server
             enty.Content = msg.Content;
             var msgType = PackMsgType.弹幕消息;
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
             var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
@@ -582,7 +505,6 @@ namespace BarrageGrab.Server
 
                 var msgType = PackMsgType.下播;
                 AttachRoomInfo(enty);
-                PrintMsg(enty, msgType);
                 pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.下播, e.Process);
             }
 
@@ -623,7 +545,6 @@ namespace BarrageGrab.Server
 
             var msgType = PackMsgType.房间排行;
             AttachRoomInfo(enty);
-            PrintMsg(enty, msgType);
             Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
         }
 

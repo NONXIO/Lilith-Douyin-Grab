@@ -163,7 +163,7 @@ namespace BarrageGrab
         /// <summary>
         /// 控制轮询间隔
         /// </summary>
-        public int PollingInterval { get; private set; } = 1000;
+        public int PollingInterval { get; private set; } = 3000;
 
         /// <summary>
         /// 禁用直播页面脚本缓存

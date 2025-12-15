@@ -95,11 +95,6 @@ namespace BarrageGrab
         public event EventHandler<RoomMessageEventArgs<EmojiChatMessage>> OnEmojiChatMessage;
 
         /// <summary>
-        /// 语音消息
-        /// </summary>
-        public event EventHandler<RoomMessageEventArgs<AudioChatMessage>> OnAudioChatMessage;
-
-        /// <summary>
         /// 房间消息
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<RoomMessage>> OnRoomMessage;
@@ -177,9 +172,9 @@ namespace BarrageGrab
         private void DoMessage(Message msg, string processName)
         {
             List<long> msgIdList;
-            if (msgDic.ContainsKey(msg.Method))
+            if (msgDic.TryGetValue(msg.Method, out var value))
             {
-                msgIdList = msgDic[msg.Method];
+                msgIdList = value;
             }
             else
             {
@@ -289,8 +284,9 @@ namespace BarrageGrab
                     case "WebcastAudioChatMessage":
                     {
                         var arg = Serializer.Deserialize<AudioChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
-                        OnAudioChatMessage?.Invoke(this,
-                            new RoomMessageEventArgs<AudioChatMessage>(processName, arg));
+                        var message = new RoomMessageEventArgs<AudioChatMessage>(processName, arg).Message;
+                        AppRuntime.DanmakuManager.ReportEvent(message.Common.roomId, message.Common.Method,
+                            message.ToJson(), "语音消息");
                         break;
                     }
                     // 房间通知消息，包含 会员开通信息

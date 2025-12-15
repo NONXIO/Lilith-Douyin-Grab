@@ -21,13 +21,18 @@ namespace BarrageGrab
             if (Debugger.IsAttached) throw new DanmakuException("内部错误,请使用Danmaku启动此后端服务");
             if (!mutex.WaitOne(TimeSpan.Zero, true))
             {
-                Console.WriteLine(@"另一个实例已在运行。");
-                Console.ReadKey();
+                Logger.LogFatal(@"另一个实例已在运行");
+                MessageBox.Show(@"另一个实例已在运行", @"程序初始化错误", MessageBoxButtons.OK);
                 return;
             }
 
             // 检查访问密钥以及房间
-            if (args.Length != 2) throw new DanmakuException("参数错误,请使用Danmaku启动此后端服务");
+            if (args.Length != 2)
+            {
+                Logger.LogError("参数错误,请使用Danmaku启动此后端服务");
+                MessageBox.Show(@"参数错误,请使用Danmaku启动此后端服务", @"程序初始化错误", MessageBoxButtons.OK);
+                return;
+            }
 
             SetTitle("启动中...");
             AppRuntime.PreInit(args);
@@ -47,14 +52,10 @@ namespace BarrageGrab
 
             // 如果使用窗体模式，使用 Application.Run 启动消息循环
             if (AppSetting.Current.ShowWindow && !exited)
-            {
                 Application.Run();
-            }
             else
-            {
                 // 控制台模式，使用传统的循环等待
                 while (!exited) Thread.Sleep(500);
-            }
 
             if (!AppRuntime.WsServer.IsDisposed) OnClose();
             WinApi.SetConsoleCtrlHandler(controlCtr, false); //反注册捕获控制台关闭            
@@ -65,15 +66,13 @@ namespace BarrageGrab
             AppRuntime.Init();
             LiveCompanHelper.SwitchSetup();
             WinApi.SetConsoleCtrlHandler(controlCtr, true); //捕获控制台关闭
-            // WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
-
+            WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
             // 如果启用窗口显示，则创建窗体（但不显示，通过托盘图标显示）
             if (AppSetting.Current.ShowWindow)
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 mainForm = new FormView();
-                // 不调用 Show()，窗体将通过托盘图标显示
             }
 
             AppRuntime.DisplayConsole(!AppSetting.Current.HideConsole); //控制控制台可见
@@ -82,12 +81,9 @@ namespace BarrageGrab
             {
                 AppRuntime.DanmakuManager.Destroy();
                 exited = true;
-
                 // 如果有窗体，关闭窗体
                 if (mainForm != null && !mainForm.IsDisposed)
-                {
-                    mainForm.Invoke(new Action(() => Application.Exit()));
-                }
+                    mainForm.Invoke(new Action(Application.Exit));
             };
             AppRuntime.WsServer.StartListen(); //启动WS以及代理服务
         }
@@ -109,10 +105,10 @@ namespace BarrageGrab
             {
                 case 0: //Ctrl+C关闭
                 case 2:
+                    Logger.LogInfo("捕获到控制台关闭请求，正在关闭服务...");
                     OnClose();
                     break;
             }
-
             return false;
         }
 

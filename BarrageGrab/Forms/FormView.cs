@@ -103,17 +103,17 @@ namespace BarrageGrab
             CheckBox cbx = sender as CheckBox;
             if (cbx == null) return;
             var selected = GetCheckedBarTypes((FlowLayoutPanel)cbx.Parent);
-            if (cbx.Parent.Parent == this.tabPage_Console)
+            if (cbx.Parent.Parent == tabPage_Console)
             {
                 AppSetting.Current.PrintFilter = selected;
             }
 
-            if (cbx.Parent.Parent == this.tabPage_Ws)
+            if (cbx.Parent.Parent == tabPage_Ws)
             {
                 AppSetting.Current.PushFilter = selected;
             }
 
-            if (cbx.Parent.Parent == this.tabPage_Log)
+            if (cbx.Parent.Parent == tabPage_Log)
             {
                 AppSetting.Current.LogFilter = selected;
             }
