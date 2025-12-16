@@ -7,18 +7,13 @@ using System.Runtime.InteropServices;
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
 [assembly: AssemblyTitle("Danmaku 后端")]
-[assembly: AssemblyDescription("基于系统代理抓包打造的抖音弹幕服务推送程序，可抓取浏览器直播间，直播伴侣，抖音客户端，的各种弹幕消息。这也是一个对开发者友好的弹幕推送器")]
+[assembly: AssemblyDescription("Lilith 抖音弹幕抓取器")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Nonxio Studio")]
 [assembly: AssemblyProduct("DanmakuBackend")]
 [assembly: AssemblyCopyright("Copyright © 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-
-// 将 ComVisible 设置为 false 会使此程序集中的类型
-//对 COM 组件不可见。如果需要从 COM 访问此程序集中的类型
-//请将此类型的 ComVisible 特性设置为 true。
-[assembly: ComVisible(false)]
 
 // 如果此项目向 COM 公开，则下列 GUID 用于类型库的 ID
 [assembly: Guid("6c61b41b-7aba-4f37-87c6-92559fc8cd6a")]
@@ -33,6 +28,6 @@ using System.Runtime.InteropServices;
 //可以指定所有这些值，也可以使用“生成号”和“修订号”的默认值
 //通过使用 "*"，如下所示:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.7.9")]
-[assembly: AssemblyFileVersion("2.7.9")]
+[assembly: AssemblyVersion("3.0.0")]
+[assembly: AssemblyFileVersion("3.0.0")]
 [assembly: NeutralResourcesLanguage("zh-CN")]

@@ -283,6 +283,14 @@ namespace BarrageGrab.Proxy
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
                 Logger.LogInfo($"[直播间 {roomid}]订阅到新的弹幕流地址");
+                
+                //触发连接事件
+                 base.FireRoomStatusChange(new RoomStatusEventArgs()
+                 {
+                     RoomId = roomid,
+                     IsConnected = true,
+                     Msg = $"已连接 {roomid} 的直播间"
+                 });
             }
 
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
@@ -678,6 +686,20 @@ namespace BarrageGrab.Proxy
             if (messageData.Count > 0)
             {
                 // 没有收到 WebSocket 帧的结束帧，抛出异常或者进行处理
+            }
+        
+            //判断是否连接断开
+            if (e.Count == 0)
+            {
+                var uri = args.HttpClient.Request.RequestUri;
+                var roomid = uri.GetQueryParam("room_id");
+                Logger.LogInfo($"直播间连接已断开: {roomid}");
+                base.FireRoomStatusChange(new RoomStatusEventArgs()
+                {
+                    RoomId = roomid,
+                    IsConnected = false,
+                    Msg = "直播间连接已断开"
+                });
             }
         }
 

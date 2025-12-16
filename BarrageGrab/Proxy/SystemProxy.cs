@@ -25,9 +25,14 @@ namespace BarrageGrab.Proxy
         public event EventHandler<HttpResponseEventArgs> OnFetchResponse;
 
         /// <summary>
-        /// 代理切换时触�?
+        /// 代理切换时触发
         /// </summary>
         public event EventHandler<SystemProxyChangeEventArgs> OnProxyStatus;
+
+        /// <summary>
+        /// 房间状态变更
+        /// </summary>
+        public event EventHandler<RoomStatusEventArgs> OnRoomStatusChange;
 
         /// <summary>
         /// 代理端口
@@ -80,6 +85,15 @@ namespace BarrageGrab.Proxy
         protected void FireOnFetchResponse(HttpResponseEventArgs args)
         {
             OnFetchResponse?.Invoke(this, args);
+        }
+
+        /// <summary>
+        /// 触发房间状态变更事件
+        /// </summary>
+        /// <param name="args"></param>
+        protected void FireRoomStatusChange(RoomStatusEventArgs args)
+        {
+            OnRoomStatusChange?.Invoke(this, args);
         }
 
         /// <summary>

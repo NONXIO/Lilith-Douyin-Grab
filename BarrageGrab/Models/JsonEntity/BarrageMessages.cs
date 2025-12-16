@@ -24,7 +24,9 @@ namespace BarrageGrab.Models.JsonEntity
         [Description("会员开通")] 会员开通 = 11,
         [Description("房间数据")] 房间数据 = 12,
         [Description("房间排行")] 房间排行 = 13,
-        [Description("焦点")] 焦点事件 = 14
+        [Description("焦点")] 焦点事件 = 14,
+        [Description("连接")] 直播间连接 = 15,
+        [Description("断开")] 直播间断开 = 16
     }
 
     /// <summary>

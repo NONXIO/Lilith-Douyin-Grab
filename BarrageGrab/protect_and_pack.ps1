@@ -47,11 +47,10 @@ Write-Host "Project file created at $CrprojPath" -ForegroundColor Green
 # Check and Run ConfuserEx
 if (Test-Path $ConfuserCliPath) {
     Write-Host "Running ConfuserEx..." -ForegroundColor Cyan
-    & $ConfuserCliPath $CrprojPath > "confuser_log_3.txt" 2>&1
+    & $ConfuserCliPath $CrprojPath > "confuser_log.txt" 2>&1
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Protection and Packing Complete!" -ForegroundColor Green
-        
         # Copy App.config to output
         $ConfigName = "$MainExe.config"
         $SourceConfig = Join-Path $BinDir $ConfigName
@@ -67,7 +66,6 @@ if (Test-Path $ConfuserCliPath) {
         # Cleanup PDB files
         Get-ChildItem -Path $OutputDir -Filter "*.pdb" | Remove-Item -Force
         Write-Host "Cleaned up PDB files." -ForegroundColor Green
-        
         Write-Host "Output is available at: $OutputDir\$MainExe" -ForegroundColor Green
     }
     else {

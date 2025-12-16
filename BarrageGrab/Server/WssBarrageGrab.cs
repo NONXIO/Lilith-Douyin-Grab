@@ -27,6 +27,12 @@ namespace BarrageGrab
         {
             proxy.OnWebSocketData += Proxy_OnWebSocketData;
             proxy.OnFetchResponse += Proxy_OnFetchResponse;
+            proxy.OnRoomStatusChange += Proxy_OnRoomStatusChange;
+        }
+
+        private void Proxy_OnRoomStatusChange(object sender, RoomStatusEventArgs e)
+        {
+            OnRoomStatusChange?.Invoke(this, e);
         }
 
         /// <summary>
@@ -98,6 +104,11 @@ namespace BarrageGrab
         /// 房间消息
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<RoomMessage>> OnRoomMessage;
+
+        /// <summary>
+        /// 房间状态变更
+        /// </summary>
+        public event EventHandler<RoomStatusEventArgs> OnRoomStatusChange;
 
         public void Start()
         {

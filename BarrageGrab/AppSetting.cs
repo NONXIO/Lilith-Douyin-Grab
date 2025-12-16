@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Drawing;
-using System.IO;
 using System.Linq;
-using BarrageGrab.Models.JsonEntity;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using static System.Configuration.ConfigurationManager;
 
@@ -12,63 +9,34 @@ namespace BarrageGrab
 {
     internal class AppSetting
     {
-        private static readonly AppSetting ins = new AppSetting();
-
-        /// <summary>
-        /// 弹幕颜色映射
-        /// </summary>
-        public Dictionary<PackMsgType, Tuple<ConsoleColor, Color>> ColorMap =
-            new Dictionary<PackMsgType, Tuple<ConsoleColor, Color>>
-            {
-                { PackMsgType.弹幕消息, Tuple.Create(ConsoleColor.White, Color.White) },
-                { PackMsgType.点赞消息, Tuple.Create(ConsoleColor.Cyan, Color.Cyan) },
-                { PackMsgType.进直播间, Tuple.Create(ConsoleColor.Green, Color.Green) },
-                { PackMsgType.关注消息, Tuple.Create(ConsoleColor.Yellow, Color.Yellow) },
-                { PackMsgType.礼物消息, Tuple.Create(ConsoleColor.Red, Color.Red) },
-                { PackMsgType.直播间统计, Tuple.Create(ConsoleColor.Magenta, Color.Magenta) },
-                { PackMsgType.粉丝团消息, Tuple.Create(ConsoleColor.Blue, Color.Blue) },
-                { PackMsgType.直播间分享, Tuple.Create(ConsoleColor.DarkBlue, Color.DarkBlue) },
-                { PackMsgType.下播, Tuple.Create(ConsoleColor.DarkCyan, Color.DarkCyan) }
-            };
-
-        public AppSetting()
+        private AppSetting()
         {
             try
             {
-                ProcessFilter = AppSettings["processFilter"].Trim().Split(',');
-                WsProt = int.Parse(AppSettings["wsListenPort"]);
-                PrintBarrage = AppSettings["printBarrage"].ToLower() == "true";
-                ProxyPort = int.Parse(AppSettings["proxyPort"]);
-                PrintFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
-                PushFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
-                LogFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
-                FilterHostName = bool.Parse(AppSettings["filterHostName"].Trim());
-                HostNameFilter = AppSettings["hostNameFilter"].Trim().Split(',')
+                ProcessFilter = (AppSettings["processFilter"] ?? "直播伴侣,douyin,chrome,firefox").Trim().Split(',');
+                WsProt = int.Parse(AppSettings["wsListenPort"] ?? "8880");
+                ProxyPort = int.Parse(AppSettings["proxyPort"] ?? "8123");
+                FilterHostName = bool.Parse((AppSettings["filterHostName"] ?? "true").Trim());
+                HostNameFilter = (AppSettings["hostNameFilter"] ?? "").Trim().Split(',')
                     .Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
-                UsedProxy = bool.Parse(AppSettings["sysProxy"].Trim());
-                ListenAny = bool.Parse(AppSettings["listenAny"].Trim());
-                UpstreamProxy = AppSettings["upstreamProxy"].Trim();
-                HideConsole = bool.Parse(AppSettings["hideConsole"].Trim());
-                BarrageLog = bool.Parse(AppSettings["barrageFileLog"].Trim());
-                ShowWindow = bool.Parse(AppSettings["showWindow"].Trim());
-                AutoPause = bool.Parse(AppSettings["autoPause"].Trim());
-                ForcePolling = bool.Parse(AppSettings["forcePolling"].Trim());
-                PollingInterval = int.Parse(AppSettings["pollingInterval"].Trim());
-                DisableLivePageScriptCache = bool.Parse(AppSettings["disableLivePageScriptCache"].Trim());
-                WebRoomIds = AppSettings["webRoomIds"].Trim().Split(',').Where(w => !string.IsNullOrWhiteSpace(w))
-                    .ToArray();
-                LiveCompanPath = AppSettings["liveCompanPath"].Trim();
-                LiveCompanHookSwitch = bool.Parse(AppSettings["liveCompanHookSwitch"].Trim());
-                ConfigFilter();
+                UsedProxy = bool.Parse((AppSettings["sysProxy"] ?? "true").Trim());
+                UpstreamProxy = (AppSettings["upstreamProxy"] ?? "").Trim();
+                ShowWindow = bool.Parse((AppSettings["showWindow"] ?? "false").Trim());
+                AutoPause = bool.Parse((AppSettings["autoPause"] ?? "true").Trim());
+                ForcePolling = bool.Parse((AppSettings["forcePolling"] ?? "false").Trim());
+                PollingInterval = int.Parse((AppSettings["pollingInterval"] ?? "3000").Trim());
+                DisableLivePageScriptCache = bool.Parse((AppSettings["disableLivePageScriptCache"] ?? "false").Trim());
+                LiveCompanPath = (AppSettings["liveCompanPath"] ?? "").Trim();
+                LiveCompanHookSwitch = bool.Parse((AppSettings["liveCompanHookSwitch"] ?? "false").Trim());
             }
             catch (Exception ex)
             {
-                Logger.PrintColor("配置文件读取失败,请检查配置文件是否正确");
+                Logger.LogError("配置文件读取失败,请检查配置文件是否正确");
                 throw ex;
             }
         }
 
-        public static AppSetting Current => ins;
+        public static AppSetting Current { get; } = new AppSetting();
 
         /// <summary>
         /// 使用系统代理
@@ -86,39 +54,9 @@ namespace BarrageGrab
         public int WsProt { get; set; } = 8880;
 
         /// <summary>
-        /// true:监听在0.0.0.0，接受任意Ip连接，false:监听在127.0.0.1，仅接受本机连接
-        /// </summary>
-        public bool ListenAny { get; set; } = false;
-
-        /// <summary>
-        /// 控制台打印消息开关
-        /// </summary>
-        public bool PrintBarrage { get; set; } = false;
-
-        /// <summary>
         /// 代理端口
         /// </summary>
         public int ProxyPort { get; private set; } = 8123;
-
-        /// <summary>
-        /// 控制台输出过滤器
-        /// </summary>
-        public int[] PrintFilter { get; set; } = { 1, 2, 3, 4, 5, 6, 7, 8 };
-
-        /// <summary>
-        /// 推送弹幕过滤器
-        /// </summary>
-        public int[] PushFilter { get; set; } = { 1, 2, 3, 4, 5, 6, 7, 8 };
-
-        /// <summary>
-        /// 弹幕日志过滤器
-        /// </summary>
-        public int[] LogFilter { get; set; } = { 1, 2, 3, 4, 5, 6, 7, 8 };
-
-        /// <summary>
-        /// 监听的房间号
-        /// </summary>
-        public string[] WebRoomIds { get; internal set; } = new string[0];
 
         /// <summary>
         /// 使用域名过滤
@@ -128,22 +66,12 @@ namespace BarrageGrab
         /// <summary>
         /// 域名白名单列表
         /// </summary>
-        public string[] HostNameFilter { get; private set; } = new string[0];
+        public string[] HostNameFilter { get; private set; } = Array.Empty<string>();
 
         /// <summary>
         /// 上游代理地址
         /// </summary>
-        public string UpstreamProxy { get; set; }
-
-        /// <summary>
-        /// 隐藏控制台
-        /// </summary>
-        public bool HideConsole { get; set; }
-
-        /// <summary>
-        /// 弹幕日志
-        /// </summary>
-        public bool BarrageLog { get; set; } = false;
+        public string UpstreamProxy { get; set; } = string.Empty;
 
         /// <summary>
         /// 显示窗体
@@ -173,7 +101,7 @@ namespace BarrageGrab
         /// <summary>
         /// 直播伴侣文件位置
         /// </summary>
-        public string LiveCompanPath { get; set; } = "";
+        public string LiveCompanPath { get; set; } = string.Empty;
 
         /// <summary>
         /// hook直播伴侣代理开关
@@ -184,104 +112,113 @@ namespace BarrageGrab
         /// 从JSON文件加载配置
         /// </summary>
         /// <param name="jsonFilePath">JSON配置文件路径</param>
-        public void LoadFromJson(string jsonFilePath = null)
+        public void LoadFromJson(string jsonStr = null)
         {
-            if (jsonFilePath == null)
-                jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appConfig.json");
             try
             {
-                if (!File.Exists(jsonFilePath))
+                if (jsonStr.IsNullOrEmpty())
                 {
-                    Logger.LogError($"配置文件不存在: {jsonFilePath}");
+                    Logger.LogError($"配置文件为空");
                     return;
                 }
-
-                // 读取JSON文件内容（保留注释）
-                string jsonContent = File.ReadAllText(jsonFilePath);
-
-                // 解析JSON（Newtonsoft.Json支持JSONC格式，会自动忽略注释）
-                JObject config = JObject.Parse(jsonContent);
+                JObject config = JObject.Parse(jsonStr);
 
                 // 从JSON读取应用配置
                 var app = config["app"];
 
                 // 常规配置
-                var general = app["general"];
-                HideConsole = general["hideConsole"]?.Value<bool>() ?? false;
-                ShowWindow = general["showWindow"]?.Value<bool>() ?? false;
+                var general = app?["general"];
+                ShowWindow = general?["showWindow"]?.Value<bool>() ?? false;
 
                 // 网络配置
-                var network = app["network"];
-                var proxy = network["proxy"];
-                ProxyPort = proxy["port"]?.Value<int>() ?? 8827;
-                UsedProxy = proxy["enabled"]?.Value<bool>() ?? true;
-                UpstreamProxy = proxy["upstreamAddress"]?.Value<string>() ?? string.Empty;
+                var network = app?["network"];
+                var proxy = network?["proxy"];
+                ProxyPort = proxy?["port"]?.Value<int>() ?? 8827;
+                UsedProxy = proxy?["enabled"]?.Value<bool>() ?? true;
+                UpstreamProxy = proxy?["upstreamAddress"]?.Value<string>() ?? string.Empty;
 
-                var websocket = network["websocket"];
-                WsProt = websocket["listenPort"]?.Value<int>() ?? 8888;
-                ListenAny = websocket["listenAny"]?.Value<bool>() ?? true;
+                var websocket = network?["websocket"];
+                WsProt = websocket?["listenPort"]?.Value<int>() ?? 8888;
 
                 // 过滤配置
-                var filtering = app["filtering"];
-                var processFilterStr = filtering["processFilter"]?.Value<string>() ??
+                var filtering = app?["filtering"];
+                var processFilterStr = filtering?["processFilter"]?.Value<string>() ??
                                        "直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore";
                 ProcessFilter = processFilterStr.Split(',');
-                FilterHostName = filtering["hostNameEnabled"]?.Value<bool>() ?? true;
-                string hostNameFilterStr = filtering["hostNameList"]?.Value<string>() ?? string.Empty;
+                FilterHostName = filtering?["hostNameEnabled"]?.Value<bool>() ?? true;
+                string hostNameFilterStr = filtering?["hostNameList"]?.Value<string>() ?? string.Empty;
                 HostNameFilter = !string.IsNullOrWhiteSpace(hostNameFilterStr)
                     ? hostNameFilterStr.Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray()
                     : new string[0];
-                string webRoomIdsStr = filtering["webRoomIds"]?.Value<string>() ?? string.Empty;
-                WebRoomIds = !string.IsNullOrWhiteSpace(webRoomIdsStr)
-                    ? webRoomIdsStr.Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray()
-                    : new string[0];
+                string webRoomIdsStr = filtering?["webRoomIds"]?.Value<string>() ?? string.Empty;
 
                 // 弹幕配置
-                var barrage = app["barrage"];
-                PrintBarrage = barrage["printEnabled"]?.Value<bool>() ?? true;
-                BarrageLog = barrage["barrageFileLog"]?.Value<bool>() ?? false;
-                var polling = app["barrage"]["polling"];
-                ForcePolling = polling["enabled"]?.Value<bool>() ?? false;
-                PollingInterval = polling["interval"]?.Value<int>() ?? 3000;
-                DisableLivePageScriptCache = polling["disableScriptCache"]?.Value<bool>() ?? false;
-
-                // 设置默认过滤器
-                PrintFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
-                PushFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
-                LogFilter = Enum.GetValues(typeof(PackMsgType)).Cast<int>().Where(w => w > 0).ToArray();
-
-                string printFilterStr = barrage["printFilter"]?.Value<string>() ?? string.Empty;
-                string pushFilterStr = barrage["pushFilter"]?.Value<string>() ?? string.Empty;
-                string logFilterStr = barrage["logFilter"]?.Value<string>() ?? "1,2,4,5,6,7,8";
-
-                // 解析过滤器
-                if (!string.IsNullOrWhiteSpace(printFilterStr))
-                {
-                    PrintFilter = printFilterStr.Split(',').Select(x => int.Parse(x)).ToArray();
-                }
-
-                if (!string.IsNullOrWhiteSpace(pushFilterStr))
-                {
-                    PushFilter = pushFilterStr.Split(',').Select(x => int.Parse(x)).ToArray();
-                }
-
-                if (!string.IsNullOrWhiteSpace(logFilterStr))
-                {
-                    LogFilter = logFilterStr.Split(',').Select(x => int.Parse(x)).ToArray();
-                }
+                var barrage = app?["barrage"];
+                var polling = app?["barrage"]?["polling"];
+                ForcePolling = polling?["enabled"]?.Value<bool>() ?? false;
+                PollingInterval = polling?["interval"]?.Value<int>() ?? 3000;
+                DisableLivePageScriptCache = polling?["disableScriptCache"]?.Value<bool>() ?? false;
 
                 // 直播伴侣配置
-                var liveCompanion = app["liveCompanion"];
-                LiveCompanPath = liveCompanion["path"]?.Value<string>() ?? string.Empty;
-                LiveCompanHookSwitch = liveCompanion["hookEnabled"]?.Value<bool>() ?? false;
-                AutoPause = liveCompanion["autoPause"]?.Value<bool>() ?? true;
-
-                Logger.PrintColor("已从JSON配置文件加载设置");
+                var liveCompanion = app?["liveCompanion"];
+                LiveCompanPath = liveCompanion?["path"]?.Value<string>() ?? string.Empty;
+                LiveCompanHookSwitch = liveCompanion?["hookEnabled"]?.Value<bool>() ?? false;
+                AutoPause = liveCompanion?["autoPause"]?.Value<bool>() ?? true;
+                Logger.LogInfo("已从JSON配置文件加载设置");
             }
             catch (Exception ex)
             {
-                Logger.PrintColor($"从JSON加载配置失败: {ex.Message}，将尝试从App.config加载");
+                Logger.LogError($"JSON加载配置失败: {ex.Message}");
             }
+        }
+
+        public string SaveToJson()
+        {
+            var config = new
+            {
+                app = new
+                {
+                    general = new
+                    {
+                        showWindow = ShowWindow
+                    },
+                    network = new
+                    {
+                        proxy = new
+                        {
+                            port = ProxyPort,
+                            enabled = UsedProxy,
+                            upstreamAddress = UpstreamProxy
+                        },
+                        websocket = new
+                        {
+                            listenPort = WsProt,
+                        }
+                    },
+                    filtering = new
+                    {
+                        processFilter = string.Join(",", ProcessFilter),
+                        hostNameEnabled = FilterHostName,
+                        hostNameList = string.Join(",", HostNameFilter)
+                    },
+                    barrage = new
+                    {
+                        polling = new
+                        {
+                            enabled = ForcePolling,
+                            interval = PollingInterval,
+                            disableScriptCache = DisableLivePageScriptCache
+                        }
+                    },
+                    liveCompanion = new
+                    {
+                        path = LiveCompanPath,
+                        hookEnabled = LiveCompanHookSwitch,
+                        autoPause = AutoPause
+                    }
+                }
+            };
+            return JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = false });
         }
 
         /// <summary>
@@ -291,49 +228,15 @@ namespace BarrageGrab
         {
             if (string.IsNullOrWhiteSpace(value))
                 return false;
-
             value = value.ToLower().Trim();
-
             return value == "true" || value == "1" || value == "yes" || value == "y" || value == "on";
-        }
-
-        //各种过滤器设置
-        private void ConfigFilter()
-        {
-            var printFilter = AppSettings["printFilter"].Trim().ToLower();
-            var pushFilter = AppSettings["pushFilter"].Trim().ToLower();
-            var logFilter = AppSettings["logFilter"].Trim().ToLower();
-            if (!string.IsNullOrWhiteSpace(printFilter))
-            {
-                if (string.IsNullOrWhiteSpace(printFilter)) PrintFilter = new int[0];
-                else PrintFilter = printFilter.Split(',').Select(x => int.Parse(x)).ToArray();
-            }
-
-            if (!string.IsNullOrWhiteSpace(pushFilter))
-            {
-                if (string.IsNullOrWhiteSpace(pushFilter)) PushFilter = new int[0];
-                else PushFilter = pushFilter.Split(',').Select(x => int.Parse(x)).ToArray();
-            }
-
-            if (!string.IsNullOrWhiteSpace(logFilter))
-            {
-                if (string.IsNullOrWhiteSpace(logFilter)) LogFilter = new int[0];
-                else LogFilter = logFilter.Split(',').Select(x => int.Parse(x)).ToArray();
-            }
         }
 
         public void Save()
         {
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             config.AppSettings.Settings["wsListenPort"].Value = WsProt.ToString();
-            config.AppSettings.Settings["printBarrage"].Value = PrintBarrage.ToString().ToLower();
-            config.AppSettings.Settings["printFilter"].Value = string.Join("", PrintFilter);
-            config.AppSettings.Settings["pushFilter"].Value = string.Join("", PushFilter);
-            config.AppSettings.Settings["logFilter"].Value = string.Join("", LogFilter);
             config.AppSettings.Settings["upstreamProxy"].Value = UpstreamProxy;
-            config.AppSettings.Settings["listenAny"].Value = ListenAny.ToString().ToLower();
-            config.AppSettings.Settings["hideConsole"].Value = HideConsole.ToString().ToLower();
-            config.AppSettings.Settings["barrageFileLog"].Value = HideConsole.ToString().ToLower();
             config.Save(ConfigurationSaveMode.Modified);
             RefreshSection(config.AppSettings.SectionInformation.Name);
         }

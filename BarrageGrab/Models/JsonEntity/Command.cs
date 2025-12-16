@@ -17,7 +17,17 @@ namespace BarrageGrab.Models.JsonEntity
         /// <summary>
         /// 配置更改
         /// </summary>
-        Config = 2
+        Config = 2,
+
+        /// <summary>
+        /// 获取配置
+        /// </summary>
+        GetConfig = 101,
+
+        /// <summary>
+        /// 更新配置
+        /// </summary>
+        UpdateConfig = 102
     }
 
     public class Command

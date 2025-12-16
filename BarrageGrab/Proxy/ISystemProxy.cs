@@ -14,6 +14,11 @@ namespace BarrageGrab.Proxy
         event EventHandler<SystemProxyChangeEventArgs> OnProxyStatus;
 
         /// <summary>
+        /// 房间状态变更
+        /// </summary>
+        event EventHandler<RoomStatusEventArgs> OnRoomStatusChange;
+
+        /// <summary>
         /// Http上游代理地址
         /// </summary>
         string HttpUpstreamProxy { get; }

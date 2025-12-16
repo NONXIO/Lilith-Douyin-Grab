@@ -10,8 +10,10 @@ using System.Timers;
 using BarrageGrab.Models;
 using BarrageGrab.Models.JsonEntity;
 using BarrageGrab.Models.ProtoEntity;
+using BarrageGrab.Proxy.ProxyEventArgs;
 using Fleck;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using MemberMessage = BarrageGrab.Models.ProtoEntity.MemberMessage;
 
 namespace BarrageGrab.Server
@@ -61,6 +63,7 @@ namespace BarrageGrab.Server
             this.grab.OnRoomRankMessage += Grab_OnRoomRankMessage;
             this.grab.OnRoomMessage += Grab_OnRoomMessage;
             this.grab.OnEmojiChatMessage += Grab_OnEmojiMessage;
+            this.grab.OnRoomStatusChange += Grab_OnRoomStatusChange;
 
             this.socketServer = socket;
             //dieout.Start();
@@ -584,12 +587,21 @@ namespace BarrageGrab.Server
             }
         }
 
+        //直播间状态变更
+        private void Grab_OnRoomStatusChange(object sender, RoomStatusEventArgs e)
+        {
+            var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(e.RoomId);
+            if (roomInfo == null) return;
+            var type = e.IsConnected ? PackMsgType.直播间连接 : PackMsgType.直播间断开;
+            var json = JsonConvert.SerializeObject(roomInfo);
+            Broadcast(new BarrageMsgPack(json, type, Process.GetCurrentProcess().ProcessName));
+        }
+
         //监听用户连接
         private void Listen(IWebSocketConnection socket)
         {
             //客户端url
             string clientUrl = socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort;
-
             socket.OnOpen = () =>
             {
                 if (!socketList.TryGetValue(clientUrl, out var client))
@@ -651,6 +663,12 @@ namespace BarrageGrab.Server
                                 Environment.Exit(0);
                             }
 
+                            break;
+                        case CommandCode.GetConfig:
+                            HandleGetConfig(socket);
+                            break;
+                        case CommandCode.UpdateConfig:
+                            HandleUpdateConfig(socket, cmdPack.Data);
                             break;
                     }
                 }
@@ -784,6 +802,49 @@ namespace BarrageGrab.Server
             {
                 this.Dispose();
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// 处理获取配置请求
+        /// </summary>
+        private void HandleGetConfig(IWebSocketConnection socket)
+        {
+            var json = Appsetting.SaveToJson();
+            var response = new Command
+            {
+                Cmd = CommandCode.GetConfig,
+                Data = JObject.Parse(json) // Data expects object, JObject parses it structure-wise
+            };
+            socket.Send(JsonConvert.SerializeObject(response));
+        }
+
+        /// <summary>
+        /// 处理更新配置请求
+        /// </summary>
+        private void HandleUpdateConfig(IWebSocketConnection socket, object data)
+        {
+            try
+            {
+                var json = data.ToString();
+                Appsetting.LoadFromJson(json);
+                Appsetting.Save(); // Save to App.config if needed, but AppSetting.cs Save logic seems to only update specific fields ?
+                var response = new Command
+                {
+                    Cmd = CommandCode.UpdateConfig,
+                    Data = new { success = true, message = "配置已更新" }
+                };
+                socket.Send(JsonConvert.SerializeObject(response));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"更新配置失败: {ex.Message}");
+                var response = new Command
+                {
+                    Cmd = CommandCode.UpdateConfig,
+                    Data = new { success = false, message = $"更新失败: {ex.Message}" }
+                };
+                socket.Send(JsonConvert.SerializeObject(response));
             }
         }
 

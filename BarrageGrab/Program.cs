@@ -51,7 +51,7 @@ namespace BarrageGrab
             }
 
             // 如果使用窗体模式，使用 Application.Run 启动消息循环
-            if (AppSetting.Current.ShowWindow && !exited)
+            if (!exited)
                 Application.Run();
             else
                 // 控制台模式，使用传统的循环等待
@@ -68,20 +68,19 @@ namespace BarrageGrab
             WinApi.SetConsoleCtrlHandler(controlCtr, true); //捕获控制台关闭
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
             // 如果启用窗口显示，则创建窗体（但不显示，通过托盘图标显示）
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            mainForm = new FormView();
+            
             if (AppSetting.Current.ShowWindow)
             {
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-                mainForm = new FormView();
+                mainForm.Show();
             }
-
-            AppRuntime.DisplayConsole(!AppSetting.Current.HideConsole); //控制控制台可见
             AppRuntime.WsServer.Grab.Proxy.SetUpstreamProxy(AppSetting.Current.UpstreamProxy); //设置上游代理
             AppRuntime.WsServer.OnClose += (s, e) =>
             {
                 AppRuntime.DanmakuManager.Destroy();
                 exited = true;
-                // 如果有窗体，关闭窗体
                 if (mainForm != null && !mainForm.IsDisposed)
                     mainForm.Invoke(new Action(Application.Exit));
             };
