@@ -14,8 +14,8 @@ namespace DanmakuBackend
             try
             {
                 ProcessFilter = (AppSettings["processFilter"] ?? "直播伴侣,douyin,chrome,firefox").Trim().Split(',');
-                WsProt = int.Parse(AppSettings["wsListenPort"] ?? "8880");
-                ProxyPort = int.Parse(AppSettings["proxyPort"] ?? "8123");
+                WsProt = int.Parse(AppSettings["wsListenPort"] ?? "8801");
+                ProxyPort = int.Parse(AppSettings["proxyPort"] ?? "8800");
                 FilterHostName = bool.Parse((AppSettings["filterHostName"] ?? "true").Trim());
                 HostNameFilter = (AppSettings["hostNameFilter"] ?? "").Trim().Split(',')
                     .Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
@@ -115,6 +115,7 @@ namespace DanmakuBackend
                     Logger.LogError($"配置文件为空");
                     return;
                 }
+
                 JObject config = JObject.Parse(jsonStr);
                 // 从JSON读取应用配置
                 var app = config["app"];
