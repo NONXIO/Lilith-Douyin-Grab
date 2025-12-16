@@ -7,7 +7,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace BarrageGrab.Models.ProtoEntity
+namespace DanmakuBackend.Models.ProtoEntity
 {
 #pragma warning disable CS0612, CS0618, CS1591, CS3021, IDE0079, IDE1006, RCS1036, RCS1057, RCS1085, RCS1192
     [global::ProtoBuf.ProtoContract()]

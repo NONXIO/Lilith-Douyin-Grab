@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using BarrageGrab.Proxy.ProxyEventArgs;
+using DanmakuBackend.Proxy.ProxyEventArgs;
 
-namespace BarrageGrab.Proxy
+namespace DanmakuBackend.Proxy
 {
     public interface ISystemProxy : IDisposable
     {

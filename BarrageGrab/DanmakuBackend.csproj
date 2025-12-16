@@ -9,7 +9,7 @@
     <ProjectGuid>{A07BB1DA-D5C2-4EEA-9F3F-E42AADB9C1D6}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BarrageGrab</RootNamespace>
+    <RootNamespace>DanmakuBackend</RootNamespace>
     <AssemblyName>DanmakuBackend</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -303,32 +303,19 @@
     <Compile Include="Cloud\LicenceShutdownBroadcast.cs"/>
     <Compile Include="Cloud\OnlineClient.cs"/>
     <Compile Include="DanmakuException.cs"/>
+    <Compile Include="Models\BusinessExecption.cs"/>
     <Compile Include="Models\JsonEntity\BarrageMessages.cs"/>
     <Compile Include="Models\JsonEntity\Command.cs"/>
+    <Compile Include="Models\ProtoEntity\Messages.cs"/>
+    <Compile Include="Models\ProtoEntity\Wss.cs"/>
     <Compile Include="Models\RoomInfo.cs"/>
+    <Compile Include="Models\WebCastGift.cs"/>
     <Compile Include="Proxy\ProxyEventArgs\RoomStatusEventArgs.cs"/>
     <Compile Include="Utility\DyApiHelper.cs" />
     <Compile Include="Utility\EmbResource.cs" />
-    <Compile Include="Forms\FormView.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FormView.Designer.cs">
-      <DependentUpon>FormView.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\Models\RoomCacheItem.cs" />
-    <Compile Include="Forms\RoomDetail.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\RoomDetail.Designer.cs">
-      <DependentUpon>RoomDetail.cs</DependentUpon>
-    </Compile>
     <Compile Include="JsEngine.cs" />
     <Compile Include="Utility\LiveCompanHelper.cs" />
     <Compile Include="Logger.cs" />
-    <Compile Include="Modles\BusinessExecption.cs" />
-    <Compile Include="Modles\ProtoEntity\Messages.cs" />
-    <Compile Include="Modles\ProtoEntity\Wss.cs" />
-    <Compile Include="Modles\WebCastGift.cs" />
     <Compile Include="ObjectExtension.cs" />
     <Compile Include="Proxy\ProxyEventArgs\HttpResponseEventArgs.cs" />
     <Compile Include="Proxy\ProxyEventArgs\SystemProxyChangeEventArgs.cs" />
@@ -341,8 +328,17 @@
     <Compile Include="Server\WssBarrageGrab.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server\WsBarrageServer.cs" />
+    <Compile Include="Views\FormView.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\FormView.Designer.cs">
+      <DependentUpon>FormView.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Views\FormView.resx">
+      <DependentUpon>FormView.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="App.config" />
     <EmbeddedResource Include="Configs\nlog.config">
       <CustomToolNamespace>WssBarrageService</CustomToolNamespace>
@@ -368,14 +364,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Forms\FormView.resx">
-      <DependentUpon>FormView.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Forms\RoomDetail.resx">
-      <DependentUpon>RoomDetail.cs</DependentUpon>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
     <COMReference Include="IWshRuntimeLibrary">
       <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
       <VersionMajor>1</VersionMajor>
@@ -385,9 +373,6 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Modles\JsonEntity\"/>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

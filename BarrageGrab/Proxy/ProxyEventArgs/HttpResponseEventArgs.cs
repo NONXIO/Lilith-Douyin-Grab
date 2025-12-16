@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Titanium.Web.Proxy.Http;
 
-namespace BarrageGrab.Proxy.ProxyEventArgs
+namespace DanmakuBackend.Proxy.ProxyEventArgs
 {
     /// <summary>
     /// Http 响应事件参数

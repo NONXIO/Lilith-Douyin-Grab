@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BarrageGrab
+namespace DanmakuBackend
 {
     public class DanmakuException : SystemException
     {

@@ -8,6 +8,7 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DanmakuBackend;
 using HtmlAgilityPack;
 using IWshRuntimeLibrary;
 using Microsoft.Win32;

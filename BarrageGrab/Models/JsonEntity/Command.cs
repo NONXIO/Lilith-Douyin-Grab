@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace BarrageGrab.Models.JsonEntity
+namespace DanmakuBackend.Models.JsonEntity
 {
     public enum CommandCode
     {

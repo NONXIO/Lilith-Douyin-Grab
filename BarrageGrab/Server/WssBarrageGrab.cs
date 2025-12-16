@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using BarrageGrab.Models.ProtoEntity;
-using BarrageGrab.Proxy;
-using BarrageGrab.Proxy.ProxyEventArgs;
+using DanmakuBackend.Models.ProtoEntity;
+using DanmakuBackend.Proxy;
+using DanmakuBackend.Proxy.ProxyEventArgs;
 using ProtoBuf;
 
-namespace BarrageGrab
+namespace DanmakuBackend.Server
 {
     /// <summary>
     /// 本机Wss弹幕抓取器

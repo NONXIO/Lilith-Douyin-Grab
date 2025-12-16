@@ -5,7 +5,7 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using static System.Configuration.ConfigurationManager;
 
-namespace BarrageGrab
+namespace DanmakuBackend
 {
     internal class AppSetting
     {
@@ -21,7 +21,6 @@ namespace BarrageGrab
                     .Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
                 UsedProxy = bool.Parse((AppSettings["sysProxy"] ?? "true").Trim());
                 UpstreamProxy = (AppSettings["upstreamProxy"] ?? "").Trim();
-                ShowWindow = bool.Parse((AppSettings["showWindow"] ?? "false").Trim());
                 AutoPause = bool.Parse((AppSettings["autoPause"] ?? "true").Trim());
                 ForcePolling = bool.Parse((AppSettings["forcePolling"] ?? "false").Trim());
                 PollingInterval = int.Parse((AppSettings["pollingInterval"] ?? "3000").Trim());
@@ -74,11 +73,6 @@ namespace BarrageGrab
         public string UpstreamProxy { get; set; } = string.Empty;
 
         /// <summary>
-        /// 显示窗体
-        /// </summary>
-        public bool ShowWindow { get; private set; } = false;
-
-        /// <summary>
         /// 进入直播间自动暂停播放
         /// </summary>
         public bool AutoPause { get; private set; } = false;
@@ -122,14 +116,8 @@ namespace BarrageGrab
                     return;
                 }
                 JObject config = JObject.Parse(jsonStr);
-
                 // 从JSON读取应用配置
                 var app = config["app"];
-
-                // 常规配置
-                var general = app?["general"];
-                ShowWindow = general?["showWindow"]?.Value<bool>() ?? false;
-
                 // 网络配置
                 var network = app?["network"];
                 var proxy = network?["proxy"];
@@ -139,21 +127,16 @@ namespace BarrageGrab
 
                 var websocket = network?["websocket"];
                 WsProt = websocket?["listenPort"]?.Value<int>() ?? 8888;
-
                 // 过滤配置
                 var filtering = app?["filtering"];
-                var processFilterStr = filtering?["processFilter"]?.Value<string>() ??
-                                       "直播伴侣,douyin,chrome,msedge,QQBrowser,360se,firefox,2345explorer,iexplore";
+                var processFilterStr = filtering?["processFilter"]?.Value<string>() ?? "直播伴侣,douyin,chrome";
                 ProcessFilter = processFilterStr.Split(',');
                 FilterHostName = filtering?["hostNameEnabled"]?.Value<bool>() ?? true;
-                string hostNameFilterStr = filtering?["hostNameList"]?.Value<string>() ?? string.Empty;
+                var hostNameFilterStr = filtering?["hostNameList"]?.Value<string>() ?? string.Empty;
                 HostNameFilter = !string.IsNullOrWhiteSpace(hostNameFilterStr)
                     ? hostNameFilterStr.Split(',').Where(w => !string.IsNullOrWhiteSpace(w)).ToArray()
-                    : new string[0];
-                string webRoomIdsStr = filtering?["webRoomIds"]?.Value<string>() ?? string.Empty;
-
+                    : Array.Empty<string>();
                 // 弹幕配置
-                var barrage = app?["barrage"];
                 var polling = app?["barrage"]?["polling"];
                 ForcePolling = polling?["enabled"]?.Value<bool>() ?? false;
                 PollingInterval = polling?["interval"]?.Value<int>() ?? 3000;
@@ -178,10 +161,6 @@ namespace BarrageGrab
             {
                 app = new
                 {
-                    general = new
-                    {
-                        showWindow = ShowWindow
-                    },
                     network = new
                     {
                         proxy = new

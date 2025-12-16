@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace BarrageGrab.Models
+namespace DanmakuBackend.Models
 {
     /// <summary>
     /// 礼物信息

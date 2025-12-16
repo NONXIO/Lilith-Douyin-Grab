@@ -7,16 +7,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
-using BarrageGrab.Models;
-using BarrageGrab.Models.JsonEntity;
-using BarrageGrab.Models.ProtoEntity;
-using BarrageGrab.Proxy.ProxyEventArgs;
+using DanmakuBackend.Models;
+using DanmakuBackend.Models.JsonEntity;
+using DanmakuBackend.Models.ProtoEntity;
+using DanmakuBackend.Proxy.ProxyEventArgs;
 using Fleck;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using MemberMessage = BarrageGrab.Models.ProtoEntity.MemberMessage;
 
-namespace BarrageGrab.Server
+namespace DanmakuBackend.Server
 {
     /// <summary>
     /// WsBarrageServer 包装消息事件委托

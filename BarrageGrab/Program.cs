@@ -3,9 +3,12 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
-using BarrageGrab.Cloud;
+using BarrageGrab;
+using DanmakuBackend.Cloud;
+using DanmakuBackend.Utility;
+using DanmakuBackend.Views;
 
-namespace BarrageGrab
+namespace DanmakuBackend
 {
     public class Program
     {
@@ -67,15 +70,9 @@ namespace BarrageGrab
             LiveCompanHelper.SwitchSetup();
             WinApi.SetConsoleCtrlHandler(controlCtr, true); //捕获控制台关闭
             WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
-            // 如果启用窗口显示，则创建窗体（但不显示，通过托盘图标显示）
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             mainForm = new FormView();
-            
-            if (AppSetting.Current.ShowWindow)
-            {
-                mainForm.Show();
-            }
             AppRuntime.WsServer.Grab.Proxy.SetUpstreamProxy(AppSetting.Current.UpstreamProxy); //设置上游代理
             AppRuntime.WsServer.OnClose += (s, e) =>
             {
@@ -106,7 +103,7 @@ namespace BarrageGrab
                 case 2:
                     Logger.LogInfo("捕获到控制台关闭请求，正在关闭服务...");
                     OnClose();
-                    break;
+                    return true;
             }
             return false;
         }

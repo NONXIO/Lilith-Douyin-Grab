@@ -1,27 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
-using BarrageGrab.Forms;
-using BarrageGrab.Forms.Models;
-using BarrageGrab.Models.JsonEntity;
-using BarrageGrab.Proxy;
-using BarrageGrab.Proxy.ProxyEventArgs;
-using BarrageGrab.Server;
+using DanmakuBackend.Models.JsonEntity;
+using DanmakuBackend.Proxy;
+using DanmakuBackend.Server;
 
-namespace BarrageGrab
+namespace DanmakuBackend.Views
 {
     public partial class FormView : Form
     {
-        static int printCount = 0;
+        private static int printCount = 0;
 
-        WsBarrageServer barServer = AppRuntime.WsServer;
-        WssBarrageGrab grab = AppRuntime.WsServer.Grab;
+        private WsBarrageServer barServer = AppRuntime.WsServer;
+        private WssBarrageGrab grab = AppRuntime.WsServer.Grab;
         private bool isExiting = false;
-        ISystemProxy proxy = AppRuntime.WsServer.Grab.Proxy;
+        private ISystemProxy proxy = AppRuntime.WsServer.Grab.Proxy;
 
         // 系统托盘相关
         private NotifyIcon trayIcon;
@@ -40,9 +34,8 @@ namespace BarrageGrab
 
         private void FormView_Load(object sender, EventArgs e)
         {
-            
         }
-        
+
         #region 系统托盘功能
 
         /// <summary>
@@ -101,6 +94,7 @@ namespace BarrageGrab
                 trayIcon.Visible = false;
                 trayIcon.Dispose();
             }
+
             // 关闭应用程序
             Application.Exit();
         }
@@ -112,6 +106,7 @@ namespace BarrageGrab
         {
             if (!isExiting) e.Cancel = true;
         }
+
         #endregion
     }
 }

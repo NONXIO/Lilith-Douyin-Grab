@@ -8,8 +8,9 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using BarrageGrab.Models;
-using BarrageGrab.Proxy.ProxyEventArgs;
+using DanmakuBackend.Models;
+using DanmakuBackend.Proxy.ProxyEventArgs;
+using DanmakuBackend.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Titanium.Web.Proxy;
@@ -20,7 +21,7 @@ using Titanium.Web.Proxy.Network;
 using Titanium.Web.Proxy.StreamExtended.Network;
 using HtmlDocument = HtmlAgilityPack.HtmlDocument;
 
-namespace BarrageGrab.Proxy
+namespace DanmakuBackend.Proxy
 {
     internal class TitaniumProxy : SystemProxy
     {

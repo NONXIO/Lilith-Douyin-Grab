@@ -1,4 +1,4 @@
-﻿namespace BarrageGrab
+﻿namespace DanmakuBackend.Views
 {
     partial class FormView
     {
@@ -41,7 +41,7 @@
             this.label1.Size = new System.Drawing.Size(662, 77);
             this.label1.TabIndex = 0;
             this.label1.Text = "Lilith Danmaku 后端";
-            // 
+            //
             // FormView
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BarrageGrab.Models
+namespace DanmakuBackend.Models
 {
     /// <summary>
     /// 业务异常

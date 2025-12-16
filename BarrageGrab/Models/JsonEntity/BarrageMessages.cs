@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Newtonsoft.Json;
 
-namespace BarrageGrab.Models.JsonEntity
+namespace DanmakuBackend.Models.JsonEntity
 {
     /// <summary>
     /// 弹幕消息类型

@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Jint;
 using Jint.Native;
 using Newtonsoft.Json;
 
-namespace BarrageGrab
+namespace DanmakuBackend
 {
     public static class JsEngine
     {

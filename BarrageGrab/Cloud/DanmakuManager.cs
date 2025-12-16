@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using BarrageGrab;
 using DeviceId;
 using Supabase;
 using Supabase.Realtime;
@@ -9,7 +10,7 @@ using Client = Supabase.Client;
 using Constants = Supabase.Postgrest.Constants;
 using Timer = System.Timers.Timer;
 
-namespace BarrageGrab.Cloud
+namespace DanmakuBackend.Cloud
 {
     public class DanmakuManager
     {

@@ -2,7 +2,7 @@ using System;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
-namespace BarrageGrab.Cloud
+namespace DanmakuBackend.Cloud
 {
     [Table("danmaku_session")]
     public class OnlineClient : BaseModel

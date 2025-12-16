@@ -1,15 +1,12 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using BarrageGrab.Models.JsonEntity;
 using Fleck;
 using NLog;
 using NLog.Config;
 using LogLevel = Fleck.LogLevel;
 
-namespace BarrageGrab
+namespace DanmakuBackend
 {
     public static class Logger
     {

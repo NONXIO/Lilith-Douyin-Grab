@@ -1,6 +1,6 @@
 using System;
 
-namespace BarrageGrab.Proxy.ProxyEventArgs
+namespace DanmakuBackend.Proxy.ProxyEventArgs
 {
     public class RoomStatusEventArgs : EventArgs
     {

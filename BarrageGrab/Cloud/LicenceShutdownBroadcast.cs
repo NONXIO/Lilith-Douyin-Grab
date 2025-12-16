@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using Supabase.Realtime.Models;
 
-namespace BarrageGrab.Cloud
+namespace DanmakuBackend.Cloud
 {
     public class LicenceShutdownBroadcast : BaseBroadcast
     {

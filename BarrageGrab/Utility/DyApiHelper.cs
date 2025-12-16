@@ -5,10 +5,10 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using BarrageGrab.Models;
+using DanmakuBackend.Models;
 using Newtonsoft.Json.Linq;
 
-namespace BarrageGrab
+namespace DanmakuBackend.Utility
 {
     /// <summary>
     /// 抖音服务

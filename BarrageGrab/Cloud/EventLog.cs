@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
-namespace BarrageGrab.Cloud
+namespace DanmakuBackend.Cloud
 {
     [Table("events_logging")]
     class EventLog : BaseModel
