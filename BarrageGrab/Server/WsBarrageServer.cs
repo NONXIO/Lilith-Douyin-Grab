@@ -655,18 +655,17 @@ namespace DanmakuBackend.Server
                             HandleAuthenticationAsync(clientUrl, cmdPack.Data).Wait();
                             break;
                         case CommandCode.Close:
-                            if (cmdPack.Data is bool && (bool)cmdPack.Data == true)
-                            {
-                                Logger.LogInfo("关闭程序...");
-                                Dispose();
-                                Environment.Exit(0);
-                            }
-
+                            // 关闭服务器
+                            Logger.LogInfo("关闭程序...");
+                            Dispose();
+                            Environment.Exit(0);
                             break;
                         case CommandCode.GetConfig:
+                            // 处理获取配置请求
                             HandleGetConfig(socket);
                             break;
                         case CommandCode.UpdateConfig:
+                            // 处理更新配置请求
                             HandleUpdateConfig(socket, cmdPack.Data);
                             break;
                     }
