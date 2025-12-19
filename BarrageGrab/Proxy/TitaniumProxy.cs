@@ -255,11 +255,11 @@ namespace DanmakuBackend.Proxy
             {
                 roomInfo.RoomId = roomid;
                 roomInfo.Title = jobj["data"]?["title"]?.Value<string>();
-                Logger.LogInfo($"直播伴侣开播，开播账号:{displayId} {nickname} ，更新RoomId={roomInfo.RoomId}");
             }
 
-            if (roomInfo != null)
+            if (roomInfo != null && AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roomInfo.WebRoomId)))
             {
+                Logger.LogInfo($"直播伴侣开播，开播账号:{displayId} {nickname}, 房间{roomInfo.RoomId}");
                 AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
             }
         }
@@ -284,14 +284,14 @@ namespace DanmakuBackend.Proxy
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
                 Logger.LogInfo($"[直播间 {roomid}]订阅到新的弹幕流地址");
-                
+
                 //触发连接事件
-                 base.FireRoomStatusChange(new RoomStatusEventArgs()
-                 {
-                     RoomId = roomid,
-                     IsConnected = true,
-                     Msg = $"已连接 {roomid} 的直播间"
-                 });
+                FireRoomStatusChange(new RoomStatusEventArgs
+                {
+                    RoomId = roomid,
+                    IsConnected = true,
+                    Msg = $"已连接 {roomid} 的直播间"
+                });
             }
 
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
@@ -390,10 +390,13 @@ namespace DanmakuBackend.Proxy
 
                     if (code == 0)
                     {
-                        Logger.LogInfo($"已连接 <{webrid}> - [{roominfo.Owner.Nickname}]的直播间");
-                        roominfo.WebRoomId = webrid;
-                        roominfo.LiveUrl = url;
-                        AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
+                        if (AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roominfo.WebRoomId)))
+                        {
+                            Logger.LogInfo($"已连接 <{webrid}> - [{roominfo.Owner.Nickname}]的直播间");
+                            roominfo.WebRoomId = webrid;
+                            roominfo.LiveUrl = url;
+                            AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
+                        }
                     }
                     else
                     {
@@ -412,7 +415,8 @@ namespace DanmakuBackend.Proxy
                             };
                         }
 
-                        AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
+                        if (AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roominfo.WebRoomId)))
+                            AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                     }
 
                     try
@@ -688,7 +692,7 @@ namespace DanmakuBackend.Proxy
             {
                 // 没有收到 WebSocket 帧的结束帧，抛出异常或者进行处理
             }
-        
+
             //判断是否连接断开
             if (e.Count == 0)
             {

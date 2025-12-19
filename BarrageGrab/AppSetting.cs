@@ -45,7 +45,7 @@ namespace DanmakuBackend
         /// <summary>
         /// 过滤的进程
         /// </summary>
-        public string[] ProcessFilter { get; private set; } = { "直播伴侣", "douyin", "chrome", "firefox" };
+        public string[] ProcessFilter { get; private set; } = { "直播伴侣" };
 
         /// <summary>
         /// 端口号
