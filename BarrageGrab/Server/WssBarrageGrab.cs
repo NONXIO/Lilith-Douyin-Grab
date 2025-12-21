@@ -30,11 +30,6 @@ namespace DanmakuBackend.Server
             proxy.OnRoomStatusChange += Proxy_OnRoomStatusChange;
         }
 
-        private void Proxy_OnRoomStatusChange(object sender, RoomStatusEventArgs e)
-        {
-            OnRoomStatusChange?.Invoke(this, e);
-        }
-
         /// <summary>
         /// 代理
         /// </summary>
@@ -43,6 +38,11 @@ namespace DanmakuBackend.Server
         public void Dispose()
         {
             proxy.Dispose();
+        }
+
+        private void Proxy_OnRoomStatusChange(object sender, RoomStatusEventArgs e)
+        {
+            OnRoomStatusChange?.Invoke(this, e);
         }
 
         /// <summary>
@@ -147,7 +147,7 @@ namespace DanmakuBackend.Server
 
             try
             {
-                var enty = Serializer.Deserialize<WssResponse>(new ReadOnlyMemory<byte>(buff));
+                var enty = DeserializeProto<WssResponse>(buff);
                 if (enty == null) return;
 
                 //检测包格式
@@ -156,9 +156,7 @@ namespace DanmakuBackend.Server
                 byte[] allBuff;
                 //解压gzip
                 allBuff = e.NeedDecompress ? Decompress(enty.Payload) : enty.Payload;
-                var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(allBuff));
-
-
+                var response = DeserializeProto<Response>(allBuff);
                 response.Messages.ForEach(f => DoMessage(f, e.ProcessName));
             }
             catch (Exception ex)
@@ -174,7 +172,7 @@ namespace DanmakuBackend.Server
 
             if (payload == null || payload.Length == 0) return;
 
-            var response = Serializer.Deserialize<Response>(new ReadOnlyMemory<byte>(payload));
+            var response = DeserializeProto<Response>(payload);
 
             response.Messages.ForEach(f => { DoMessage(f, e.ProcessName); });
         }
@@ -212,42 +210,42 @@ namespace DanmakuBackend.Server
                     //来了
                     case "WebcastMemberMessage":
                     {
-                        var arg = Serializer.Deserialize<MemberMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<MemberMessage>(msg.Payload);
                         OnMemberMessage?.Invoke(this, new RoomMessageEventArgs<MemberMessage>(processName, arg));
                         break;
                     }
                     //关注
                     case "WebcastSocialMessage":
                     {
-                        var arg = Serializer.Deserialize<SocialMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<SocialMessage>(msg.Payload);
                         OnSocialMessage?.Invoke(this, new RoomMessageEventArgs<SocialMessage>(processName, arg));
                         break;
                     }
                     //消息
                     case "WebcastChatMessage":
                     {
-                        var arg = Serializer.Deserialize<ChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<ChatMessage>(msg.Payload);
                         OnChatMessage?.Invoke(this, new RoomMessageEventArgs<ChatMessage>(processName, arg));
                         break;
                     }
                     //点赞
                     case "WebcastLikeMessage":
                     {
-                        var arg = Serializer.Deserialize<LikeMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<LikeMessage>(msg.Payload);
                         OnLikeMessage?.Invoke(this, new RoomMessageEventArgs<LikeMessage>(processName, arg));
                         break;
                     }
                     //礼物
                     case "WebcastGiftMessage":
                     {
-                        var arg = Serializer.Deserialize<GiftMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<GiftMessage>(msg.Payload);
                         OnGiftMessage?.Invoke(this, new RoomMessageEventArgs<GiftMessage>(processName, arg));
                         break;
                     }
                     //直播间统计
                     case "WebcastRoomUserSeqMessage":
                     {
-                        var arg = Serializer.Deserialize<RoomUserSeqMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<RoomUserSeqMessage>(msg.Payload);
                         OnRoomUserSeqMessage?.Invoke(this,
                             new RoomMessageEventArgs<RoomUserSeqMessage>(processName, arg));
                         break;
@@ -255,14 +253,14 @@ namespace DanmakuBackend.Server
                     //直播间状态变更
                     case "WebcastControlMessage":
                     {
-                        var arg = Serializer.Deserialize<ControlMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<ControlMessage>(msg.Payload);
                         OnControlMessage?.Invoke(this, new RoomMessageEventArgs<ControlMessage>(processName, arg));
                         break;
                     }
                     //粉丝团消息
                     case "WebcastFansclubMessage":
                     {
-                        var arg = Serializer.Deserialize<FansclubMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<FansclubMessage>(msg.Payload);
                         OnFansclubMessage?.Invoke(this,
                             new RoomMessageEventArgs<FansclubMessage>(processName, arg));
                         break;
@@ -270,7 +268,7 @@ namespace DanmakuBackend.Server
                     //直播间统计
                     case "WebcastRoomStatsMessage":
                     {
-                        var arg = Serializer.Deserialize<RoomStatsMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<RoomStatsMessage>(msg.Payload);
                         OnRoomStatsMessage?.Invoke(this,
                             new RoomMessageEventArgs<RoomStatsMessage>(processName, arg));
                         break;
@@ -278,7 +276,7 @@ namespace DanmakuBackend.Server
                     //直播间排行榜
                     case "WebcastRoomRankMessage":
                     {
-                        var arg = Serializer.Deserialize<RoomRankMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<RoomRankMessage>(msg.Payload);
                         OnRoomRankMessage?.Invoke(this,
                             new RoomMessageEventArgs<RoomRankMessage>(processName, arg));
                         break;
@@ -286,7 +284,7 @@ namespace DanmakuBackend.Server
                     //表情消息
                     case "WebcastEmojiChatMessage":
                     {
-                        var arg = Serializer.Deserialize<EmojiChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<EmojiChatMessage>(msg.Payload);
                         OnEmojiChatMessage?.Invoke(this,
                             new RoomMessageEventArgs<EmojiChatMessage>(processName, arg));
                         break;
@@ -294,7 +292,7 @@ namespace DanmakuBackend.Server
                     //语音消息
                     case "WebcastAudioChatMessage":
                     {
-                        var arg = Serializer.Deserialize<AudioChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<AudioChatMessage>(msg.Payload);
                         var message = new RoomMessageEventArgs<AudioChatMessage>(processName, arg).Message;
                         AppRuntime.DanmakuManager.ReportEvent(message.Common.roomId, message.Common.Method,
                             message.ToJson(), "语音消息");
@@ -303,14 +301,14 @@ namespace DanmakuBackend.Server
                     // 房间通知消息，包含 会员开通信息
                     case "WebcastRoomMessage":
                     {
-                        var arg = Serializer.Deserialize<RoomMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<RoomMessage>(msg.Payload);
                         OnRoomMessage?.Invoke(this, new RoomMessageEventArgs<RoomMessage>(processName, arg));
                         break;
                     }
                     // 展馆聊天消息
                     case "WebcastExhibitionChatMessage":
                     {
-                        var arg = Serializer.Deserialize<ExhibitionChatMessage>(new ReadOnlyMemory<byte>(msg.Payload));
+                        var arg = DeserializeProto<ExhibitionChatMessage>(msg.Payload);
                         var message = new RoomMessageEventArgs<ExhibitionChatMessage>(processName, arg).Message;
                         AppRuntime.DanmakuManager.ReportEvent(message.Common.roomId, message.Common.Method,
                             message.ToJson(), "展馆聊天消息");
@@ -348,6 +346,14 @@ namespace DanmakuBackend.Server
             catch (Exception ex)
             {
                 Logger.LogError($"处理消息<{msg.Method}>时出错:" + ex.Message + "\n" + ex.StackTrace);
+            }
+        }
+
+        private T DeserializeProto<T>(byte[] data)
+        {
+            using (var ms = new MemoryStream(data))
+            {
+                return Serializer.Deserialize<T>(ms);
             }
         }
 

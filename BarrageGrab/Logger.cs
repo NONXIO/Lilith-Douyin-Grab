@@ -11,7 +11,6 @@ namespace DanmakuBackend
     public static class Logger
     {
         private static ISetupBuilder builder;
-
         private static NLog.Logger logger;
 
         static Logger()

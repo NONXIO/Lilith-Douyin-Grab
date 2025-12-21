@@ -33,7 +33,6 @@
   <module path="Supabase.Storage.dll" />
   <module path="System.Buffers.dll" />
   <module path="System.Collections.Immutable.dll" />
-  <module path="System.Diagnostics.DiagnosticSource.dll" />
   <module path="System.IdentityModel.Tokens.Jwt.dll" />
   <module path="System.Memory.dll" />
   <module path="System.Numerics.Vectors.dll" />

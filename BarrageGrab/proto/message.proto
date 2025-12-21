@@ -2,7 +2,7 @@ syntax = "proto3";
 
 
 // 定义消息结构
-message Response{
+mmessage Response{
     repeated Message messages = 1;
     string cursor = 2;
     int64 fetchInterval = 3;

@@ -282,7 +282,7 @@ namespace DanmakuBackend.Server
             }
 
             AttachRoomInfo(enty);
-            Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
+            Broadcast(new DanmakuMessagePack(enty.ToJson(), msgType, e.Process));
         }
 
         //统计消息
@@ -294,7 +294,7 @@ namespace DanmakuBackend.Server
             enty.Online = msg.Total;
             enty.Viewed = msg.totalUser;
             enty.Content = $"当前直播间人数 {msg.onlineUserForAnchor}，累计观看人数 {msg.totalPvForAnchor}";
-            Broadcast(new BarrageMsgPack(enty.ToJson(), PackMsgType.直播间统计, e.Process));
+            Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.直播间统计, e.Process));
         }
 
         //礼物
@@ -380,7 +380,7 @@ namespace DanmakuBackend.Server
 
             var msgType = PackMsgType.礼物消息;
             AttachRoomInfo(enty);
-            var pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.礼物消息, e.Process);
+            var pack = new DanmakuMessagePack(enty.ToJson(), PackMsgType.礼物消息, e.Process);
             Broadcast(pack);
         }
 
@@ -394,7 +394,7 @@ namespace DanmakuBackend.Server
             enty.Content = $"{msg.User.Nickname} 关注了主播";
             var msgType = PackMsgType.关注消息;
             AttachRoomInfo(enty);
-            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
+            var pack = new DanmakuMessagePack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
         }
 
@@ -418,7 +418,7 @@ namespace DanmakuBackend.Server
             AttachRoomInfo(enty);
 
             //shareTarget: (112:好友),(1微信)(2朋友圈)(3微博)(5:qq)(4:qq空间),shareType: 1            
-            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
+            var pack = new DanmakuMessagePack(enty.ToJson(), msgType, e.Process);
             var json = JsonConvert.SerializeObject(pack);
             Broadcast(pack);
         }
@@ -434,7 +434,7 @@ namespace DanmakuBackend.Server
             enty.CurrentCount = msg.memberCount;
             enty.EnterTipType = enterType;
             AttachRoomInfo(enty);
-            Broadcast(new BarrageMsgPack(enty.ToJson(), PackMsgType.进直播间, e.Process));
+            Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.进直播间, e.Process));
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
                 AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
@@ -454,7 +454,7 @@ namespace DanmakuBackend.Server
 
             var msgType = PackMsgType.点赞消息;
             AttachRoomInfo(enty);
-            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
+            var pack = new DanmakuMessagePack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
         }
 
@@ -467,7 +467,7 @@ namespace DanmakuBackend.Server
             enty.Content = msg.Content;
             var msgType = PackMsgType.弹幕消息;
             AttachRoomInfo(enty);
-            var pack = new BarrageMsgPack(enty.ToJson(), msgType, e.Process);
+            var pack = new DanmakuMessagePack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
             if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
@@ -484,7 +484,7 @@ namespace DanmakuBackend.Server
             enty.EmojiUrl = msg.emojiContent.Pieces.First().imageValue.Image.urlList.First();
             enty.Content = $"[会员表情]";
             AttachRoomInfo(enty);
-            Broadcast(new BarrageMsgPack(enty.ToJson(), PackMsgType.会员表情, e.Process));
+            Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.会员表情, e.Process));
         }
 
         //直播间状态变更
@@ -492,22 +492,19 @@ namespace DanmakuBackend.Server
         {
             var msg = e.Message;
             if (!CheckRoomId(msg.Common.roomId)) return;
-            BarrageMsgPack pack = null;
+            DanmakuMessagePack pack = null;
             //下播
             if (msg.Status == 3)
             {
                 var enty = new Msg()
                 {
                     MsgId = msg.Common.msgId,
-                    Content = "直播已结束",
+                    Content = "直播结束",
                     RoomId = msg.Common.roomId.ToString(),
                     WebRoomId = AppRuntime.RoomCaches.GetCachedWebRoomid(msg.Common.roomId.ToString()),
-                    User = null,
                 };
-
-                var msgType = PackMsgType.下播;
                 AttachRoomInfo(enty);
-                pack = new BarrageMsgPack(enty.ToJson(), PackMsgType.下播, e.Process);
+                pack = new DanmakuMessagePack(enty.ToJson(), PackMsgType.下播, e.Process);
             }
 
             if (pack != null)
@@ -527,7 +524,7 @@ namespace DanmakuBackend.Server
             enty.Viewed = msg.Total;
             var msgType = PackMsgType.房间数据;
             AttachRoomInfo(enty);
-            Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
+            Broadcast(new DanmakuMessagePack(enty.ToJson(), msgType, e.Process));
         }
 
         //直播间排行榜
@@ -547,7 +544,7 @@ namespace DanmakuBackend.Server
 
             var msgType = PackMsgType.房间排行;
             AttachRoomInfo(enty);
-            Broadcast(new BarrageMsgPack(enty.ToJson(), msgType, e.Process));
+            Broadcast(new DanmakuMessagePack(enty.ToJson(), msgType, e.Process));
         }
 
         //房间消息
@@ -576,7 +573,7 @@ namespace DanmakuBackend.Server
             {
                 enty.Content = msg.Content;
                 AttachRoomInfo(enty);
-                Broadcast(new BarrageMsgPack(enty.ToJson(), type, e.Process));
+                Broadcast(new DanmakuMessagePack(enty.ToJson(), type, e.Process));
             }
 
             if (msg.Common.User != null && msg.Common.User.badgeImageListV2 != null &&
@@ -593,7 +590,7 @@ namespace DanmakuBackend.Server
             if (roomInfo == null) return;
             var type = e.IsConnected ? PackMsgType.直播间连接 : PackMsgType.直播间断开;
             var json = JsonConvert.SerializeObject(roomInfo);
-            Broadcast(new BarrageMsgPack(json, type, Process.GetCurrentProcess().ProcessName));
+            Broadcast(new DanmakuMessagePack(json, type, Process.GetCurrentProcess().ProcessName));
         }
 
         //监听用户连接
@@ -761,7 +758,7 @@ namespace DanmakuBackend.Server
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             };
 
-            var pack = new BarrageMsgPack(eventMsg.ToJson(), eventType, Process.GetCurrentProcess().ProcessName);
+            var pack = new DanmakuMessagePack(eventMsg.ToJson(), eventType, Process.GetCurrentProcess().ProcessName);
             Broadcast(pack);
         }
 
@@ -769,7 +766,7 @@ namespace DanmakuBackend.Server
         /// 广播消息
         /// </summary>
         /// <param name="pack">弹幕数据包</param>
-        public void Broadcast(BarrageMsgPack pack)
+        public void Broadcast(DanmakuMessagePack pack)
         {
             if (pack == null) return;
             foreach (var item in socketList)

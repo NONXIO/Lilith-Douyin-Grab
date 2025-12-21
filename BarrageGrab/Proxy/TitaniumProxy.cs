@@ -9,6 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DanmakuBackend.Models;
+using DanmakuBackend.Models.JsonEntity;
 using DanmakuBackend.Proxy.ProxyEventArgs;
 using DanmakuBackend.Utility;
 using Newtonsoft.Json;
@@ -116,7 +117,6 @@ namespace DanmakuBackend.Proxy
             if (result != null) return result;
 
             return null;
-
             // 打开“受信任的根证书颁发机构”存储区
             using (X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
             {
@@ -237,7 +237,6 @@ namespace DanmakuBackend.Proxy
             var tupe = RoomInfo.TryParseStreamPusherCreate(reponse, out roomInfo);
             var code = tupe.Item1;
             var msg = tupe.Item2;
-
             if (code != 0)
             {
                 Logger.LogWarn($"直播伴侣开播房间资料缓存失败，原因:{msg}");
@@ -245,12 +244,10 @@ namespace DanmakuBackend.Proxy
             }
 
             var jobj = JsonConvert.DeserializeObject<JObject>(reponse);
-
             var roomid = jobj["data"]?["id_str"]?.Value<string>();
             var sec_uid = jobj["data"]?["owner"]?["sec_uid"]?.Value<string>();
             var nickname = jobj["data"]?["owner"]?["nickname"]?.Value<string>();
             var displayId = jobj["data"]?["owner"]?["display_id"]?.Value<string>();
-
             if (roomInfo != null && !roomid.IsNullOrWhiteSpace())
             {
                 roomInfo.RoomId = roomid;
@@ -259,8 +256,12 @@ namespace DanmakuBackend.Proxy
 
             if (roomInfo != null && AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roomInfo.WebRoomId)))
             {
-                Logger.LogInfo($"直播伴侣开播，开播账号:{displayId} {nickname}, 房间{roomInfo.RoomId}");
+                Logger.LogInfo($"直播伴侣开播，开播信息: {displayId} {nickname}, 房间{roomInfo.RoomId}");
                 AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
+                AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(null, PackMsgType.开播, processName));
+                //TODO: 后续移除
+                AppRuntime.DanmakuManager.ReportEvent(long.Parse(roomInfo.WebRoomId), "直播伴侣开播", jobj.ToJson(),
+                    $"房间ID:{roomInfo.RoomId}");
             }
         }
 
@@ -273,7 +274,6 @@ namespace DanmakuBackend.Proxy
             var processName = base.GetProcessName(processid);
             var contentType = e.HttpClient.Response.ContentType ?? "";
             var isLiveCompan = processName == "直播伴侣";
-
             //ws 方式
             if (
                 e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket &&
@@ -283,15 +283,15 @@ namespace DanmakuBackend.Proxy
                 e.DataReceived += WebSocket_DataReceived;
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
-                Logger.LogInfo($"[直播间 {roomid}]订阅到新的弹幕流地址");
-
-                //触发连接事件
-                FireRoomStatusChange(new RoomStatusEventArgs
+                var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
+                if (roomInfo == null || !AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roomInfo.WebRoomId)))
                 {
-                    RoomId = roomid,
-                    IsConnected = true,
-                    Msg = $"已连接 {roomid} 的直播间"
-                });
+                    Logger.LogWarn($"直播间[{roomid}]不在监听列表中");
+                }
+                else
+                {
+                    Logger.LogInfo($"直播间[{roomid}]订阅到新的弹幕流地址");
+                }
             }
 
             //轮询方式(当抖音ws连接断开后，客户端也会降级使用轮询模式获取弹幕)
@@ -642,13 +642,9 @@ namespace DanmakuBackend.Proxy
         private async void WebSocket_DataReceived(object sender, DataEventArgs e)
         {
             var args = (SessionEventArgs)sender;
-
             string hostname = args.HttpClient.Request.RequestUri.Host;
-
             var processid = args.HttpClient.ProcessId.Value;
-
             List<byte> messageData = new List<byte>();
-
             try
             {
                 foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))
@@ -656,7 +652,6 @@ namespace DanmakuBackend.Proxy
                     if (frame.OpCode == WebsocketOpCode.Continuation)
                     {
                         messageData.AddRange(frame.Data.ToArray());
-                        continue;
                     }
                     else
                     {
@@ -673,38 +668,24 @@ namespace DanmakuBackend.Proxy
                             payload = frame.Data.ToArray();
                         }
 
-                        base.FireWsEvent(new WsMessageEventArgs()
+                        FireWsEvent(new WsMessageEventArgs
                         {
                             ProcessID = processid,
                             HostName = hostname,
                             Payload = payload,
-                            ProcessName = base.GetProcessName(processid)
+                            ProcessName = GetProcessName(processid)
                         });
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.PrintColor("解析某个WebSocket包出错：" + ex.Message);
+                Logger.LogError($"解析WS数据包错误：" + ex.Message + "\n" + ex.StackTrace);
             }
 
             if (messageData.Count > 0)
             {
                 // 没有收到 WebSocket 帧的结束帧，抛出异常或者进行处理
-            }
-
-            //判断是否连接断开
-            if (e.Count == 0)
-            {
-                var uri = args.HttpClient.Request.RequestUri;
-                var roomid = uri.GetQueryParam("room_id");
-                Logger.LogInfo($"直播间连接已断开: {roomid}");
-                base.FireRoomStatusChange(new RoomStatusEventArgs()
-                {
-                    RoomId = roomid,
-                    IsConnected = false,
-                    Msg = "直播间连接已断开"
-                });
             }
         }
 
@@ -712,7 +693,7 @@ namespace DanmakuBackend.Proxy
         /// <summary>
         /// 释放资源，关闭系统代理
         /// </summary>
-        override public void Dispose()
+        public override void Dispose()
         {
             if (proxyServer.ProxyRunning)
             {
@@ -729,21 +710,20 @@ namespace DanmakuBackend.Proxy
         /// <summary>
         /// 启动监听
         /// </summary>
-        override public void Start()
+        public override void Start()
         {
             proxyServer.Start(false);
-
             if (AppSetting.Current.UsedProxy)
             {
-                base.RegisterSystemProxy();
-                Logger.LogInfo($"系统代理代理已启动 端口:{ProxyPort}");
+                RegisterSystemProxy();
+                Logger.LogInfo($"代理代理已启动(全局代理) 端口:{ProxyPort}");
                 //使用其自带的系统代理设置可能会导致格式问题
                 //proxyServer.SetAsSystemHttpProxy(explicitEndPoint);
                 //proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);
             }
             else
             {
-                Logger.LogInfo($"代理已启动(局域代理) 端口:{base.ProxyPort}");
+                Logger.LogInfo($"代理已启动(局域代理) 端口:{ProxyPort}");
             }
         }
     }

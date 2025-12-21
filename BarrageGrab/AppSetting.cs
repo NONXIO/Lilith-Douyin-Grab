@@ -40,7 +40,7 @@ namespace DanmakuBackend
         /// <summary>
         /// 使用系统代理
         /// </summary>
-        public bool UsedProxy { get; private set; } = true;
+        public bool UsedProxy { get; private set; }
 
         /// <summary>
         /// 过滤的进程

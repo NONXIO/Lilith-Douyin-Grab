@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // 有关程序集的一般信息由以下
 // 控制。更改这些特性值可修改
 // 与程序集关联的信息。
-[assembly: AssemblyTitle("Danmaku 后端")]
+[assembly: AssemblyTitle("Danmaku后端")]
 [assembly: AssemblyDescription("Lilith 抖音弹幕抓取器")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Nonxio Studio")]
 [assembly: AssemblyProduct("DanmakuBackend")]
-[assembly: AssemblyCopyright("Copyright © 2025")]
+[assembly: AssemblyCopyright("Copyright © 2025-2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -25,6 +25,6 @@ using System.Runtime.InteropServices;
 //      修订号
 //
 //可以指定所有这些值，也可以使用“生成号”和“修订号”的默认值
-[assembly: AssemblyVersion("3.0.0")]
-[assembly: AssemblyFileVersion("3.0.0")]
+[assembly: AssemblyVersion("3.0.1")]
+[assembly: AssemblyFileVersion("3.0.1")]
 [assembly: NeutralResourcesLanguage("zh-CN")]

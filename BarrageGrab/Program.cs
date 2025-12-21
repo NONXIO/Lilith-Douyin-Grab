@@ -3,8 +3,8 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
-using BarrageGrab;
 using DanmakuBackend.Cloud;
+using DanmakuBackend.Models.JsonEntity;
 using DanmakuBackend.Utility;
 using DanmakuBackend.Views;
 
@@ -44,6 +44,11 @@ namespace DanmakuBackend
             {
                 Init();
                 SetTitle("运行中");
+                AppRuntime.WsServer.Broadcast(new DanmakuMessagePack
+                {
+                    Type = PackMsgType.后端初始化,
+                    Data = LiveCompanHelper.LiveCompanExePath
+                });
             }
             catch (Exception ex)
             {
@@ -58,7 +63,8 @@ namespace DanmakuBackend
                 Application.Run();
             else
                 // 控制台模式，使用传统的循环等待
-                while (!exited) Thread.Sleep(500);
+                while (!exited)
+                    Thread.Sleep(500);
 
             if (!AppRuntime.WsServer.IsDisposed) OnClose();
             WinApi.SetConsoleCtrlHandler(controlCtr, false); //反注册捕获控制台关闭            
@@ -69,7 +75,7 @@ namespace DanmakuBackend
             AppRuntime.Init();
             LiveCompanHelper.SwitchSetup();
             WinApi.SetConsoleCtrlHandler(controlCtr, true); //捕获控制台关闭
-            WinApi.DisableQuickEditMode();//禁用控制台快速编辑模式
+            WinApi.DisableQuickEditMode(); //禁用控制台快速编辑模式
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             mainForm = new FormView();
@@ -105,6 +111,7 @@ namespace DanmakuBackend
                     OnClose();
                     return true;
             }
+
             return false;
         }
 

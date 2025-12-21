@@ -12,6 +12,7 @@ namespace DanmakuBackend.Models.ProtoEntity
     public partial class WssResponse : global::ProtoBuf.IExtensible
     {
         private global::ProtoBuf.IExtension __pbn__extensionData;
+
         global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
             => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
 
@@ -29,7 +30,8 @@ namespace DanmakuBackend.Models.ProtoEntity
 
         [global::ProtoBuf.ProtoMember(5, Name = @"headers")]
         [global::ProtoBuf.ProtoMap]
-        public global::System.Collections.Generic.Dictionary<string, string> Headers { get; } = new global::System.Collections.Generic.Dictionary<string, string>();
+        public global::System.Collections.Generic.Dictionary<string, string> Headers { get; } =
+            new global::System.Collections.Generic.Dictionary<string, string>();
 
         [global::ProtoBuf.ProtoMember(6)]
         [global::System.ComponentModel.DefaultValue("")]
@@ -41,7 +43,6 @@ namespace DanmakuBackend.Models.ProtoEntity
 
         [global::ProtoBuf.ProtoMember(8, Name = @"payload")]
         public byte[] Payload { get; set; }
-
     }
 
 #pragma warning restore CS0612, CS0618, CS1591, CS3021, IDE0079, IDE1006, RCS1036, RCS1057, RCS1085, RCS1192

@@ -26,7 +26,9 @@ namespace DanmakuBackend.Models.JsonEntity
         [Description("房间排行")] 房间排行 = 13,
         [Description("焦点")] 焦点事件 = 14,
         [Description("连接")] 直播间连接 = 15,
-        [Description("断开")] 直播间断开 = 16
+        [Description("断开")] 直播间断开 = 16,
+        [Description("后端初始化")] 后端初始化 = 17,
+        [Description("开播")] 开播 = 18
     }
 
     /// <summary>
@@ -211,13 +213,13 @@ namespace DanmakuBackend.Models.JsonEntity
     /// <summary>
     /// 数据包装器
     /// </summary>
-    public class BarrageMsgPack
+    public class DanmakuMessagePack
     {
-        public BarrageMsgPack()
+        public DanmakuMessagePack()
         {
         }
 
-        public BarrageMsgPack(string data, PackMsgType type, string processName)
+        public DanmakuMessagePack(string data, PackMsgType type, string processName)
         {
             Data = data;
             Type = type;

@@ -1,24 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using DanmakuBackend;
 using HtmlAgilityPack;
 using IWshRuntimeLibrary;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using File = System.IO.File;
 
-namespace BarrageGrab
+namespace DanmakuBackend.Utility
 {
     public static class LiveCompanHelper
     {
+        public static string LiveCompanExePath { get; set; } = "";
+
         /// <summary>
         /// 获取抖音直播伴侣的exe路径
         /// </summary>
@@ -33,7 +29,8 @@ namespace BarrageGrab
             try
             {
                 // 打开注册表中的卸载信息节点
-                RegistryKey uninstallNode = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
+                var uninstallNode =
+                    Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
 
                 if (uninstallNode != null)
                 {
@@ -70,7 +67,8 @@ namespace BarrageGrab
             }
 
             //从 C:\ProgramData\Microsoft\Windows\Start Menu\Programs 中查找
-            string startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs");
+            var startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu),
+                "Programs");
             var findFiles = Directory.GetFiles(startMenuPath, $"{appName}.lnk", SearchOption.AllDirectories);
             if (findFiles.Length > 0)
             {
@@ -89,10 +87,12 @@ namespace BarrageGrab
                 {
                     throw new Exception("未找到直播伴侣版本选择器的 launcher_config.json 文件");
                 }
+
                 var json = File.ReadAllText(launcherConfigPath, Encoding.UTF8);
                 var jobj = JsonConvert.DeserializeObject<dynamic>(json);
                 string curPath = jobj.cur_path;
                 exePath = Path.Combine(dir, curPath, "直播伴侣.exe");
+                LiveCompanExePath = exePath;
             }
 
             // 如果没有找到相关信息，则返回空字符串
@@ -108,13 +108,14 @@ namespace BarrageGrab
         {
             if (string.IsNullOrEmpty(shortcutPath))
             {
-                throw new ArgumentException("快捷方式路径不能为空", nameof(shortcutPath));
+                throw new ArgumentException(@"快捷方式路径不能为空", nameof(shortcutPath));
             }
 
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = "powershell",
-                Arguments = $"-command \"$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('{shortcutPath}'); $Shortcut.TargetPath\"",
+                Arguments =
+                    $"-command \"$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('{shortcutPath}'); $Shortcut.TargetPath\"",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -158,14 +159,13 @@ namespace BarrageGrab
 
             //设置index.js
             var indexJsPath = Path.Combine(Path.GetDirectoryName(exePath), "resources", "app", "index.js");
-            Logger.LogInfo($"正在配置 " + indexJsPath);
-
+            Logger.LogInfo($"正在配置直播伴侣 " + indexJsPath);
             if (!File.Exists(indexJsPath))
             {
                 throw new Exception("未找到直播伴侣的index.js文件");
             }
-            var indexJs = File.ReadAllText(indexJsPath, Encoding.UTF8);
 
+            var indexJs = File.ReadAllText(indexJsPath, Encoding.UTF8);
             CheckBackFile(indexJsPath);
             var newjs = SetIndexJsContent(indexJs);
             if (newjs != indexJs && !newjs.IsNullOrWhiteSpace())
@@ -245,7 +245,8 @@ namespace BarrageGrab
                 var matchValue = proxyMatch.Groups["value"].Value;
                 if (value != matchValue)
                 {
-                    content = proxyReg.Replace(content, $@"${{varname}}.commandLine.appendSwitch(""{name}"",""{value}"")");
+                    content = proxyReg.Replace(content,
+                        $@"${{varname}}.commandLine.appendSwitch(""{name}"",""{value}"")");
                     Logger.LogInfo($"直播伴侣成功覆盖启动参数  [{name}] = [{value}]");
                 }
             }
@@ -256,7 +257,8 @@ namespace BarrageGrab
                 var match = nosandboxReg.Match(content);
                 if (match.Success)
                 {
-                    var newvalue = $@"{match.Groups["varname"].ToString()}.commandLine.appendSwitch(""{name}"",""{value}""),";
+                    var newvalue =
+                        $@"{match.Groups["varname"].ToString()}.commandLine.appendSwitch(""{name}"",""{value}""),";
                     content = content.Insert(match.Index, newvalue);
                     Logger.LogInfo($"直播伴侣成功添加启动参数  [{name}] = [{value}]");
                 }
