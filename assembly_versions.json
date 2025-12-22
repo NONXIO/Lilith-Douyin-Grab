@@ -1,0 +1,1622 @@
+[
+  {
+    "FileName": "Acornima.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Acornima.1.2.0\\lib\\net462\\Acornima.dll",
+    "AssemblyVersion": "1.2.0.0",
+    "PublicKeyToken": "496b38436bb9edeb"
+  },
+  {
+    "FileName": "Acornima.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Acornima.1.2.0\\lib\\net8.0\\Acornima.dll",
+    "AssemblyVersion": "1.2.0.0",
+    "PublicKeyToken": "496b38436bb9edeb"
+  },
+  {
+    "FileName": "Acornima.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Acornima.1.2.0\\lib\\netstandard2.0\\Acornima.dll",
+    "AssemblyVersion": "1.2.0.0",
+    "PublicKeyToken": "496b38436bb9edeb"
+  },
+  {
+    "FileName": "Acornima.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Acornima.1.2.0\\lib\\netstandard2.1\\Acornima.dll",
+    "AssemblyVersion": "1.2.0.0",
+    "PublicKeyToken": "496b38436bb9edeb"
+  },
+  {
+    "FileName": "BouncyCastle.Cryptography.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BouncyCastle.Cryptography.2.6.2\\lib\\net461\\BouncyCastle.Cryptography.dll",
+    "AssemblyVersion": "2.0.0.0",
+    "PublicKeyToken": "072edcf4a5328938"
+  },
+  {
+    "FileName": "BouncyCastle.Cryptography.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BouncyCastle.Cryptography.2.6.2\\lib\\net6.0\\BouncyCastle.Cryptography.dll",
+    "AssemblyVersion": "2.0.0.0",
+    "PublicKeyToken": "072edcf4a5328938"
+  },
+  {
+    "FileName": "BouncyCastle.Cryptography.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BouncyCastle.Cryptography.2.6.2\\lib\\netstandard2.0\\BouncyCastle.Cryptography.dll",
+    "AssemblyVersion": "2.0.0.0",
+    "PublicKeyToken": "072edcf4a5328938"
+  },
+  {
+    "FileName": "BrotliSharpLib.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BrotliSharpLib.0.3.3\\lib\\net20\\BrotliSharpLib.dll",
+    "AssemblyVersion": "0.3.2.0",
+    "PublicKeyToken": "3f4e2a1cd615fcb7"
+  },
+  {
+    "FileName": "BrotliSharpLib.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BrotliSharpLib.0.3.3\\lib\\net35\\BrotliSharpLib.dll",
+    "AssemblyVersion": "0.3.2.0",
+    "PublicKeyToken": "3f4e2a1cd615fcb7"
+  },
+  {
+    "FileName": "BrotliSharpLib.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BrotliSharpLib.0.3.3\\lib\\net40\\BrotliSharpLib.dll",
+    "AssemblyVersion": "0.3.2.0",
+    "PublicKeyToken": "3f4e2a1cd615fcb7"
+  },
+  {
+    "FileName": "BrotliSharpLib.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BrotliSharpLib.0.3.3\\lib\\net45\\BrotliSharpLib.dll",
+    "AssemblyVersion": "0.3.2.0",
+    "PublicKeyToken": "3f4e2a1cd615fcb7"
+  },
+  {
+    "FileName": "BrotliSharpLib.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BrotliSharpLib.0.3.3\\lib\\net451\\BrotliSharpLib.dll",
+    "AssemblyVersion": "0.3.2.0",
+    "PublicKeyToken": "3f4e2a1cd615fcb7"
+  },
+  {
+    "FileName": "BrotliSharpLib.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BrotliSharpLib.0.3.3\\lib\\netstandard1.1\\BrotliSharpLib.dll",
+    "AssemblyVersion": "0.3.2.0",
+    "PublicKeyToken": "3f4e2a1cd615fcb7"
+  },
+  {
+    "FileName": "BrotliSharpLib.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BrotliSharpLib.0.3.3\\lib\\netstandard1.3\\BrotliSharpLib.dll",
+    "AssemblyVersion": "0.3.2.0",
+    "PublicKeyToken": "3f4e2a1cd615fcb7"
+  },
+  {
+    "FileName": "BrotliSharpLib.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\BrotliSharpLib.0.3.3\\lib\\netstandard2.0\\BrotliSharpLib.dll",
+    "AssemblyVersion": "0.3.2.0",
+    "PublicKeyToken": "3f4e2a1cd615fcb7"
+  },
+  {
+    "FileName": "Costura.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Costura.Fody.6.0.0\\lib\\netstandard2.0\\Costura.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "9919ef960d84173d"
+  },
+  {
+    "FileName": "DeviceId.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.6.9.0\\lib\\net35\\DeviceId.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "DeviceId.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.6.9.0\\lib\\net40\\DeviceId.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "DeviceId.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.6.9.0\\lib\\net8.0\\DeviceId.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "DeviceId.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.6.9.0\\lib\\net9.0\\DeviceId.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "DeviceId.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.6.9.0\\lib\\netstandard2.0\\DeviceId.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "DeviceId.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.Windows.6.9.0\\lib\\net35\\DeviceId.Windows.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "DeviceId.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.Windows.6.9.0\\lib\\net40\\DeviceId.Windows.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "DeviceId.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.Windows.6.9.0\\lib\\net8.0-windows10.0.17763\\DeviceId.Windows.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "DeviceId.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.Windows.6.9.0\\lib\\net9.0-windows10.0.17763\\DeviceId.Windows.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "DeviceId.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\DeviceId.Windows.6.9.0\\lib\\netstandard2.0\\DeviceId.Windows.dll",
+    "AssemblyVersion": "6.9.0.0",
+    "PublicKeyToken": "f755c371b5c59c52"
+  },
+  {
+    "FileName": "Esprima.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Esprima.3.0.5\\lib\\net462\\Esprima.dll",
+    "AssemblyVersion": "3.0.5.0",
+    "PublicKeyToken": "2e92ba9c8d81157f"
+  },
+  {
+    "FileName": "Esprima.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Esprima.3.0.5\\lib\\netstandard2.0\\Esprima.dll",
+    "AssemblyVersion": "3.0.5.0",
+    "PublicKeyToken": "2e92ba9c8d81157f"
+  },
+  {
+    "FileName": "Esprima.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Esprima.3.0.5\\lib\\netstandard2.1\\Esprima.dll",
+    "AssemblyVersion": "3.0.5.0",
+    "PublicKeyToken": "2e92ba9c8d81157f"
+  },
+  {
+    "FileName": "Fleck.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Fleck.1.2.0\\lib\\net40\\Fleck.dll",
+    "AssemblyVersion": "1.2.0.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Fleck.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Fleck.1.2.0\\lib\\net45\\Fleck.dll",
+    "AssemblyVersion": "1.2.0.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Fleck.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Fleck.1.2.0\\lib\\netcoreapp2.0\\Fleck.dll",
+    "AssemblyVersion": "1.2.0.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Fleck.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Fleck.1.2.0\\lib\\netstandard2.0\\Fleck.dll",
+    "AssemblyVersion": "1.2.0.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\Net35\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\Net40\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\Net40-client\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\Net45\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\net7.0\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\NetCore45\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\netstandard2.0\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\portable-net45+netcore45+wp8+MonoAndroid+MonoTouch\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\portable-net45+netcore45+wpa81+wp8+MonoAndroid+MonoTouch\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "HtmlAgilityPack.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\HtmlAgilityPack.1.12.4\\lib\\uap10.0\\HtmlAgilityPack.dll",
+    "AssemblyVersion": "1.12.4.0",
+    "PublicKeyToken": "bd319b19eaf3b43a"
+  },
+  {
+    "FileName": "Jint.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Jint.4.4.2\\lib\\net462\\Jint.dll",
+    "AssemblyVersion": "4.4.2.0",
+    "PublicKeyToken": "2e92ba9c8d81157f"
+  },
+  {
+    "FileName": "Jint.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Jint.4.4.2\\lib\\net8.0\\Jint.dll",
+    "AssemblyVersion": "4.4.2.0",
+    "PublicKeyToken": "2e92ba9c8d81157f"
+  },
+  {
+    "FileName": "Jint.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Jint.4.4.2\\lib\\netstandard2.0\\Jint.dll",
+    "AssemblyVersion": "4.4.2.0",
+    "PublicKeyToken": "2e92ba9c8d81157f"
+  },
+  {
+    "FileName": "Jint.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Jint.4.4.2\\lib\\netstandard2.1\\Jint.dll",
+    "AssemblyVersion": "4.4.2.0",
+    "PublicKeyToken": "2e92ba9c8d81157f"
+  },
+  {
+    "FileName": "Microsoft.Bcl.AsyncInterfaces.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Bcl.AsyncInterfaces.1.1.0\\lib\\net461\\Microsoft.Bcl.AsyncInterfaces.dll",
+    "AssemblyVersion": "1.0.0.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "Microsoft.Bcl.AsyncInterfaces.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Bcl.AsyncInterfaces.1.1.0\\lib\\netstandard2.0\\Microsoft.Bcl.AsyncInterfaces.dll",
+    "AssemblyVersion": "1.0.0.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "Microsoft.Bcl.AsyncInterfaces.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Bcl.AsyncInterfaces.1.1.0\\lib\\netstandard2.1\\Microsoft.Bcl.AsyncInterfaces.dll",
+    "AssemblyVersion": "1.0.0.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Abstractions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Abstractions.7.5.1\\lib\\net461\\Microsoft.IdentityModel.Abstractions.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Abstractions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Abstractions.7.5.1\\lib\\net462\\Microsoft.IdentityModel.Abstractions.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Abstractions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Abstractions.7.5.1\\lib\\net472\\Microsoft.IdentityModel.Abstractions.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Abstractions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Abstractions.7.5.1\\lib\\net6.0\\Microsoft.IdentityModel.Abstractions.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Abstractions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Abstractions.7.5.1\\lib\\net8.0\\Microsoft.IdentityModel.Abstractions.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Abstractions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Abstractions.7.5.1\\lib\\netstandard2.0\\Microsoft.IdentityModel.Abstractions.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.JsonWebTokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.JsonWebTokens.7.5.1\\lib\\net461\\Microsoft.IdentityModel.JsonWebTokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.JsonWebTokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.JsonWebTokens.7.5.1\\lib\\net462\\Microsoft.IdentityModel.JsonWebTokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.JsonWebTokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.JsonWebTokens.7.5.1\\lib\\net472\\Microsoft.IdentityModel.JsonWebTokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.JsonWebTokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.JsonWebTokens.7.5.1\\lib\\net6.0\\Microsoft.IdentityModel.JsonWebTokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.JsonWebTokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.JsonWebTokens.7.5.1\\lib\\net8.0\\Microsoft.IdentityModel.JsonWebTokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.JsonWebTokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.JsonWebTokens.7.5.1\\lib\\netstandard2.0\\Microsoft.IdentityModel.JsonWebTokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Logging.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Logging.7.5.1\\lib\\net461\\Microsoft.IdentityModel.Logging.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Logging.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Logging.7.5.1\\lib\\net462\\Microsoft.IdentityModel.Logging.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Logging.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Logging.7.5.1\\lib\\net472\\Microsoft.IdentityModel.Logging.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Logging.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Logging.7.5.1\\lib\\net6.0\\Microsoft.IdentityModel.Logging.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Logging.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Logging.7.5.1\\lib\\net8.0\\Microsoft.IdentityModel.Logging.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Logging.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Logging.7.5.1\\lib\\netstandard2.0\\Microsoft.IdentityModel.Logging.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Tokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Tokens.7.5.1\\lib\\net461\\Microsoft.IdentityModel.Tokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Tokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Tokens.7.5.1\\lib\\net462\\Microsoft.IdentityModel.Tokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Tokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Tokens.7.5.1\\lib\\net472\\Microsoft.IdentityModel.Tokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Tokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Tokens.7.5.1\\lib\\net6.0\\Microsoft.IdentityModel.Tokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Tokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Tokens.7.5.1\\lib\\net8.0\\Microsoft.IdentityModel.Tokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.IdentityModel.Tokens.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.IdentityModel.Tokens.7.5.1\\lib\\netstandard2.0\\Microsoft.IdentityModel.Tokens.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "Microsoft.Win32.Primitives.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Win32.Primitives.4.3.0\\lib\\net46\\Microsoft.Win32.Primitives.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "Microsoft.Win32.Registry.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Win32.Registry.5.0.0\\lib\\net46\\Microsoft.Win32.Registry.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "Microsoft.Win32.Registry.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Win32.Registry.5.0.0\\lib\\net461\\Microsoft.Win32.Registry.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "Microsoft.Win32.Registry.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Win32.Registry.5.0.0\\lib\\netstandard1.3\\Microsoft.Win32.Registry.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "Microsoft.Win32.Registry.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Win32.Registry.5.0.0\\lib\\netstandard2.0\\Microsoft.Win32.Registry.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "Microsoft.Win32.Registry.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Win32.Registry.5.0.0\\runtimes\\win\\lib\\net46\\Microsoft.Win32.Registry.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "Microsoft.Win32.Registry.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Win32.Registry.5.0.0\\runtimes\\win\\lib\\net461\\Microsoft.Win32.Registry.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "Microsoft.Win32.Registry.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Win32.Registry.5.0.0\\runtimes\\win\\lib\\netstandard1.3\\Microsoft.Win32.Registry.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "Microsoft.Win32.Registry.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Microsoft.Win32.Registry.5.0.0\\runtimes\\win\\lib\\netstandard2.0\\Microsoft.Win32.Registry.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "MimeMapping.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\MimeMapping.3.0.1\\lib\\net462\\MimeMapping.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "680e2d5f226b327b"
+  },
+  {
+    "FileName": "MimeMapping.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\MimeMapping.3.0.1\\lib\\netstandard2.0\\MimeMapping.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "680e2d5f226b327b"
+  },
+  {
+    "FileName": "Newtonsoft.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Newtonsoft.Json.13.0.3\\lib\\net20\\Newtonsoft.Json.dll",
+    "AssemblyVersion": "13.0.0.0",
+    "PublicKeyToken": "30ad4fe6b2a6aeed"
+  },
+  {
+    "FileName": "Newtonsoft.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Newtonsoft.Json.13.0.3\\lib\\net35\\Newtonsoft.Json.dll",
+    "AssemblyVersion": "13.0.0.0",
+    "PublicKeyToken": "30ad4fe6b2a6aeed"
+  },
+  {
+    "FileName": "Newtonsoft.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Newtonsoft.Json.13.0.3\\lib\\net40\\Newtonsoft.Json.dll",
+    "AssemblyVersion": "13.0.0.0",
+    "PublicKeyToken": "30ad4fe6b2a6aeed"
+  },
+  {
+    "FileName": "Newtonsoft.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Newtonsoft.Json.13.0.3\\lib\\net45\\Newtonsoft.Json.dll",
+    "AssemblyVersion": "13.0.0.0",
+    "PublicKeyToken": "30ad4fe6b2a6aeed"
+  },
+  {
+    "FileName": "Newtonsoft.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Newtonsoft.Json.13.0.3\\lib\\net6.0\\Newtonsoft.Json.dll",
+    "AssemblyVersion": "13.0.0.0",
+    "PublicKeyToken": "30ad4fe6b2a6aeed"
+  },
+  {
+    "FileName": "Newtonsoft.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Newtonsoft.Json.13.0.3\\lib\\netstandard1.0\\Newtonsoft.Json.dll",
+    "AssemblyVersion": "13.0.0.0",
+    "PublicKeyToken": "30ad4fe6b2a6aeed"
+  },
+  {
+    "FileName": "Newtonsoft.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Newtonsoft.Json.13.0.3\\lib\\netstandard1.3\\Newtonsoft.Json.dll",
+    "AssemblyVersion": "13.0.0.0",
+    "PublicKeyToken": "30ad4fe6b2a6aeed"
+  },
+  {
+    "FileName": "Newtonsoft.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Newtonsoft.Json.13.0.3\\lib\\netstandard2.0\\Newtonsoft.Json.dll",
+    "AssemblyVersion": "13.0.0.0",
+    "PublicKeyToken": "30ad4fe6b2a6aeed"
+  },
+  {
+    "FileName": "NLog.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\NLog.6.0.7\\lib\\net35\\NLog.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "5120e14c03d0593c"
+  },
+  {
+    "FileName": "NLog.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\NLog.6.0.7\\lib\\net45\\NLog.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "5120e14c03d0593c"
+  },
+  {
+    "FileName": "NLog.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\NLog.6.0.7\\lib\\net46\\NLog.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "5120e14c03d0593c"
+  },
+  {
+    "FileName": "NLog.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\NLog.6.0.7\\lib\\netstandard2.0\\NLog.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "5120e14c03d0593c"
+  },
+  {
+    "FileName": "NLog.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\NLog.6.0.7\\lib\\netstandard2.1\\NLog.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "5120e14c03d0593c"
+  },
+  {
+    "FileName": "BouncyCastle.Crypto.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Portable.BouncyCastle.1.9.0\\lib\\net40\\BouncyCastle.Crypto.dll",
+    "AssemblyVersion": "1.9.0.0",
+    "PublicKeyToken": "0e99375e54769942"
+  },
+  {
+    "FileName": "BouncyCastle.Crypto.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Portable.BouncyCastle.1.9.0\\lib\\netstandard2.0\\BouncyCastle.Crypto.dll",
+    "AssemblyVersion": "1.9.0.0",
+    "PublicKeyToken": "0e99375e54769942"
+  },
+  {
+    "FileName": "protobuf-net.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\protobuf-net.3.2.56\\lib\\net462\\protobuf-net.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "257b51d87d2e4d67"
+  },
+  {
+    "FileName": "protobuf-net.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\protobuf-net.3.2.56\\lib\\net8.0\\protobuf-net.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "257b51d87d2e4d67"
+  },
+  {
+    "FileName": "protobuf-net.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\protobuf-net.3.2.56\\lib\\netstandard2.0\\protobuf-net.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "257b51d87d2e4d67"
+  },
+  {
+    "FileName": "protobuf-net.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\protobuf-net.3.2.56\\lib\\netstandard2.1\\protobuf-net.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "257b51d87d2e4d67"
+  },
+  {
+    "FileName": "protobuf-net.Core.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\protobuf-net.Core.3.2.56\\lib\\net462\\protobuf-net.Core.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "257b51d87d2e4d67"
+  },
+  {
+    "FileName": "protobuf-net.Core.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\protobuf-net.Core.3.2.56\\lib\\net8.0\\protobuf-net.Core.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "257b51d87d2e4d67"
+  },
+  {
+    "FileName": "protobuf-net.Core.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\protobuf-net.Core.3.2.56\\lib\\netstandard2.0\\protobuf-net.Core.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "257b51d87d2e4d67"
+  },
+  {
+    "FileName": "protobuf-net.Core.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\protobuf-net.Core.3.2.56\\lib\\netstandard2.1\\protobuf-net.Core.dll",
+    "AssemblyVersion": "3.0.0.0",
+    "PublicKeyToken": "257b51d87d2e4d67"
+  },
+  {
+    "FileName": "Supabase.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Supabase.1.0.5\\lib\\netstandard2.0\\Supabase.dll",
+    "AssemblyVersion": "1.0.5.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Supabase.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Supabase.1.0.5\\lib\\netstandard2.1\\Supabase.dll",
+    "AssemblyVersion": "1.0.5.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Supabase.Core.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Supabase.Core.1.0.0\\lib\\netstandard2.0\\Supabase.Core.dll",
+    "AssemblyVersion": "1.0.0.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Supabase.Functions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Supabase.Functions.2.0.0\\lib\\netstandard2.0\\Supabase.Functions.dll",
+    "AssemblyVersion": "2.0.0.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Supabase.Gotrue.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Supabase.Gotrue.5.0.6\\lib\\netstandard2.0\\Supabase.Gotrue.dll",
+    "AssemblyVersion": "5.0.6.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Supabase.Postgrest.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Supabase.Postgrest.4.0.3\\lib\\netstandard2.0\\Supabase.Postgrest.dll",
+    "AssemblyVersion": "4.0.3.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Supabase.Realtime.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Supabase.Realtime.7.0.1\\lib\\netstandard2.0\\Supabase.Realtime.dll",
+    "AssemblyVersion": "7.0.1.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Supabase.Realtime.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Supabase.Realtime.7.0.1\\lib\\netstandard2.1\\Supabase.Realtime.dll",
+    "AssemblyVersion": "7.0.1.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "Supabase.Storage.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Supabase.Storage.2.0.2\\lib\\netstandard2.0\\Supabase.Storage.dll",
+    "AssemblyVersion": "2.0.2.0",
+    "PublicKeyToken": ""
+  },
+  {
+    "FileName": "System.AppContext.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.AppContext.4.3.0\\lib\\net46\\System.AppContext.dll",
+    "AssemblyVersion": "4.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.AppContext.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.AppContext.4.3.0\\lib\\net463\\System.AppContext.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.AppContext.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.AppContext.4.3.0\\lib\\netcore50\\System.AppContext.dll",
+    "AssemblyVersion": "4.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.AppContext.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.AppContext.4.3.0\\lib\\netstandard1.6\\System.AppContext.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.AppContext.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.AppContext.4.3.0\\runtimes\\aot\\lib\\netcore50\\System.AppContext.dll",
+    "AssemblyVersion": "4.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Buffers.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Buffers.4.6.1\\lib\\net462\\System.Buffers.dll",
+    "AssemblyVersion": "4.0.5.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Buffers.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Buffers.4.6.1\\lib\\netstandard2.0\\System.Buffers.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Collections.Concurrent.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Collections.Concurrent.4.3.0\\lib\\netcore50\\System.Collections.Concurrent.dll",
+    "AssemblyVersion": "4.0.10.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Collections.Concurrent.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Collections.Concurrent.4.3.0\\lib\\netstandard1.3\\System.Collections.Concurrent.dll",
+    "AssemblyVersion": "4.0.13.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Collections.Immutable.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Collections.Immutable.10.0.1\\lib\\net10.0\\System.Collections.Immutable.dll",
+    "AssemblyVersion": "10.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Collections.Immutable.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Collections.Immutable.10.0.1\\lib\\net462\\System.Collections.Immutable.dll",
+    "AssemblyVersion": "10.0.0.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Collections.Immutable.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Collections.Immutable.10.0.1\\lib\\net8.0\\System.Collections.Immutable.dll",
+    "AssemblyVersion": "10.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Collections.Immutable.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Collections.Immutable.10.0.1\\lib\\net9.0\\System.Collections.Immutable.dll",
+    "AssemblyVersion": "10.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Collections.Immutable.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Collections.Immutable.10.0.1\\lib\\netstandard2.0\\System.Collections.Immutable.dll",
+    "AssemblyVersion": "10.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Console.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Console.4.3.1\\lib\\net46\\System.Console.dll",
+    "AssemblyVersion": "4.0.1.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Diagnostics.Tracing.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Diagnostics.Tracing.4.3.0\\lib\\net462\\System.Diagnostics.Tracing.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Globalization.Calendars.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Globalization.Calendars.4.3.0\\lib\\net46\\System.Globalization.Calendars.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.IdentityModel.Tokens.Jwt.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IdentityModel.Tokens.Jwt.7.5.1\\lib\\net461\\System.IdentityModel.Tokens.Jwt.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "System.IdentityModel.Tokens.Jwt.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IdentityModel.Tokens.Jwt.7.5.1\\lib\\net462\\System.IdentityModel.Tokens.Jwt.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "System.IdentityModel.Tokens.Jwt.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IdentityModel.Tokens.Jwt.7.5.1\\lib\\net472\\System.IdentityModel.Tokens.Jwt.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "System.IdentityModel.Tokens.Jwt.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IdentityModel.Tokens.Jwt.7.5.1\\lib\\net6.0\\System.IdentityModel.Tokens.Jwt.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "System.IdentityModel.Tokens.Jwt.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IdentityModel.Tokens.Jwt.7.5.1\\lib\\net8.0\\System.IdentityModel.Tokens.Jwt.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "System.IdentityModel.Tokens.Jwt.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IdentityModel.Tokens.Jwt.7.5.1\\lib\\netstandard2.0\\System.IdentityModel.Tokens.Jwt.dll",
+    "AssemblyVersion": "7.5.1.0",
+    "PublicKeyToken": "31bf3856ad364e35"
+  },
+  {
+    "FileName": "System.IO.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.4.3.0\\lib\\net462\\System.IO.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.IO.Compression.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.Compression.4.3.0\\lib\\net46\\System.IO.Compression.dll",
+    "AssemblyVersion": "4.1.2.0",
+    "PublicKeyToken": "b77a5c561934e089"
+  },
+  {
+    "FileName": "System.IO.Compression.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.Compression.4.3.0\\runtimes\\unix\\lib\\netstandard1.3\\System.IO.Compression.dll",
+    "AssemblyVersion": "4.1.2.0",
+    "PublicKeyToken": "b77a5c561934e089"
+  },
+  {
+    "FileName": "System.IO.Compression.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.Compression.4.3.0\\runtimes\\win\\lib\\net46\\System.IO.Compression.dll",
+    "AssemblyVersion": "4.1.2.0",
+    "PublicKeyToken": "b77a5c561934e089"
+  },
+  {
+    "FileName": "System.IO.Compression.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.Compression.4.3.0\\runtimes\\win\\lib\\netstandard1.3\\System.IO.Compression.dll",
+    "AssemblyVersion": "4.1.2.0",
+    "PublicKeyToken": "b77a5c561934e089"
+  },
+  {
+    "FileName": "System.IO.Compression.ZipFile.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.Compression.ZipFile.4.3.0\\lib\\net46\\System.IO.Compression.ZipFile.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "b77a5c561934e089"
+  },
+  {
+    "FileName": "System.IO.Compression.ZipFile.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.Compression.ZipFile.4.3.0\\lib\\netstandard1.3\\System.IO.Compression.ZipFile.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "b77a5c561934e089"
+  },
+  {
+    "FileName": "System.IO.FileSystem.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.FileSystem.4.3.0\\lib\\net46\\System.IO.FileSystem.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.IO.FileSystem.Primitives.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.FileSystem.Primitives.4.3.0\\lib\\net46\\System.IO.FileSystem.Primitives.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.IO.FileSystem.Primitives.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.IO.FileSystem.Primitives.4.3.0\\lib\\netstandard1.3\\System.IO.FileSystem.Primitives.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Linq.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Linq.4.3.0\\lib\\net463\\System.Linq.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Linq.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Linq.4.3.0\\lib\\netcore50\\System.Linq.dll",
+    "AssemblyVersion": "4.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Linq.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Linq.4.3.0\\lib\\netstandard1.6\\System.Linq.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Linq.Expressions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Linq.Expressions.4.3.0\\lib\\net463\\System.Linq.Expressions.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Linq.Expressions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Linq.Expressions.4.3.0\\lib\\netcore50\\System.Linq.Expressions.dll",
+    "AssemblyVersion": "4.0.10.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Linq.Expressions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Linq.Expressions.4.3.0\\lib\\netstandard1.6\\System.Linq.Expressions.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Linq.Expressions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Linq.Expressions.4.3.0\\runtimes\\aot\\lib\\netcore50\\System.Linq.Expressions.dll",
+    "AssemblyVersion": "4.0.10.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Memory.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Memory.4.6.3\\lib\\net462\\System.Memory.dll",
+    "AssemblyVersion": "4.0.5.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Memory.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Memory.4.6.3\\lib\\netstandard2.0\\System.Memory.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Net.Http.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Net.Http.4.3.4\\lib\\net46\\System.Net.Http.dll",
+    "AssemblyVersion": "4.1.1.3",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Net.Http.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Net.Http.4.3.4\\runtimes\\unix\\lib\\netstandard1.6\\System.Net.Http.dll",
+    "AssemblyVersion": "4.1.1.3",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Net.Http.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Net.Http.4.3.4\\runtimes\\win\\lib\\net46\\System.Net.Http.dll",
+    "AssemblyVersion": "4.1.1.3",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Net.Http.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Net.Http.4.3.4\\runtimes\\win\\lib\\netcore50\\System.Net.Http.dll",
+    "AssemblyVersion": "4.1.1.3",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Net.Http.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Net.Http.4.3.4\\runtimes\\win\\lib\\netstandard1.3\\System.Net.Http.dll",
+    "AssemblyVersion": "4.1.1.3",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Net.Sockets.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Net.Sockets.4.3.0\\lib\\net46\\System.Net.Sockets.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Numerics.Vectors.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Numerics.Vectors.4.6.1\\lib\\net462\\System.Numerics.Vectors.dll",
+    "AssemblyVersion": "4.1.6.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Numerics.Vectors.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Numerics.Vectors.4.6.1\\lib\\netstandard2.0\\System.Numerics.Vectors.dll",
+    "AssemblyVersion": "4.1.3.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.ObjectModel.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.ObjectModel.4.3.0\\lib\\netcore50\\System.ObjectModel.dll",
+    "AssemblyVersion": "4.0.10.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.ObjectModel.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.ObjectModel.4.3.0\\lib\\netstandard1.3\\System.ObjectModel.dll",
+    "AssemblyVersion": "4.0.13.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Reactive.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Reactive.5.0.0\\lib\\net472\\System.Reactive.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "94bc3704cddfc263"
+  },
+  {
+    "FileName": "System.Reactive.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Reactive.5.0.0\\lib\\net5.0\\System.Reactive.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "94bc3704cddfc263"
+  },
+  {
+    "FileName": "System.Reactive.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Reactive.5.0.0\\lib\\net5.0-windows10.0.19041\\System.Reactive.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "94bc3704cddfc263"
+  },
+  {
+    "FileName": "System.Reactive.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Reactive.5.0.0\\lib\\netstandard2.0\\System.Reactive.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "94bc3704cddfc263"
+  },
+  {
+    "FileName": "System.Reactive.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Reactive.5.0.0\\lib\\uap10.0.16299\\System.Reactive.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "94bc3704cddfc263"
+  },
+  {
+    "FileName": "System.Reflection.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Reflection.4.3.0\\lib\\net462\\System.Reflection.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.4.3.1\\lib\\net462\\System.Runtime.dll",
+    "AssemblyVersion": "4.1.1.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.CompilerServices.Unsafe.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.CompilerServices.Unsafe.6.1.2\\lib\\net462\\System.Runtime.CompilerServices.Unsafe.dll",
+    "AssemblyVersion": "6.0.3.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.CompilerServices.Unsafe.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.CompilerServices.Unsafe.6.1.2\\lib\\net6.0\\System.Runtime.CompilerServices.Unsafe.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.CompilerServices.Unsafe.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.CompilerServices.Unsafe.6.1.2\\lib\\netstandard2.0\\System.Runtime.CompilerServices.Unsafe.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.Extensions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.Extensions.4.3.1\\lib\\net462\\System.Runtime.Extensions.dll",
+    "AssemblyVersion": "4.1.1.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.4.3.0\\lib\\net462\\System.Runtime.InteropServices.dll",
+    "AssemblyVersion": "4.1.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.4.3.0\\lib\\net463\\System.Runtime.InteropServices.dll",
+    "AssemblyVersion": "4.1.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.RuntimeInformation.4.3.0\\lib\\net45\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.RuntimeInformation.4.3.0\\lib\\netstandard1.1\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.RuntimeInformation.4.3.0\\lib\\win8\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.RuntimeInformation.4.3.0\\lib\\wpa81\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.RuntimeInformation.4.3.0\\runtimes\\aot\\lib\\netcore50\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.RuntimeInformation.4.3.0\\runtimes\\unix\\lib\\netstandard1.1\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.RuntimeInformation.4.3.0\\runtimes\\win\\lib\\net45\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.RuntimeInformation.4.3.0\\runtimes\\win\\lib\\netcore50\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.InteropServices.RuntimeInformation.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.InteropServices.RuntimeInformation.4.3.0\\runtimes\\win\\lib\\netstandard1.1\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.Numerics.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.Numerics.4.3.0\\lib\\netcore50\\System.Runtime.Numerics.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Runtime.Numerics.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Runtime.Numerics.4.3.0\\lib\\netstandard1.3\\System.Runtime.Numerics.dll",
+    "AssemblyVersion": "4.0.2.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.AccessControl.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.AccessControl.6.0.1\\lib\\net461\\System.Security.AccessControl.dll",
+    "AssemblyVersion": "6.0.0.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.AccessControl.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.AccessControl.6.0.1\\lib\\net6.0\\System.Security.AccessControl.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.AccessControl.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.AccessControl.6.0.1\\lib\\netstandard2.0\\System.Security.AccessControl.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.AccessControl.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.AccessControl.6.0.1\\runtimes\\win\\lib\\net461\\System.Security.AccessControl.dll",
+    "AssemblyVersion": "6.0.0.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.AccessControl.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.AccessControl.6.0.1\\runtimes\\win\\lib\\net6.0\\System.Security.AccessControl.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.AccessControl.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.AccessControl.6.0.1\\runtimes\\win\\lib\\netstandard2.0\\System.Security.AccessControl.dll",
+    "AssemblyVersion": "6.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\lib\\net46\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\lib\\net461\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.1.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\lib\\net463\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.2.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\runtimes\\osx\\lib\\netstandard1.6\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.2.1.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\runtimes\\unix\\lib\\netstandard1.6\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.2.1.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\runtimes\\win\\lib\\net46\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\runtimes\\win\\lib\\net461\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.1.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\runtimes\\win\\lib\\net463\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.2.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\runtimes\\win\\lib\\netcore50\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.1.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Algorithms.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Algorithms.4.3.1\\runtimes\\win\\lib\\netstandard1.6\\System.Security.Cryptography.Algorithms.dll",
+    "AssemblyVersion": "4.2.1.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Encoding.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Encoding.4.3.0\\lib\\net46\\System.Security.Cryptography.Encoding.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Encoding.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Encoding.4.3.0\\runtimes\\unix\\lib\\netstandard1.3\\System.Security.Cryptography.Encoding.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Encoding.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Encoding.4.3.0\\runtimes\\win\\lib\\net46\\System.Security.Cryptography.Encoding.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Encoding.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Encoding.4.3.0\\runtimes\\win\\lib\\netstandard1.3\\System.Security.Cryptography.Encoding.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Primitives.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Primitives.4.3.0\\lib\\net46\\System.Security.Cryptography.Primitives.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.Primitives.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.Primitives.4.3.0\\lib\\netstandard1.3\\System.Security.Cryptography.Primitives.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.X509Certificates.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.X509Certificates.4.3.2\\lib\\net46\\System.Security.Cryptography.X509Certificates.dll",
+    "AssemblyVersion": "4.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.X509Certificates.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.X509Certificates.4.3.2\\lib\\net461\\System.Security.Cryptography.X509Certificates.dll",
+    "AssemblyVersion": "4.1.1.2",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.X509Certificates.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.X509Certificates.4.3.2\\runtimes\\unix\\lib\\netstandard1.6\\System.Security.Cryptography.X509Certificates.dll",
+    "AssemblyVersion": "4.1.1.2",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.X509Certificates.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.X509Certificates.4.3.2\\runtimes\\win\\lib\\net46\\System.Security.Cryptography.X509Certificates.dll",
+    "AssemblyVersion": "4.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.X509Certificates.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.X509Certificates.4.3.2\\runtimes\\win\\lib\\net461\\System.Security.Cryptography.X509Certificates.dll",
+    "AssemblyVersion": "4.1.1.2",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.X509Certificates.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.X509Certificates.4.3.2\\runtimes\\win\\lib\\netcore50\\System.Security.Cryptography.X509Certificates.dll",
+    "AssemblyVersion": "4.1.1.2",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Cryptography.X509Certificates.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Cryptography.X509Certificates.4.3.2\\runtimes\\win\\lib\\netstandard1.6\\System.Security.Cryptography.X509Certificates.dll",
+    "AssemblyVersion": "4.1.1.2",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\lib\\net46\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\lib\\net461\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\lib\\netstandard1.3\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\lib\\netstandard2.0\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\runtimes\\unix\\lib\\netcoreapp2.0\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\runtimes\\unix\\lib\\netcoreapp2.1\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\runtimes\\win\\lib\\net46\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\runtimes\\win\\lib\\net461\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\runtimes\\win\\lib\\netcoreapp2.0\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\runtimes\\win\\lib\\netcoreapp2.1\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Security.Principal.Windows.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Security.Principal.Windows.5.0.0\\runtimes\\win\\lib\\netstandard1.3\\System.Security.Principal.Windows.dll",
+    "AssemblyVersion": "4.0.1.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Text.Encodings.Web.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.Encodings.Web.4.7.2\\lib\\net461\\System.Text.Encodings.Web.dll",
+    "AssemblyVersion": "4.0.5.1",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Text.Encodings.Web.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.Encodings.Web.4.7.2\\lib\\netstandard1.0\\System.Text.Encodings.Web.dll",
+    "AssemblyVersion": "4.0.3.1",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Text.Encodings.Web.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.Encodings.Web.4.7.2\\lib\\netstandard2.0\\System.Text.Encodings.Web.dll",
+    "AssemblyVersion": "4.0.5.1",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Text.Encodings.Web.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.Encodings.Web.4.7.2\\lib\\netstandard2.1\\System.Text.Encodings.Web.dll",
+    "AssemblyVersion": "4.0.5.1",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Text.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.Json.4.7.2\\lib\\net461\\System.Text.Json.dll",
+    "AssemblyVersion": "4.0.1.2",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Text.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.Json.4.7.2\\lib\\netcoreapp3.0\\System.Text.Json.dll",
+    "AssemblyVersion": "4.0.1.2",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Text.Json.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.Json.4.7.2\\lib\\netstandard2.0\\System.Text.Json.dll",
+    "AssemblyVersion": "4.0.1.2",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Text.RegularExpressions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.RegularExpressions.4.3.1\\lib\\net463\\System.Text.RegularExpressions.dll",
+    "AssemblyVersion": "4.1.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Text.RegularExpressions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.RegularExpressions.4.3.1\\lib\\netcore50\\System.Text.RegularExpressions.dll",
+    "AssemblyVersion": "4.0.10.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Text.RegularExpressions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Text.RegularExpressions.4.3.1\\lib\\netstandard1.6\\System.Text.RegularExpressions.dll",
+    "AssemblyVersion": "4.1.1.1",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Threading.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.4.3.0\\lib\\netcore50\\System.Threading.dll",
+    "AssemblyVersion": "4.0.12.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Threading.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.4.3.0\\lib\\netstandard1.3\\System.Threading.dll",
+    "AssemblyVersion": "4.0.12.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Threading.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.4.3.0\\runtimes\\aot\\lib\\netcore50\\System.Threading.dll",
+    "AssemblyVersion": "4.0.12.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Threading.Channels.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.Channels.5.0.0\\lib\\net461\\System.Threading.Channels.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Threading.Channels.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.Channels.5.0.0\\lib\\netcoreapp3.0\\System.Threading.Channels.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Threading.Channels.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.Channels.5.0.0\\lib\\netstandard1.3\\System.Threading.Channels.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Threading.Channels.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.Channels.5.0.0\\lib\\netstandard2.0\\System.Threading.Channels.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Threading.Channels.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.Channels.5.0.0\\lib\\netstandard2.1\\System.Threading.Channels.dll",
+    "AssemblyVersion": "5.0.0.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Threading.Tasks.Extensions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.Tasks.Extensions.4.5.4\\lib\\net461\\System.Threading.Tasks.Extensions.dll",
+    "AssemblyVersion": "4.2.0.1",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Threading.Tasks.Extensions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.Tasks.Extensions.4.5.4\\lib\\netstandard1.0\\System.Threading.Tasks.Extensions.dll",
+    "AssemblyVersion": "4.2.0.1",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Threading.Tasks.Extensions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.Tasks.Extensions.4.5.4\\lib\\netstandard2.0\\System.Threading.Tasks.Extensions.dll",
+    "AssemblyVersion": "4.2.0.1",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Threading.Tasks.Extensions.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Threading.Tasks.Extensions.4.5.4\\lib\\portable-net45+win8+wp8+wpa81\\System.Threading.Tasks.Extensions.dll",
+    "AssemblyVersion": "4.2.0.1",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.ValueTuple.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.ValueTuple.4.5.0\\lib\\net461\\System.ValueTuple.dll",
+    "AssemblyVersion": "4.0.3.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.ValueTuple.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.ValueTuple.4.5.0\\lib\\net47\\System.ValueTuple.dll",
+    "AssemblyVersion": "4.0.3.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.ValueTuple.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.ValueTuple.4.5.0\\lib\\netstandard1.0\\System.ValueTuple.dll",
+    "AssemblyVersion": "4.0.3.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.ValueTuple.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.ValueTuple.4.5.0\\lib\\portable-net40+sl4+win8+wp8\\System.ValueTuple.dll",
+    "AssemblyVersion": "4.0.3.0",
+    "PublicKeyToken": "cc7b13ffcd2ddd51"
+  },
+  {
+    "FileName": "System.Xml.ReaderWriter.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Xml.ReaderWriter.4.3.1\\lib\\net46\\System.Xml.ReaderWriter.dll",
+    "AssemblyVersion": "4.1.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Xml.ReaderWriter.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Xml.ReaderWriter.4.3.1\\lib\\netcore50\\System.Xml.ReaderWriter.dll",
+    "AssemblyVersion": "4.1.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Xml.ReaderWriter.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Xml.ReaderWriter.4.3.1\\lib\\netstandard1.3\\System.Xml.ReaderWriter.dll",
+    "AssemblyVersion": "4.1.0.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Xml.XDocument.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Xml.XDocument.4.3.0\\lib\\netcore50\\System.Xml.XDocument.dll",
+    "AssemblyVersion": "4.0.12.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "System.Xml.XDocument.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\System.Xml.XDocument.4.3.0\\lib\\netstandard1.3\\System.Xml.XDocument.dll",
+    "AssemblyVersion": "4.0.12.0",
+    "PublicKeyToken": "b03f5f7f11d50a3a"
+  },
+  {
+    "FileName": "Titanium.Web.Proxy.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Titanium.Web.Proxy.3.2.2-beta\\lib\\net461\\Titanium.Web.Proxy.dll",
+    "AssemblyVersion": "1.0.1.0",
+    "PublicKeyToken": "8e41e1f1c790d7cf"
+  },
+  {
+    "FileName": "Titanium.Web.Proxy.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Titanium.Web.Proxy.3.2.2-beta\\lib\\net6.0\\Titanium.Web.Proxy.dll",
+    "AssemblyVersion": "1.0.1.0",
+    "PublicKeyToken": "8e41e1f1c790d7cf"
+  },
+  {
+    "FileName": "Websocket.Client.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Websocket.Client.4.7.0\\lib\\net5.0\\Websocket.Client.dll",
+    "AssemblyVersion": "4.7.0.0",
+    "PublicKeyToken": "ae648c6d12f59b1b"
+  },
+  {
+    "FileName": "Websocket.Client.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Websocket.Client.4.7.0\\lib\\net6.0\\Websocket.Client.dll",
+    "AssemblyVersion": "4.7.0.0",
+    "PublicKeyToken": "ae648c6d12f59b1b"
+  },
+  {
+    "FileName": "Websocket.Client.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Websocket.Client.4.7.0\\lib\\netstandard2.0\\Websocket.Client.dll",
+    "AssemblyVersion": "4.7.0.0",
+    "PublicKeyToken": "ae648c6d12f59b1b"
+  },
+  {
+    "FileName": "Websocket.Client.dll",
+    "PackagePath": "D:\\Developer\\Lilith\\DanmakuBackend\\packages\\Websocket.Client.4.7.0\\lib\\netstandard2.1\\Websocket.Client.dll",
+    "AssemblyVersion": "4.7.0.0",
+    "PublicKeyToken": "ae648c6d12f59b1b"
+  }
+]

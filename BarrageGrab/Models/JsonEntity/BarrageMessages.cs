@@ -38,7 +38,8 @@ namespace DanmakuBackend.Models.JsonEntity
     {
         粉丝团升级 = 1,
         加入粉丝团 = 2,
-        灭灯 = 6 //TODO: 待确定
+        灭灯 = 6, //TODO: 待确定
+        星守护 = 7
     }
 
     /// <summary>
@@ -403,7 +404,7 @@ namespace DanmakuBackend.Models.JsonEntity
         [JsonProperty("_type")] public string MsgType = "fan";
 
         /// <summary>
-        /// 粉丝团消息类型,升级1，加入2
+        /// 粉丝团消息类型,升级1，加入2, Star Guard? 7
         /// </summary>
         [JsonProperty("type")]
         public FansclubType Type { get; set; }
