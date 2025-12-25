@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -36,7 +36,10 @@ namespace DanmakuBackend.Server
 
         private Timer giftCountTimer = new Timer(10000); //礼物缓存清理计时器
         private WssBarrageGrab grab = new WssBarrageGrab(); //弹幕解析器核心
-        private Dictionary<string, UserState> socketList = new Dictionary<string, UserState>(); //客户端列表
+
+        private ConcurrentDictionary<string, UserState>
+            socketList = new ConcurrentDictionary<string, UserState>(); //客户端列表
+
         private WebSocketServer socketServer; //Ws服务器对象
 
         public WsBarrageServer()
@@ -138,7 +141,16 @@ namespace DanmakuBackend.Server
         {
             var now = DateTime.Now;
             var dieoutKvs = socketList.Where(w => w.Value.LastPing.AddSeconds(dieout.Interval * 3) < now).ToList();
-            dieoutKvs.ForEach(f => f.Value.Socket.Close());
+            foreach (var kvp in dieoutKvs)
+                try
+                {
+                    kvp.Value.Socket.Close();
+                    socketList.TryRemove(kvp.Key, out _);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"清理超时客户端时出错: {ex.Message}");
+                }
         }
 
         //判断Rommid是否符合拦截规则
@@ -214,7 +226,7 @@ namespace DanmakuBackend.Server
         }
 
         //创建消息对象
-        private T CreateMsg<T>(dynamic msg, User user = null) where T : Msg, new()
+        private T CreateMsg<T>(dynamic msg, MsgUser user = null) where T : Msg, new()
         {
             var roomid = msg.Common.roomId.ToString();
             RoomInfo roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
@@ -485,6 +497,7 @@ namespace DanmakuBackend.Server
             enty.Content = $"[会员表情]";
             AttachRoomInfo(enty);
             Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.会员表情, e.Process));
+            AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "会员表情");
         }
 
         //直播间状态变更
@@ -561,7 +574,9 @@ namespace DanmakuBackend.Server
             {
                 if (displayText.Pieces != null && displayText.Pieces.Count > 2)
                 {
-                    enty = CreateMsg<VipBuyMsg>(msg, displayText.Pieces[0].userValue.User);
+                    var protoUser = displayText.Pieces[0].userValue?.User;
+                    var msgUser = protoUser != null ? GetUser(protoUser) : null;
+                    enty = CreateMsg<VipBuyMsg>(msg, msgUser);
                     enty.Action = displayText.Pieces[1].stringValue;
                     enty.Unit = displayText.Pieces[2].stringValue;
                     enty.IsAnnual = enty.Unit.Equals("年度", StringComparison.CurrentCultureIgnoreCase);
@@ -603,7 +618,7 @@ namespace DanmakuBackend.Server
                 if (!socketList.TryGetValue(clientUrl, out var client))
                 {
                     var userState = new UserState(socket);
-                    socketList.Add(clientUrl, userState);
+                    socketList.TryAdd(clientUrl, userState);
                     Logger.LogInfo($"建立与[{socket.ConnectionInfo.Id}]的握手，等待认证...");
                     // 发送 ServerHello 消息
                     var serverHello = new ServerHello
@@ -626,7 +641,7 @@ namespace DanmakuBackend.Server
                             Logger.LogWarn($"客户端认证超时，断开连接");
                             userState.AuthTimer?.Stop();
                             socket.Close();
-                            socketList.Remove(clientUrl);
+                            socketList.TryRemove(clientUrl, out _);
                         }
                     };
                     userState.AuthTimer.AutoReset = false;
@@ -674,13 +689,16 @@ namespace DanmakuBackend.Server
             };
             socket.OnClose = () =>
             {
-                socketList.Remove(clientUrl);
+                socketList.TryRemove(clientUrl, out _);
                 Logger.LogInfo($"关闭与[{clientUrl}]的连接");
             };
             socket.OnPing = (data) =>
             {
-                socketList[clientUrl].LastPing = DateTime.Now;
-                socket.SendPong(Encoding.UTF8.GetBytes(AppRuntime.DanmakuManager.SessionId));
+                if (socketList.TryGetValue(clientUrl, out var client))
+                {
+                    client.LastPing = DateTime.Now;
+                    socket.SendPong(Encoding.UTF8.GetBytes(AppRuntime.DanmakuManager.SessionId));
+                }
             };
         }
 
@@ -736,13 +754,13 @@ namespace DanmakuBackend.Server
                     };
                     userState.Socket.Send(JsonConvert.SerializeObject(response));
                     userState.Socket.Close();
-                    socketList[clientUrl].Socket.Close();
+                    if (socketList.TryGetValue(clientUrl, out var failedClient)) failedClient.Socket.Close();
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError($"处理认证请求时出错: {ex.Message}");
-                if (socketList.ContainsKey(clientUrl)) socketList[clientUrl].Socket.Close();
+                if (socketList.TryGetValue(clientUrl, out var errorClient)) errorClient.Socket.Close();
             }
         }
 
@@ -769,16 +787,45 @@ namespace DanmakuBackend.Server
         public void Broadcast(DanmakuMessagePack pack)
         {
             if (pack == null) return;
+            // 收集需要删除的键，避免在遍历时修改集合
+            var keysToRemove = new List<string>();
             foreach (var item in socketList)
             {
                 var client = item.Value;
                 if (client.IsAuthenticated && client.Socket.IsAvailable)
                 {
-                    client.Socket.Send(pack.ToJson());
+                    try
+                    {
+                        client.Socket.Send(pack.ToJson());
+                    }
+                    catch (Exception ex)
+                    {
+                        // 发送失败，标记为需要删除
+                        Logger.LogError($"发送消息到客户端失败: {ex.Message}");
+                        keysToRemove.Add(item.Key);
+                    }
                 }
                 else if (!client.Socket.IsAvailable)
                 {
-                    socketList.Remove(item.Key);
+                    keysToRemove.Add(item.Key);
+                }
+            }
+
+            // 遍历完成后删除无效的客户端
+            foreach (var key in keysToRemove)
+            {
+                if (socketList.TryRemove(key, out var removedClient))
+                {
+                    try
+                    {
+                        removedClient.Socket?.Close();
+                        removedClient.AuthTimer?.Stop();
+                        removedClient.AuthTimer?.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"清理客户端连接时出错: {ex.Message}");
+                    }
                 }
             }
         }

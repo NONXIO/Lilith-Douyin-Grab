@@ -107,7 +107,7 @@ namespace DanmakuBackend
             {
                 case 0: //Ctrl+C关闭
                 case 2:
-                    Logger.LogInfo("捕获到控制台关闭请求，正在关闭服务...");
+                    Logger.LogInfo("正在关闭服务...");
                     OnClose();
                     return true;
             }
