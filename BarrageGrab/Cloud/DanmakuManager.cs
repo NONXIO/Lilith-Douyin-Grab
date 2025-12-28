@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeviceId;
+using Newtonsoft.Json;
 using Supabase;
 using Supabase.Realtime;
 using Client = Supabase.Client;
-using Constants = Supabase.Postgrest.Constants;
 using Timer = System.Timers.Timer;
 
 namespace DanmakuBackend.Cloud
@@ -70,6 +70,11 @@ namespace DanmakuBackend.Cloud
         /// </summary>
         public string ValidatedSessionId { get; private set; }
 
+        /// <summary>
+        ///     当前会话的授权信息
+        /// </summary>
+        public LicenceInfo LicenceInfo { get; private set; }
+
         public bool IsAnchorRoom(long roomId)
         {
             return _roomId == roomId;
@@ -117,27 +122,46 @@ namespace DanmakuBackend.Cloud
         {
             try
             {
-                // 查询 danmaku_online 表
-                var thirtySecondsAgo = DateTime.Now.AddSeconds(-30);
-                var result = await _client
-                    .From<OnlineClient>()
-                    .Filter("machine_id", Constants.Operator.Equals, _machineId)
-                    .Filter("session_id", Constants.Operator.Equals, sessionId)
-                    .Filter("banned", Constants.Operator.Equals, "false")
-                    .Get();
-
-                if (!result.Models.Any()) return false;
-                var client = result.Models.First();
-
-                // 检查 last_online_at 是否在30秒内
-                if (client.LastOnlineAt < thirtySecondsAgo)
+                // 调用 Supabase Edge Function 进行验证
+                var payload = new Dictionary<string, object>
                 {
-                    Logger.LogDebug($"验证失败: 会话过期");
+                    { "machine_id", _machineId },
+                    { "room_id", _roomId }
+                };
+
+                var payloadJson = JsonConvert.SerializeObject(payload);
+                var response = await _client.Functions.Invoke("validate-session-and-get-licence", payloadJson);
+                if (response == null)
+                {
+                    Logger.LogError("验证会话失败: 响应为空");
                     return false;
                 }
 
-                // 验证成功，保存 session_id
+                // 将响应对象序列化为 JSON 字符串
+                var responseContent = JsonConvert.SerializeObject(response);
+
+                // 如果响应是字符串类型，直接使用
+                if (response is string strResponse)
+                {
+                    responseContent = strResponse;
+                }
+                else if (string.IsNullOrEmpty(responseContent) || responseContent == "null")
+                {
+                    Logger.LogError("验证会话失败: 响应内容为空");
+                    return false;
+                }
+
+                var result = JsonConvert.DeserializeObject<ValidateSessionResponse>(responseContent);
+
+                if (result == null || result.Licence == null)
+                {
+                    Logger.LogDebug("验证失败: 未找到有效的授权信息");
+                    return false;
+                }
+
+                // 验证成功，保存 session_id 和授权信息
                 ValidatedSessionId = sessionId;
+                LicenceInfo = result.Licence;
                 return true;
             }
             catch (Exception e)
@@ -177,6 +201,16 @@ namespace DanmakuBackend.Cloud
                 {
                     Logger.LogError("取消订阅授权频道失败: " + e.Message);
                 }
+        }
+
+        /// <summary>
+        ///     Edge Function 响应模型
+        /// </summary>
+        private class ValidateSessionResponse
+        {
+            [JsonProperty("licence")] public LicenceInfo Licence { get; set; }
+
+            [JsonProperty("error")] public string Error { get; set; }
         }
     }
 }

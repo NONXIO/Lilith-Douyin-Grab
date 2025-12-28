@@ -117,6 +117,7 @@ namespace DanmakuBackend.Proxy
             if (result != null) return result;
 
             return null;
+
             // 打开“受信任的根证书颁发机构”存储区
             using (X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine))
             {
@@ -237,6 +238,7 @@ namespace DanmakuBackend.Proxy
             var tupe = RoomInfo.TryParseStreamPusherCreate(reponse, out roomInfo);
             var code = tupe.Item1;
             var msg = tupe.Item2;
+
             if (code != 0)
             {
                 Logger.LogWarn($"直播伴侣开播房间资料缓存失败，原因:{msg}");
@@ -244,14 +246,17 @@ namespace DanmakuBackend.Proxy
             }
 
             var jobj = JsonConvert.DeserializeObject<JObject>(reponse);
+
             var roomid = jobj["data"]?["id_str"]?.Value<string>();
             var sec_uid = jobj["data"]?["owner"]?["sec_uid"]?.Value<string>();
             var nickname = jobj["data"]?["owner"]?["nickname"]?.Value<string>();
             var displayId = jobj["data"]?["owner"]?["display_id"]?.Value<string>();
+
             if (roomInfo != null && !roomid.IsNullOrWhiteSpace())
             {
                 roomInfo.RoomId = roomid;
                 roomInfo.Title = jobj["data"]?["title"]?.Value<string>();
+                Logger.LogInfo($"直播伴侣开播，开播账号:{displayId} {nickname} ，更新RoomId={roomInfo.RoomId}");
             }
 
             if (roomInfo != null && AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roomInfo.WebRoomId)))
@@ -429,7 +434,7 @@ namespace DanmakuBackend.Proxy
                             script.InnerHtml = liveRoomInjectScript;
                             body.AppendChild(script);
                             html = doc.DocumentNode.OuterHtml;
-                            Logger.LogDebug($"直播页{urlNoQuery},用户脚本已成功注入!\n");
+                            Logger.LogDebug($"直播页{urlNoQuery},用户脚本已注入!\n");
                         }
                     }
                     catch (Exception ex)
@@ -479,7 +484,7 @@ namespace DanmakuBackend.Proxy
                         body.AppendChild(script);
                         var newHtml = doc.DocumentNode.OuterHtml;
                         e.SetResponseBodyString(newHtml);
-                        Logger.LogDebug($"直播首页{urlNoQuery},用户脚本已成功注入!\n");
+                        Logger.LogDebug($"直播首页{urlNoQuery},用户脚本已注入!\n");
                     }
                 }
             }
@@ -642,9 +647,13 @@ namespace DanmakuBackend.Proxy
         private async void WebSocket_DataReceived(object sender, DataEventArgs e)
         {
             var args = (SessionEventArgs)sender;
+
             string hostname = args.HttpClient.Request.RequestUri.Host;
+
             var processid = args.HttpClient.ProcessId.Value;
+
             List<byte> messageData = new List<byte>();
+
             try
             {
                 foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))
@@ -652,6 +661,7 @@ namespace DanmakuBackend.Proxy
                     if (frame.OpCode == WebsocketOpCode.Continuation)
                     {
                         messageData.AddRange(frame.Data.ToArray());
+                        continue;
                     }
                     else
                     {
