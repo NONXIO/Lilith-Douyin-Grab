@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
 using DanmakuBackend.Models;
 using DanmakuBackend.Models.JsonEntity;
@@ -143,7 +142,9 @@ namespace DanmakuBackend.Server
                     {
                         f.Socket.Close();
                     }
-                    catch { }
+                    catch
+                    {
+                    }
                 });
             }
             catch (Exception ex)
@@ -549,7 +550,7 @@ namespace DanmakuBackend.Server
             var pack = new DanmakuMessagePack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
         }
-        
+
         private void Grab_OnAudioChatMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<AudioChatMessage> e)
         {
             var msg = e.Message;
@@ -694,34 +695,27 @@ namespace DanmakuBackend.Server
                 if (!socketList.TryGetValue(clientUrl, out var client))
                 {
                     var userState = new UserState(socket);
-                    socketList.TryAdd(clientUrl, userState);
-                    Logger.LogInfo($"建立与[{socket.ConnectionInfo.Id}]的握手，等待认证...");
-                    // 发送 ServerHello 消息
-                    var serverHello = new ServerHello
+                    // 从 Header 中读取 session-id
+                    if (socket.ConnectionInfo.Headers != null)
                     {
-                        MachineId = AppRuntime.DanmakuManager.MachineId,
-                        TimeoutSeconds = 10
-                    };
-                    var helloCommand = new Command
-                    {
-                        Cmd = CommandCode.Auth,
-                        Data = serverHello
-                    };
-                    socket.Send(JsonConvert.SerializeObject(helloCommand));
-                    // 启动10秒认证超时计时器
-                    userState.AuthTimer = new Timer(10000);
-                    userState.AuthTimer.Elapsed += (sender, e) =>
-                    {
-                        if (!userState.IsAuthenticated)
+                        // 尝试从不同的 Header 名称读取 session-id
+                        if (socket.ConnectionInfo.Headers.TryGetValue("auth-session", out var sessionId))
                         {
-                            Logger.LogWarn($"客户端认证超时，断开连接");
-                            userState.AuthTimer?.Stop();
-                            socket.Close();
-                            socketList.TryRemove(clientUrl, out _);
+                            // 验证 session
+                            if (AppRuntime.DanmakuManager.IsSessionMatched(sessionId))
+                            {
+                                userState.IsAuthenticated = true;
+                                userState.SessionId = sessionId;
+                                socketList.TryAdd(clientUrl, userState);
+                                Logger.LogInfo($"客户端[{socket.ConnectionInfo.Id}]认证成功");
+                            }
+                            else
+                            {
+                                Logger.LogWarn($"客户端[{socket.ConnectionInfo.Id}]认证失败");
+                                socket.Close();
+                            }
                         }
-                    };
-                    userState.AuthTimer.AutoReset = false;
-                    userState.AuthTimer.Start();
+                    }
                 }
                 else
                 {
@@ -734,14 +728,18 @@ namespace DanmakuBackend.Server
             {
                 try
                 {
+                    // 检查客户端是否已认证
+                    if (!socketList.TryGetValue(clientUrl, out var userState) || !userState.IsAuthenticated)
+                    {
+                        Logger.LogWarn($"未认证的客户端[{socket.ConnectionInfo.Id}]尝试发送消息，拒绝处理");
+                        socket.Close();
+                        return;
+                    }
+
                     var cmdPack = JsonConvert.DeserializeObject<Command>(message);
                     if (cmdPack == null) return;
                     switch (cmdPack.Cmd)
                     {
-                        case CommandCode.Auth:
-                            // 处理认证请求
-                            HandleAuthenticationAsync(clientUrl, cmdPack.Data).Wait();
-                            break;
                         case CommandCode.Close:
                             // 关闭服务器
                             Logger.LogInfo("关闭程序...");
@@ -778,67 +776,6 @@ namespace DanmakuBackend.Server
             };
         }
 
-        /// <summary>
-        /// 处理客户端认证请求
-        /// </summary>
-        /// <param name="clientUrl">客户端URL</param>
-        /// <param name="data">认证数据</param>
-        private async Task HandleAuthenticationAsync(string clientUrl, object data)
-        {
-            try
-            {
-                if (!socketList.TryGetValue(clientUrl, out var userState))
-                {
-                    Logger.LogError($"无效客户端");
-                    return;
-                }
-
-                // 反序列化认证请求
-                var authRequest = JsonConvert.DeserializeObject<AuthRequest>(data.ToString());
-                if (authRequest == null)
-                {
-                    Logger.LogError("认证请求格式错误");
-                    userState.Socket.Close();
-                    return;
-                }
-
-                // 验证 session
-                var isValid = await AppRuntime.DanmakuManager.ValidateSessionAsync(authRequest.SessionId);
-                if (isValid)
-                {
-                    // 认证成功
-                    userState.IsAuthenticated = true;
-                    userState.SessionId = authRequest.SessionId;
-                    userState.AuthTimer?.Stop();
-                    Logger.LogInfo($"客户端[{userState.Socket.ConnectionInfo.Id}]认证成功");
-                    // 发送认证成功响应
-                    var response = new Command
-                    {
-                        Cmd = CommandCode.Auth,
-                        Data = new { success = true, message = "认证成功" }
-                    };
-                    userState.Socket.Send(JsonConvert.SerializeObject(response));
-                }
-                else
-                {
-                    // 认证失败
-                    Logger.LogWarn($"客户端[{userState.Socket.ConnectionInfo.Id}]认证失败，断开连接");
-                    var response = new Command
-                    {
-                        Cmd = CommandCode.Auth,
-                        Data = new { success = false, message = "认证失败" }
-                    };
-                    userState.Socket.Send(JsonConvert.SerializeObject(response));
-                    userState.Socket.Close();
-                    if (socketList.TryGetValue(clientUrl, out var failedClient)) failedClient.Socket.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError($"处理认证请求时出错: {ex.Message}");
-                if (socketList.TryGetValue(clientUrl, out var errorClient)) errorClient.Socket.Close();
-            }
-        }
 
         /// <summary>
         /// 广播简单事件

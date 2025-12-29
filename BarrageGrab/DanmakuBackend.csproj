@@ -300,7 +300,7 @@
     <Compile Include="Cloud\DanmakuManager.cs"/>
     <Compile Include="Cloud\EventLog.cs" />
     <Compile Include="Cloud\LicenceInfo.cs"/>
-    <Compile Include="Cloud\LicenceShutdownBroadcast.cs"/>
+    <Compile Include="Cloud\ShutdownBroadcast.cs"/>
     <Compile Include="Cloud\OnlineClient.cs"/>
     <Compile Include="DanmakuException.cs"/>
     <Compile Include="Models\BusinessExecption.cs"/>

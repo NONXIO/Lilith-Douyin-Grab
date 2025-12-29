@@ -44,8 +44,8 @@ namespace DanmakuBackend
         {
             var accessKey = args[0] ?? string.Empty;
             var roomId = args[1] ?? string.Empty;
-            if (string.IsNullOrEmpty(accessKey)) throw new DanmakuException("未授权,请使用Danmaku启动此后端服务");
-            if (string.IsNullOrEmpty(roomId)) throw new DanmakuException("参数错误,请使用Danmaku启动此后端服务");
+            if (string.IsNullOrEmpty(accessKey)) throw new DanmakuException("未授权");
+            if (string.IsNullOrEmpty(roomId)) throw new DanmakuException("参数错误");
             DanmakuManager = new DanmakuManager(accessKey, roomId);
         }
 

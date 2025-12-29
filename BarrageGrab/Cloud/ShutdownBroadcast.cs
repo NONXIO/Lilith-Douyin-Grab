@@ -3,7 +3,7 @@ using Supabase.Realtime.Models;
 
 namespace DanmakuBackend.Cloud
 {
-    public class LicenceShutdownBroadcast : BaseBroadcast
+    public class ShutdownBroadcast : BaseBroadcast
     {
         [JsonProperty("reason")] public string Reason { get; set; }
     }

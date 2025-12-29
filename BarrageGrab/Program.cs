@@ -22,7 +22,7 @@ namespace DanmakuBackend
 
         static void Main(string[] args)
         {
-            if (Debugger.IsAttached) throw new DanmakuException("内部错误,请使用Danmaku启动此后端服务");
+            if (Debugger.IsAttached) return;
             if (!mutex.WaitOne(TimeSpan.Zero, true))
             {
                 Logger.LogFatal(@"另一个实例已在运行");
@@ -33,7 +33,6 @@ namespace DanmakuBackend
             // 解析命令行参数
             bool isDebugMode = false;
             var validArgs = new List<string>();
-            
             foreach (var arg in args)
             {
                 if (arg.Equals("--debug", StringComparison.OrdinalIgnoreCase))
@@ -56,10 +55,7 @@ namespace DanmakuBackend
 
             // 设置调试模式
             AppRuntime.IsDebugMode = isDebugMode;
-            if (isDebugMode)
-            {
-                Logger.LogInfo("调试模式已启用");
-            }
+            if (isDebugMode) Logger.LogInfo("调试模式已启用");
 
             SetTitle("启动中...");
             AppRuntime.PreInit(validArgs.ToArray());
@@ -83,31 +79,19 @@ namespace DanmakuBackend
             }
 
             // 如果使用窗体模式，使用 Application.Run 启动消息循环
-            if (!exited)
-            {
-                Application.Run();
-            }
+            if (!exited) Application.Run();
             else
-            {
-                // 控制台模式，使用传统的循环等待
                 while (!exited)
-                {
-                    Thread.Sleep(100); // 减少等待时间，加快响应
-                }
-            }
+                    Thread.Sleep(200);
 
             // 执行清理
             OnClose();
-            
+
             // 反注册捕获控制台关闭
-            try
-            {
-                WinApi.SetConsoleCtrlHandler(controlCtr, false);
-            }
-            catch { }
-            
+            WinApi.SetConsoleCtrlHandler(controlCtr, false);
+
             // 强制退出，避免等待未完成的异步任务
-            Environment.Exit(0);            
+            Environment.Exit(0);
         }
 
         private static void Init()
@@ -122,7 +106,6 @@ namespace DanmakuBackend
             AppRuntime.WsServer.Grab.Proxy.SetUpstreamProxy(AppSetting.Current.UpstreamProxy); //设置上游代理
             AppRuntime.WsServer.OnClose += (s, e) =>
             {
-                AppRuntime.DanmakuManager.Destroy();
                 exited = true;
                 if (mainForm != null && !mainForm.IsDisposed)
                     mainForm.Invoke(new Action(Application.Exit));
@@ -135,9 +118,7 @@ namespace DanmakuBackend
         {
             var version = Assembly.GetAssembly(typeof(Program)).GetName().Version;
             if (WinApi.GetConsoleWindow() != IntPtr.Zero)
-            {
-                Console.Title = $@"Danmaku后端服务 v{version} {title}";
-            }
+                Console.Title = string.Join(" ", new List<string> { @"Danmaku后端服务", $"v{version}", title });
         }
 
         //监听控制台消息事件
@@ -160,15 +141,8 @@ namespace DanmakuBackend
             try
             {
                 // 释放资源
-                if (AppRuntime.DanmakuManager != null)
-                {
-                    AppRuntime.DanmakuManager.Destroy();
-                }
-
-                if (AppRuntime.WsServer != null && !AppRuntime.WsServer.IsDisposed)
-                {
-                    AppRuntime.WsServer.Dispose();
-                }
+                if (AppRuntime.WsServer != null && !AppRuntime.WsServer.IsDisposed) AppRuntime.WsServer.Dispose();
+                if (AppRuntime.DanmakuManager != null) AppRuntime.DanmakuManager.Destroy();
 
                 // 释放 Mutex
                 try
@@ -176,7 +150,9 @@ namespace DanmakuBackend
                     mutex?.ReleaseMutex();
                     mutex?.Dispose();
                 }
-                catch { }
+                catch
+                {
+                }
             }
             catch (Exception ex)
             {
