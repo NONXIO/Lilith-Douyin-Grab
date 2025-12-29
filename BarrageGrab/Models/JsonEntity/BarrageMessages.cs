@@ -303,6 +303,11 @@ namespace DanmakuBackend.Models.JsonEntity
         /// 消息类型
         /// </summary>
         [JsonProperty("_type")] public string MsgType = "chat";
+
+        /// <summary>
+        /// 语言消息
+        /// </summary>
+        [JsonProperty("is_audio")] public bool IsAudio;
     }
 
     /// <summary>

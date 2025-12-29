@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using DanmakuBackend.Proxy.ProxyEventArgs;
@@ -27,6 +28,11 @@ namespace DanmakuBackend.Proxy
         /// 房间状态变更
         /// </summary>
         public event EventHandler<RoomStatusEventArgs> OnRoomStatusChange;
+
+        /// <summary>
+        /// 进程名称缓存（避免重复调用 Process.GetProcessById）
+        /// </summary>
+        private static readonly ConcurrentDictionary<int, string> _processNameCache = new ConcurrentDictionary<int, string>();
 
         /// <summary>
         /// 代理端口
@@ -91,21 +97,42 @@ namespace DanmakuBackend.Proxy
         }
 
         /// <summary>
-        /// 获取进程名称
+        /// 获取进程名称（带缓存优化）
         /// </summary>
         /// <param name="processID"></param>
         /// <returns></returns>
         protected string GetProcessName(int processID)
         {
+            // 先从缓存中查找
+            if (_processNameCache.TryGetValue(processID, out var cachedName))
+            {
+                return cachedName;
+            }
+
             try
             {
                 var process = Process.GetProcessById(processID);
                 if (process != null)
                 {
-                    return process.ProcessName;
+                    var processName = process.ProcessName;
+                    // 缓存进程名称（限制缓存大小，避免内存泄漏）
+                    if (_processNameCache.Count < 1000)
+                    {
+                        _processNameCache.TryAdd(processID, processName);
+                    }
+                    return processName;
                 }
             }
-            catch (Exception ex) { }
+            catch (Exception ex)
+            {
+                // 进程可能已退出，缓存一个占位符避免重复查询
+                var placeholder = $"<{processID}>";
+                if (_processNameCache.Count < 1000)
+                {
+                    _processNameCache.TryAdd(processID, placeholder);
+                }
+                return placeholder;
+            }
             return $"<{processID}>";
         }
 

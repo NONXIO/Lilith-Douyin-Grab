@@ -201,23 +201,13 @@ namespace DanmakuBackend.Proxy
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
         {
-            string uri = e.HttpClient.Request.RequestUri.ToString();
-            string hostname = e.HttpClient.Request.RequestUri.Host;
-            var processid = e.HttpClient.ProcessId.Value;
-            var processName = base.GetProcessName(processid);
-            var contentType = e.HttpClient.Response.ContentType ?? "";
-
-            //处理直播伴侣开播更新
-            await HookSelfLive(e);
-
-            //处理弹幕
-            await HookBarrage(e);
-
-            //处理JS注入
-            await HookPageAsync(e);
-
-            //处理脚本拦截修改
-            await HookScriptAsync(e);
+            // 并行执行多个 Hook 方法，因为它们之间没有依赖关系，可以提升性能
+            await Task.WhenAll(
+                HookSelfLive(e),
+                HookBarrage(e),
+                HookPageAsync(e),
+                HookScriptAsync(e)
+            );
         }
 
         // Hook 直播伴侣开播信息并更新
@@ -289,13 +279,13 @@ namespace DanmakuBackend.Proxy
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
                 var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
-                if (roomInfo == null || !AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roomInfo.WebRoomId)))
-                {
-                    Logger.LogWarn($"直播间[{roomid}]不在监听列表中");
-                }
-                else
+                if (roomInfo != null && long.TryParse(roomInfo.WebRoomId, out var webRoomId) && AppRuntime.DanmakuManager.IsAnchorRoom(webRoomId))
                 {
                     Logger.LogInfo($"直播间[{roomid}]订阅到新的弹幕流地址");
+                }
+                else if (roomInfo == null)
+                {
+                    Logger.LogWarn($"直播间[{roomid}]不在监听列表中");
                 }
             }
 
@@ -303,7 +293,6 @@ namespace DanmakuBackend.Proxy
             if (uri.Contains(BARRAGE_POOL_PATH) && contentType.Contains("application/protobuffer"))
             {
                 var payload = await e.GetResponseBody();
-
                 var referrer = e.HttpClient.Request.Headers.GetFirstHeader("Referer")?.Value;
                 //https://live.douyin.com/22404217360
 
@@ -319,13 +308,21 @@ namespace DanmakuBackend.Proxy
                     if (roomInfo == null && cookie != null && !rinfoRequestings.Contains(webroomid))
                     {
                         lock (rinfoRequestings) rinfoRequestings.Add(webroomid);
-                        //查询后会自动缓存
-                        DyApiHelper.GetRoomInfoForApi(webroomid, cookie).ContinueWith(t =>
+                        //查询后会自动缓存 - 使用异步方式，避免阻塞
+                        _ = Task.Run(async () =>
                         {
-                            var rinfo = t.Result;
-                            //限制只尝试一次
-                            if (rinfo != null)
+                            try
                             {
+                                var rinfo = await DyApiHelper.GetRoomInfoForApi(webroomid, cookie);
+                                //限制只尝试一次
+                                if (rinfo != null)
+                                {
+                                    lock (rinfoRequestings) rinfoRequestings.Remove(webroomid);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogError($"获取房间信息失败: {ex.Message}");
                                 lock (rinfoRequestings) rinfoRequestings.Remove(webroomid);
                             }
                         });
@@ -705,15 +702,38 @@ namespace DanmakuBackend.Proxy
         /// </summary>
         public override void Dispose()
         {
-            if (proxyServer.ProxyRunning)
+            try
             {
-                proxyServer.Stop();
+                if (proxyServer != null && proxyServer.ProxyRunning)
+                {
+                    // 设置较短的超时时间，避免长时间等待
+                    proxyServer.Stop();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"停止代理服务器失败: {ex.Message}");
             }
 
-            proxyServer.Dispose();
+            try
+            {
+                proxyServer?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"释放代理服务器失败: {ex.Message}");
+            }
+
             if (AppSetting.Current.UsedProxy)
             {
-                CloseSystemProxy();
+                try
+                {
+                    CloseSystemProxy();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"关闭系统代理失败: {ex.Message}");
+                }
             }
         }
 

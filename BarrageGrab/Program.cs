@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
@@ -29,16 +30,39 @@ namespace DanmakuBackend
                 return;
             }
 
-            // 检查访问密钥以及房间
-            if (args.Length != 2)
+            // 解析命令行参数
+            bool isDebugMode = false;
+            var validArgs = new List<string>();
+            
+            foreach (var arg in args)
+            {
+                if (arg.Equals("--debug", StringComparison.OrdinalIgnoreCase))
+                {
+                    isDebugMode = true;
+                }
+                else
+                {
+                    validArgs.Add(arg);
+                }
+            }
+
+            // 检查访问密钥以及房间（排除 --debug 参数后）
+            if (validArgs.Count != 2)
             {
                 Logger.LogError("参数错误,请使用Danmaku启动此后端服务");
                 MessageBox.Show(@"参数错误,请使用Danmaku启动此后端服务", @"程序初始化错误", MessageBoxButtons.OK);
                 return;
             }
 
+            // 设置调试模式
+            AppRuntime.IsDebugMode = isDebugMode;
+            if (isDebugMode)
+            {
+                Logger.LogInfo("调试模式已启用");
+            }
+
             SetTitle("启动中...");
-            AppRuntime.PreInit(args);
+            AppRuntime.PreInit(validArgs.ToArray());
 
             try
             {
@@ -60,14 +84,30 @@ namespace DanmakuBackend
 
             // 如果使用窗体模式，使用 Application.Run 启动消息循环
             if (!exited)
+            {
                 Application.Run();
+            }
             else
+            {
                 // 控制台模式，使用传统的循环等待
                 while (!exited)
-                    Thread.Sleep(500);
+                {
+                    Thread.Sleep(100); // 减少等待时间，加快响应
+                }
+            }
 
-            if (!AppRuntime.WsServer.IsDisposed) OnClose();
-            WinApi.SetConsoleCtrlHandler(controlCtr, false); //反注册捕获控制台关闭            
+            // 执行清理
+            OnClose();
+            
+            // 反注册捕获控制台关闭
+            try
+            {
+                WinApi.SetConsoleCtrlHandler(controlCtr, false);
+            }
+            catch { }
+            
+            // 强制退出，避免等待未完成的异步任务
+            Environment.Exit(0);            
         }
 
         private static void Init()
@@ -117,7 +157,31 @@ namespace DanmakuBackend
 
         private static void OnClose()
         {
-            AppRuntime.WsServer.Dispose();
+            try
+            {
+                // 释放资源
+                if (AppRuntime.DanmakuManager != null)
+                {
+                    AppRuntime.DanmakuManager.Destroy();
+                }
+
+                if (AppRuntime.WsServer != null && !AppRuntime.WsServer.IsDisposed)
+                {
+                    AppRuntime.WsServer.Dispose();
+                }
+
+                // 释放 Mutex
+                try
+                {
+                    mutex?.ReleaseMutex();
+                    mutex?.Dispose();
+                }
+                catch { }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"关闭资源失败: {ex.Message}");
+            }
         }
     }
 }

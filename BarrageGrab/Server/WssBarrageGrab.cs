@@ -59,6 +59,11 @@ namespace DanmakuBackend.Server
         /// 聊天
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<ChatMessage>> OnChatMessage;
+        
+        /// <summary>
+        /// 聊天
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<AudioChatMessage>> OnAudioChatMessage;
 
         /// <summary>
         /// 点赞
@@ -169,11 +174,8 @@ namespace DanmakuBackend.Server
         private void Proxy_OnFetchResponse(object sender, HttpResponseEventArgs e)
         {
             var payload = e.Payload;
-
             if (payload == null || payload.Length == 0) return;
-
             var response = DeserializeProto<Response>(payload);
-
             response.Messages.ForEach(f => { DoMessage(f, e.ProcessName); });
         }
 
@@ -198,11 +200,7 @@ namespace DanmakuBackend.Server
 
             msgIdList.Add(msg.msgId);
             //每种消息类型设置300容量应该足够,不太可能存在一条消息被挤出队列后再次出现
-            while (msgIdList.Count > 300)
-            {
-                msgIdList.RemoveAt(0);
-            }
-
+            while (msgIdList.Count > 300) msgIdList.RemoveAt(0);
             try
             {
                 switch (msg.Method)
@@ -293,9 +291,7 @@ namespace DanmakuBackend.Server
                     case "WebcastAudioChatMessage":
                     {
                         var arg = DeserializeProto<AudioChatMessage>(msg.Payload);
-                        var message = new RoomMessageEventArgs<AudioChatMessage>(processName, arg).Message;
-                        AppRuntime.DanmakuManager.ReportEvent(message.Common.roomId, message.Common.Method,
-                            message.ToJson(), "语音消息");
+                        OnAudioChatMessage?.Invoke(this, new RoomMessageEventArgs<AudioChatMessage>(processName, arg));
                         break;
                     }
                     // 房间通知消息，包含 会员开通信息
@@ -308,11 +304,9 @@ namespace DanmakuBackend.Server
                     // 展馆聊天消息
                     case "WebcastExhibitionChatMessage":
                     {
+                        break;
                         var arg = DeserializeProto<ExhibitionChatMessage>(msg.Payload);
                         var message = new RoomMessageEventArgs<ExhibitionChatMessage>(processName, arg).Message;
-                        AppRuntime.DanmakuManager.ReportEvent(message.Common.roomId, message.Common.Method,
-                            message.ToJson(), "展馆聊天消息");
-                        break;
                     }
                     /* 无关事件 */
                     case "WebcastRoomIntroMessage":

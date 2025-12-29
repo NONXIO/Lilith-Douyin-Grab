@@ -107,8 +107,8 @@ namespace DanmakuBackend.Utility
                 return null;
             }
 
-            var buff = rsp.Content.ReadAsByteArrayAsync();
-            var result = Encoding.UTF8.GetString(buff.Result);
+            var buff = await rsp.Content.ReadAsByteArrayAsync();
+            var result = Encoding.UTF8.GetString(buff);
             RoomInfo dto;
             var res = RoomInfo.TryParseRoomEnterResponse(result, out dto);
             int code = res.Item1;

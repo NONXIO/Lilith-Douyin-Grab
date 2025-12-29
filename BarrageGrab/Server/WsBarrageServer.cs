@@ -53,6 +53,7 @@ namespace DanmakuBackend.Server
             giftCountTimer.Elapsed += GiftCountTimer_Elapsed;
 
             this.grab.OnChatMessage += Grab_OnChatMessage;
+            this.grab.OnAudioChatMessage += Grab_OnAudioChatMessage;
             this.grab.OnLikeMessage += Grab_OnLikeMessage;
             this.grab.OnMemberMessage += Grab_OnMemberMessage;
             this.grab.OnSocialMessage += Grab_OnSocialMessage;
@@ -92,19 +93,85 @@ namespace DanmakuBackend.Server
         /// </summary>
         public void Dispose()
         {
+            if (IsDisposed) return;
+            IsDisposed = true;
+
+            // 停止定时器
+            try
+            {
+                giftCountTimer?.Stop();
+                giftCountTimer?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"停止礼物计数定时器失败: {ex.Message}");
+            }
+
+            try
+            {
+                dieout?.Stop();
+                dieout?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"停止心跳定时器失败: {ex.Message}");
+            }
+
             // 清理所有客户端的认证计时器
             foreach (var client in socketList.Values)
-                if (client.AuthTimer != null)
+            {
+                try
                 {
-                    client.AuthTimer.Stop();
-                    client.AuthTimer.Dispose();
+                    if (client.AuthTimer != null)
+                    {
+                        client.AuthTimer.Stop();
+                        client.AuthTimer.Dispose();
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"清理客户端定时器失败: {ex.Message}");
+                }
+            }
 
-            socketList.Values.ToList().ForEach(f => f.Socket.Close());
+            // 关闭所有客户端连接
+            try
+            {
+                socketList.Values.ToList().ForEach(f =>
+                {
+                    try
+                    {
+                        f.Socket.Close();
+                    }
+                    catch { }
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"关闭客户端连接失败: {ex.Message}");
+            }
+
             socketList.Clear();
-            socketServer.Dispose();
-            grab.Dispose();
-            IsDisposed = true;
+
+            // 释放资源
+            try
+            {
+                socketServer?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"释放WebSocket服务器失败: {ex.Message}");
+            }
+
+            try
+            {
+                grab?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"释放弹幕解析器失败: {ex.Message}");
+            }
+
             OnClose?.Invoke(this, EventArgs.Empty);
         }
 
@@ -481,10 +548,19 @@ namespace DanmakuBackend.Server
             AttachRoomInfo(enty);
             var pack = new DanmakuMessagePack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
-            if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
-            {
-                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
-            }
+        }
+        
+        private void Grab_OnAudioChatMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<AudioChatMessage> e)
+        {
+            var msg = e.Message;
+            if (!CheckRoomId(msg.Common.roomId)) return;
+            var enty = CreateMsg<ChatMsg>(msg);
+            enty.Content = msg.Content;
+            enty.IsAudio = true;
+            var msgType = PackMsgType.弹幕消息;
+            AttachRoomInfo(enty);
+            var pack = new DanmakuMessagePack(enty.ToJson(), msgType, e.Process);
+            Broadcast(pack);
         }
 
         //会员表情

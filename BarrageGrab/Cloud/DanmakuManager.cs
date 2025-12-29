@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeviceId;
@@ -27,6 +28,11 @@ namespace DanmakuBackend.Cloud
         public readonly string SessionId;
 
         private Timer _heartbeatTimer;
+        
+        /// <summary>
+        /// 授权的房间ID缓存集合（用于快速查找）
+        /// </summary>
+        private readonly HashSet<long> _authorizedRoomIds = new HashSet<long>();
 
         public DanmakuManager(string accessKey, string roomId)
         {
@@ -58,6 +64,9 @@ namespace DanmakuBackend.Cloud
             });
             _licenceChannel.Subscribe();
             Logger.LogInfo("Danmaku云服务连接成功");
+            
+            // 初始化时更新房间ID缓存（包含初始的 _roomId）
+            UpdateAuthorizedRoomIdsCache();
         }
 
         /// <summary>
@@ -73,15 +82,69 @@ namespace DanmakuBackend.Cloud
         /// <summary>
         ///     当前会话的授权信息
         /// </summary>
-        public LicenceInfo LicenceInfo { get; private set; }
+        public LicenceInfo LicenceInfo
+        {
+            get => _licenceInfo;
+            private set
+            {
+                _licenceInfo = value;
+                UpdateAuthorizedRoomIdsCache();
+            }
+        }
 
+        private LicenceInfo _licenceInfo;
+
+        /// <summary>
+        /// 更新授权的房间ID缓存
+        /// </summary>
+        private void UpdateAuthorizedRoomIdsCache()
+        {
+            _authorizedRoomIds.Clear();
+            
+            if (_licenceInfo != null)
+            {
+                // 添加当前授权的房间ID（从 RoomId 字段）
+                if (_licenceInfo.RoomId > 0)
+                {
+                    _authorizedRoomIds.Add(_licenceInfo.RoomId);
+                }
+                
+                // 尝试从 Id 字段解析房间ID（如果 Id 是房间ID的字符串形式）
+                if (!string.IsNullOrWhiteSpace(_licenceInfo.Id))
+                {
+                    if (long.TryParse(_licenceInfo.Id, out var idAsRoomId) && idAsRoomId > 0)
+                    {
+                        _authorizedRoomIds.Add(idAsRoomId);
+                    }
+                }
+            }
+            
+            // 保留原有的 _roomId 作为兼容
+            if (_roomId > 0)
+            {
+                _authorizedRoomIds.Add(_roomId);
+            }
+        }
+
+        /// <summary>
+        /// 检查房间是否在授权列表中（使用缓存，避免重复解析）
+        /// </summary>
+        /// <param name="roomId">房间ID</param>
+        /// <returns>是否在授权列表中</returns>
         public bool IsAnchorRoom(long roomId)
         {
-            return _roomId == roomId;
+            // 使用缓存的房间ID集合进行快速查找，避免重复解析
+            return _authorizedRoomIds.Contains(roomId);
         }
 
         public async void ReportEvent(long roomId, string eventName, object body, string note = null)
         {
+            // 仅在调试模式下上传事件
+            if (!AppRuntime.IsDebugMode)
+            {
+                return;
+            }
+
             Logger.LogWarn($@"报告事件<{eventName}> {note}");
             try
             {
@@ -131,21 +194,14 @@ namespace DanmakuBackend.Cloud
 
                 var payloadJson = JsonConvert.SerializeObject(payload);
                 var response = await _client.Functions.Invoke("validate-session-and-get-licence", payloadJson);
-                if (response == null)
-                {
-                    Logger.LogError("验证会话失败: 响应为空");
-                    return false;
-                }
 
-                // 将响应对象序列化为 JSON 字符串
-                var responseContent = JsonConvert.SerializeObject(response);
-
-                // 如果响应是字符串类型，直接使用
-                if (response is string strResponse)
-                {
-                    responseContent = strResponse;
-                }
-                else if (string.IsNullOrEmpty(responseContent) || responseContent == "null")
+                // 处理响应内容：将响应对象序列化为 JSON 字符串
+                var responseContent = response is string strResponse 
+                    ? strResponse 
+                    : JsonConvert.SerializeObject(response);
+                
+                // 检查响应内容是否为空
+                if (string.IsNullOrEmpty(responseContent))
                 {
                     Logger.LogError("验证会话失败: 响应内容为空");
                     return false;
@@ -160,6 +216,7 @@ namespace DanmakuBackend.Cloud
                 }
 
                 // 验证成功，保存 session_id 和授权信息
+                // 设置 LicenceInfo 会自动更新房间ID缓存
                 ValidatedSessionId = sessionId;
                 LicenceInfo = result.Licence;
                 return true;
@@ -176,12 +233,21 @@ namespace DanmakuBackend.Cloud
             // 安全地停止心跳定时器
             if (_heartbeatTimer != null)
             {
-                _heartbeatTimer.Stop();
-                _heartbeatTimer.Dispose();
+                try
+                {
+                    _heartbeatTimer.Stop();
+                    _heartbeatTimer.Dispose();
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError("停止心跳定时器失败: " + e.Message);
+                }
+                _heartbeatTimer = null;
             }
 
             // 安全地取消订阅频道
             if (_clientChannel != null)
+            {
                 try
                 {
                     _clientChannel.Unsubscribe();
@@ -190,9 +256,11 @@ namespace DanmakuBackend.Cloud
                 {
                     Logger.LogError("取消订阅频道失败: " + e.Message);
                 }
+            }
 
             // 安全地取消订阅授权频道
             if (_licenceChannel != null)
+            {
                 try
                 {
                     _licenceChannel.Unsubscribe();
@@ -201,6 +269,32 @@ namespace DanmakuBackend.Cloud
                 {
                     Logger.LogError("取消订阅授权频道失败: " + e.Message);
                 }
+            }
+
+            // 关闭 Supabase 客户端连接（异步操作，不等待完成）
+            if (_client != null)
+            {
+                try
+                {
+                    // 异步关闭，不阻塞退出
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            // Supabase Realtime 会在客户端 Dispose 时自动关闭
+                            // 这里不需要手动断开连接，避免阻塞退出
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError($"关闭Realtime连接失败: {ex.Message}");
+                        }
+                    });
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError("关闭Supabase客户端失败: " + e.Message);
+                }
+            }
         }
 
         /// <summary>

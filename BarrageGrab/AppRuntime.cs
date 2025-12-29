@@ -35,6 +35,11 @@ namespace DanmakuBackend
 
         public static DanmakuManager DanmakuManager { get; private set; } = null;
 
+        /// <summary>
+        /// 是否启用调试模式（通过 --debug 参数启用）
+        /// </summary>
+        public static bool IsDebugMode { get; set; } = false;
+
         public static void PreInit(string[] args)
         {
             var accessKey = args[0] ?? string.Empty;
