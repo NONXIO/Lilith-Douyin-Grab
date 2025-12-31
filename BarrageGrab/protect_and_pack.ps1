@@ -53,7 +53,15 @@ Write-Host "Project file created at $CrprojPath" -ForegroundColor Green
 # Check and Run ConfuserEx
 if (Test-Path $ConfuserCliPath) {
     Write-Host "Running ConfuserEx..." -ForegroundColor Cyan
-    & $ConfuserCliPath $CrprojPath > "confuser_log.txt" 2>&1
+    # -n argument prevents ConfuserEx from pausing at the end
+    $origErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $ConfuserCliPath -n $CrprojPath
+    }
+    finally {
+        $ErrorActionPreference = $origErrorActionPreference
+    }
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Protection and Packing Complete!" -ForegroundColor Green
