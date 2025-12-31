@@ -2,35 +2,29 @@ name: Build .NET Framework 4.8
 
 on:
   push:
-    branches: [ "master", "main" ]
-  pull_request:
-    branches: [ "master", "main" ]
+    branches: [ "deploy/*", "main" ]
 
 jobs:
   build:
-
     runs-on: windows-latest
-
     permissions:
       contents: write
-
     steps:
     - uses: actions/checkout@v4
-
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.2.0
-
     - name: Restore NuGet packages
       run: nuget restore BarrageService.sln
-
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.3.1
-
     - name: Build Solution
       run: msbuild BarrageService.sln /p:Configuration=Release /p:Platform="Any CPU"
+    - name: Protect and Pack
+      run: .\BarrageGrab\protect_and_pack.ps1
+      shell: powershell
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: DanmakuBackend-Build
-        path: BarrageGrab/bin/Release/
+        path: BarrageGrab/bin/Release/Confused/

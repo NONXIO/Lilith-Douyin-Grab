@@ -2,7 +2,13 @@ $ErrorActionPreference = "Stop"
 
 # --- CONFIGURATION ---
 # PLEASE SET THIS TO YOUR CONFUSER.CLI.EXE PATH
-$ConfuserCliPath = "D:\Developer\Lilith\DanmakuBackend\ConfuserEx-CLI\Confuser.CLI.exe" 
+$ConfuserCliPath = Join-Path $PSScriptRoot "..\ConfuserEx-CLI\Confuser.CLI.exe"
+if (-not (Test-Path $ConfuserCliPath)) {
+    # Fallback or check for env var if needed, mostly for local dev overrides
+    if ($env:CONFUSER_CLI_PATH) {
+        $ConfuserCliPath = $env:CONFUSER_CLI_PATH
+    }
+}
 # ---------------------
 
 $ScriptDir = $PSScriptRoot
