@@ -8,16 +8,9 @@ namespace DanmakuBackend.Cloud
     /// </summary>
     public class LicenceInfo
     {
-        [JsonProperty("room_id")] public long RoomId { get; set; }
-
-        [JsonProperty("expired_at")] public DateTime? ExpiredAt { get; set; }
-
-        [JsonProperty("create_at")] public DateTime? CreateAt { get; set; }
-
+        [JsonProperty("room_id")] public string RoomId { get; set; }
         [JsonProperty("id")] public string Id { get; set; }
-
-        [JsonProperty("cache")] public object Cache { get; set; }
-
-        [JsonProperty("note")] public string Note { get; set; }
+        [JsonProperty("expired_at")] public DateTime? ExpiredAt { get; set; }
+        [JsonProperty("anchor_name")] public object Cache { get; set; }
     }
 }

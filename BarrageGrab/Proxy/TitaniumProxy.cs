@@ -236,7 +236,6 @@ namespace DanmakuBackend.Proxy
             }
 
             var jobj = JsonConvert.DeserializeObject<JObject>(reponse);
-
             var roomid = jobj["data"]?["id_str"]?.Value<string>();
             var sec_uid = jobj["data"]?["owner"]?["sec_uid"]?.Value<string>();
             var nickname = jobj["data"]?["owner"]?["nickname"]?.Value<string>();
@@ -249,7 +248,7 @@ namespace DanmakuBackend.Proxy
                 Logger.LogInfo($"直播伴侣开播，开播账号:{displayId} {nickname} ，更新RoomId={roomInfo.RoomId}");
             }
 
-            if (roomInfo != null && AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roomInfo.WebRoomId)))
+            if (roomInfo != null && AppRuntime.DanmakuManager.VerifySession(roomid))
             {
                 Logger.LogInfo($"直播伴侣开播，开播信息: {displayId} {nickname}, 房间{roomInfo.RoomId}");
                 AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
@@ -278,12 +277,11 @@ namespace DanmakuBackend.Proxy
                 e.DataReceived += WebSocket_DataReceived;
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
-                var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
-                if (roomInfo != null && long.TryParse(roomInfo.WebRoomId, out var webRoomId) && AppRuntime.DanmakuManager.IsAnchorRoom(webRoomId))
+                if (AppRuntime.DanmakuManager.VerifySession(roomid))
                 {
                     Logger.LogInfo($"直播间[{roomid}]订阅到新的弹幕流地址");
                 }
-                else if (roomInfo == null)
+                else
                 {
                     Logger.LogWarn($"直播间[{roomid}]不在监听列表中");
                 }
@@ -392,7 +390,7 @@ namespace DanmakuBackend.Proxy
 
                     if (code == 0)
                     {
-                        if (AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roominfo.WebRoomId)))
+                        if (AppRuntime.DanmakuManager.VerifySession(roominfo.RoomId))
                         {
                             Logger.LogInfo($"已连接 <{webrid}> - [{roominfo.Owner.Nickname}]的直播间");
                             roominfo.WebRoomId = webrid;
@@ -416,8 +414,7 @@ namespace DanmakuBackend.Proxy
                                 UserId = "-1"
                             };
                         }
-
-                        if (AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(roominfo.WebRoomId)))
+                        if (AppRuntime.DanmakuManager.VerifySession(roominfo.RoomId))
                             AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                     }
 

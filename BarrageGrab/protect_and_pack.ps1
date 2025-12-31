@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 # --- CONFIGURATION ---
 # PLEASE SET THIS TO YOUR CONFUSER.CLI.EXE PATH
-$ConfuserCliPath = "C:\Users\kirit\Desktop\ConfuserEx-CLI\Confuser.CLI.exe" 
+$ConfuserCliPath = "D:\Developer\Lilith\DanmakuBackend\ConfuserEx-CLI\Confuser.CLI.exe" 
 # ---------------------
 
 $ScriptDir = $PSScriptRoot

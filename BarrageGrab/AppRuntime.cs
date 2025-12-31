@@ -56,20 +56,6 @@ namespace DanmakuBackend
         }
 
         /// <summary>
-        /// 隐藏/显示 控制台
-        /// </summary>
-        /// <param name="show"></param>
-        public static void DisplayConsole(bool show)
-        {
-            //var hWnd = WinApi.FindWindow(null, Console.Title);            
-            var hWnd = WinApi.GetConsoleWindow();
-            if (hWnd != IntPtr.Zero)
-            {
-                WinApi.ShowWindow(hWnd, show ? WinApi.CmdShow.SW_SHOW : WinApi.CmdShow.SW_HIDE);
-            }
-        }
-
-        /// <summary>
         /// 房间缓存管理器
         /// </summary>
         public class RoomCacheManager

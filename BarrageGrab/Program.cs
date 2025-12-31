@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
-using DanmakuBackend.Cloud;
 using DanmakuBackend.Models.JsonEntity;
 using DanmakuBackend.Utility;
 using DanmakuBackend.Views;
@@ -13,17 +13,15 @@ namespace DanmakuBackend
 {
     public class Program
     {
-        private static FormView mainForm;
-        private static bool exited;
-        private static bool formExited;
-        static WinApi.ControlCtrlDelegate controlCtr = ControlCtrlHandle;
-        static Mutex mutex = new Mutex(false, "DanmakuBackendServiceMutex");
-        private static DanmakuManager _manager = null;
+        private static FormView _mainForm;
+        private static bool _exited;
+        private static readonly WinApi.ControlCtrlDelegate ControlCtr = ControlCtrlHandle;
+        private static readonly Mutex Mutex = new Mutex(false, "DanmakuBackendServiceMutex");
 
         static void Main(string[] args)
         {
             if (Debugger.IsAttached) return;
-            if (!mutex.WaitOne(TimeSpan.Zero, true))
+            if (!Mutex.WaitOne(TimeSpan.Zero, true))
             {
                 Logger.LogFatal(@"另一个实例已在运行");
                 MessageBox.Show(@"另一个实例已在运行", @"程序初始化错误", MessageBoxButtons.OK);
@@ -75,20 +73,20 @@ namespace DanmakuBackend
                 SetTitle("初始化失败");
                 Logger.LogError(ex, $"程序初始化错误，{ex.Message}");
                 MessageBox.Show(ex.Message, @"程序初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                exited = true;
+                _exited = true;
             }
 
             // 如果使用窗体模式，使用 Application.Run 启动消息循环
-            if (!exited) Application.Run();
+            if (!_exited) Application.Run();
             else
-                while (!exited)
+                while (!_exited)
                     Thread.Sleep(200);
 
             // 执行清理
             OnClose();
 
             // 反注册捕获控制台关闭
-            WinApi.SetConsoleCtrlHandler(controlCtr, false);
+            WinApi.SetConsoleCtrlHandler(ControlCtr, false);
 
             // 强制退出，避免等待未完成的异步任务
             Environment.Exit(0);
@@ -98,17 +96,17 @@ namespace DanmakuBackend
         {
             AppRuntime.Init();
             LiveCompanHelper.SwitchSetup();
-            WinApi.SetConsoleCtrlHandler(controlCtr, true); //捕获控制台关闭
-            WinApi.DisableQuickEditMode(); //禁用控制台快速编辑模式
+            WinApi.SetConsoleCtrlHandler(ControlCtr, true); //捕获控制台关闭
+            // WinApi.DisableQuickEditMode(); //禁用控制台快速编辑模式
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            mainForm = new FormView();
+            _mainForm = new FormView();
             AppRuntime.WsServer.Grab.Proxy.SetUpstreamProxy(AppSetting.Current.UpstreamProxy); //设置上游代理
             AppRuntime.WsServer.OnClose += (s, e) =>
             {
-                exited = true;
-                if (mainForm != null && !mainForm.IsDisposed)
-                    mainForm.Invoke(new Action(Application.Exit));
+                _exited = true;
+                if (_mainForm != null && !_mainForm.IsDisposed)
+                    _mainForm.Invoke(new Action(Application.Exit));
             };
             AppRuntime.WsServer.StartListen(); //启动WS以及代理服务
         }
@@ -117,8 +115,10 @@ namespace DanmakuBackend
         private static void SetTitle(string title)
         {
             var version = Assembly.GetAssembly(typeof(Program)).GetName().Version;
+            var session = AppRuntime.DanmakuManager?.SessionId;
             if (WinApi.GetConsoleWindow() != IntPtr.Zero)
-                Console.Title = string.Join(" ", new List<string> { @"Danmaku后端服务", $"v{version}", title });
+                Console.Title = string.Join(" ",
+                    new List<string> { "Danmaku后端服务", $"v{version}", session, title }.Where(x => x.IsNullOrEmpty()));
         }
 
         //监听控制台消息事件
@@ -142,21 +142,31 @@ namespace DanmakuBackend
             {
                 // 释放资源
                 if (AppRuntime.WsServer != null && !AppRuntime.WsServer.IsDisposed) AppRuntime.WsServer.Dispose();
-                if (AppRuntime.DanmakuManager != null) AppRuntime.DanmakuManager.Destroy();
-
-                // 释放 Mutex
-                try
-                {
-                    mutex?.ReleaseMutex();
-                    mutex?.Dispose();
-                }
-                catch
-                {
-                }
+                AppRuntime.DanmakuManager?.Destroy();
             }
             catch (Exception ex)
             {
-                Logger.LogError($"关闭资源失败: {ex.Message}");
+                Logger.LogError($"关闭资源失败(Server/Manager): {ex.Message}");
+            }
+
+            try
+            {
+                // 释放 Mutex
+                // 注意：如果是在非主线程（如Ctrl+C回调）调用ReleaseMutex，会抛出SynchronizationLockException，这是预期行为，忽略即可
+                Mutex?.ReleaseMutex();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+            try
+            {
+                Mutex?.Dispose();
+            }
+            catch
+            {
+                // ignored
             }
         }
     }

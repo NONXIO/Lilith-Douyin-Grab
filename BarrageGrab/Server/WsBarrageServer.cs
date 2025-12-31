@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 using DanmakuBackend.Models;
 using DanmakuBackend.Models.JsonEntity;
@@ -38,6 +39,8 @@ namespace DanmakuBackend.Server
 
         private ConcurrentDictionary<string, UserState>
             socketList = new ConcurrentDictionary<string, UserState>(); //客户端列表
+
+        private UserState Client { get; set; }
 
         private WebSocketServer socketServer; //Ws服务器对象
 
@@ -116,43 +119,21 @@ namespace DanmakuBackend.Server
                 Logger.LogError($"停止心跳定时器失败: {ex.Message}");
             }
 
-            // 清理所有客户端的认证计时器
-            foreach (var client in socketList.Values)
-            {
-                try
-                {
-                    if (client.AuthTimer != null)
-                    {
-                        client.AuthTimer.Stop();
-                        client.AuthTimer.Dispose();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"清理客户端定时器失败: {ex.Message}");
-                }
-            }
-
-            // 关闭所有客户端连接
             try
             {
-                socketList.Values.ToList().ForEach(f =>
+                if (Client?.AuthTimer != null)
                 {
-                    try
-                    {
-                        f.Socket.Close();
-                    }
-                    catch
-                    {
-                    }
-                });
+                    Client.AuthTimer.Stop();
+                    Client.AuthTimer.Dispose();
+                }
+
+                Client?.Socket.Close();
+                Client = null;
             }
             catch (Exception ex)
             {
                 Logger.LogError($"关闭客户端连接失败: {ex.Message}");
             }
-
-            socketList.Clear();
 
             // 释放资源
             try
@@ -208,34 +189,31 @@ namespace DanmakuBackend.Server
         private void Dieout_Elapsed(object sender, ElapsedEventArgs e)
         {
             var now = DateTime.Now;
-            var dieoutKvs = socketList.Where(w => w.Value.LastPing.AddSeconds(dieout.Interval * 3) < now).ToList();
-            foreach (var kvp in dieoutKvs)
+            if (Client != null && Client.LastPing.AddSeconds(dieout.Interval * 3) < now)
+            {
                 try
                 {
-                    kvp.Value.Socket.Close();
-                    socketList.TryRemove(kvp.Key, out _);
+                    Client.Socket.Close();
+                    Client = null;
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError($"清理超时客户端时出错: {ex.Message}");
                 }
+            }
         }
 
         //判断Rommid是否符合拦截规则
-        internal bool CheckRoomId(long roomid)
+        private static bool CheckRoomId(long roomid)
         {
-            var webrid = AppRuntime.RoomCaches.GetCachedWebRoomid(roomid.ToString());
-            if (webrid.IsNullOrWhiteSpace()) return true;
-            if (webrid == "未知") return true;
-            if (!AppRuntime.DanmakuManager.IsAnchorRoom(long.Parse(webrid))) return false;
-            return true;
+            return AppRuntime.DanmakuManager.VerifySession(roomid.ToString());
         }
 
         //解析用户
-        private MsgUser GetUser(User data)
+        private static MsgUser GetUser(User data)
         {
             if (data == null) return null;
-            MsgUser user = new MsgUser()
+            var user = new MsgUser
             {
                 DisplayId = data.displayId,
                 ShortId = data.shortId,
@@ -249,12 +227,11 @@ namespace DanmakuBackend.Server
                 FollowerCount = data.followInfo?.followerCount ?? -1,
                 FollowingCount = data.followInfo?.followingCount ?? -1,
                 FollowStatus = data.followInfo?.followStatus ?? -1,
-            };
-
-            user.FansClub = new FansClubInfo
-            {
-                ClubName = data.fansClub?.Data?.clubName ?? "",
-                Level = data.fansClub?.Data?.Level ?? 0
+                FansClub = new FansClubInfo
+                {
+                    ClubName = data.fansClub?.Data?.clubName ?? "",
+                    Level = data.fansClub?.Data?.Level ?? 0
+                }
             };
 
             // Parse badgeImageListV2
@@ -283,7 +260,7 @@ namespace DanmakuBackend.Server
         }
 
         //检查属性定义
-        private bool HasProperty(dynamic obj, string propertyName)
+        private static bool HasProperty(dynamic obj, string propertyName)
         {
             if (obj is ExpandoObject)
             {
@@ -294,7 +271,7 @@ namespace DanmakuBackend.Server
         }
 
         //创建消息对象
-        private T CreateMsg<T>(dynamic msg, MsgUser user = null) where T : Msg, new()
+        private static T CreateMsg<T>(dynamic msg, MsgUser user = null) where T : Msg, new()
         {
             var roomid = msg.Common.roomId.ToString();
             RoomInfo roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
@@ -323,7 +300,7 @@ namespace DanmakuBackend.Server
         }
 
         //附加房间信息
-        private void AttachRoomInfo(Msg msg)
+        private static void AttachRoomInfo(Msg msg)
         {
             if (msg == null) return;
             var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(msg.RoomId.ToString());
@@ -685,42 +662,52 @@ namespace DanmakuBackend.Server
             Broadcast(new DanmakuMessagePack(json, type, Process.GetCurrentProcess().ProcessName));
         }
 
+        private void StartAuthHandShare(IWebSocketConnection socket)
+        {
+            Logger.LogInfo($"发送握手包到: {socket.ConnectionInfo.Id}");
+            try
+            {
+                var serverHello = new ServerHello
+                {
+                    MachineId = AppRuntime.DanmakuManager.MachineId,
+                    TimeoutSeconds = 10
+                };
+                var helloCommand = new Command
+                {
+                    Cmd = CommandCode.Auth,
+                    Data = serverHello
+                };
+                socket.Send(JsonConvert.SerializeObject(helloCommand));
+                Logger.LogInfo("握手包发送调用完成");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"发送握手包失败: {ex.Message}");
+            }
+        }
+
         //监听用户连接
         private void Listen(IWebSocketConnection socket)
         {
             //客户端url
-            string clientUrl = socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort;
+            var clientUrl = socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort;
             socket.OnOpen = () =>
             {
-                if (!socketList.TryGetValue(clientUrl, out var client))
+                // 1. 授权的客户端更新新连接实例
+                if (Client != null && Client.SessionId == clientUrl && Client.IsAuthenticated)
                 {
-                    var userState = new UserState(socket);
-                    // 从 Header 中读取 session-id
-                    if (socket.ConnectionInfo.Headers != null)
-                    {
-                        // 尝试从不同的 Header 名称读取 session-id
-                        if (socket.ConnectionInfo.Headers.TryGetValue("auth-session", out var sessionId))
-                        {
-                            // 验证 session
-                            if (AppRuntime.DanmakuManager.IsSessionMatched(sessionId))
-                            {
-                                userState.IsAuthenticated = true;
-                                userState.SessionId = sessionId;
-                                socketList.TryAdd(clientUrl, userState);
-                                Logger.LogInfo($"客户端[{socket.ConnectionInfo.Id}]认证成功");
-                            }
-                            else
-                            {
-                                Logger.LogWarn($"客户端[{socket.ConnectionInfo.Id}]认证失败");
-                                socket.Close();
-                            }
-                        }
-                    }
+                    Client.Socket.Close(); // Close old socket? Logic implies re-connection handling
+                    Client.Socket = socket;
+                    Client.LastPing = DateTime.Now;
+                    Logger.LogInfo($"已认证客户端重连: {clientUrl}");
+                    return;
                 }
-                else
-                {
-                    client.Socket = socket;
-                }
+
+                // Client = new UserState(socket, clientUrl); // Don't assign Client yet
+                Logger.LogInfo($"建立与[{socket.ConnectionInfo.Id}]的连接，发送握手...");
+                StartAuthHandShare(socket);
+
+                // No more blocking timer
             };
 
             //接收指令
@@ -728,18 +715,16 @@ namespace DanmakuBackend.Server
             {
                 try
                 {
-                    // 检查客户端是否已认证
-                    if (!socketList.TryGetValue(clientUrl, out var userState) || !userState.IsAuthenticated)
-                    {
-                        Logger.LogWarn($"未认证的客户端[{socket.ConnectionInfo.Id}]尝试发送消息，拒绝处理");
-                        socket.Close();
-                        return;
-                    }
-
                     var cmdPack = JsonConvert.DeserializeObject<Command>(message);
                     if (cmdPack == null) return;
+                    if (cmdPack == null) return;
+                    Logger.LogInfo($"收到命令: {cmdPack.Cmd}");
                     switch (cmdPack.Cmd)
                     {
+                        case CommandCode.Auth:
+                            // 处理认证请求
+                            _ = HandleAuthenticationAsync(socket, clientUrl, cmdPack.Data);
+                            break;
                         case CommandCode.Close:
                             // 关闭服务器
                             Logger.LogInfo("关闭程序...");
@@ -761,21 +746,90 @@ namespace DanmakuBackend.Server
                     Logger.LogError($"处理命令时出错: {ex.Message}");
                 }
             };
+
             socket.OnClose = () =>
             {
-                socketList.TryRemove(clientUrl, out _);
-                Logger.LogInfo($"关闭与[{clientUrl}]的连接");
+                Logger.LogInfo($"客户端<{socket.ConnectionInfo.Id}>关闭");
+                if (Client?.ClientID == clientUrl)
+                {
+                    Client?.Socket.Close();
+                    Client = null;
+                }
             };
+
             socket.OnPing = (data) =>
             {
-                if (socketList.TryGetValue(clientUrl, out var client))
-                {
-                    client.LastPing = DateTime.Now;
-                    socket.SendPong(Encoding.UTF8.GetBytes(AppRuntime.DanmakuManager.SessionId));
-                }
+                if (Client?.ClientID != clientUrl) return;
+                Client.LastPing = DateTime.Now;
+                socket.SendPong(Encoding.UTF8.GetBytes("ok"));
             };
         }
 
+        /// <summary>
+        /// 处理客户端认证请求
+        /// </summary>
+        /// <param name="socket">连接对象</param>
+        /// <param name="clientUrl">客户端URL</param>
+        /// <param name="data">认证数据</param>
+        private async Task HandleAuthenticationAsync(IWebSocketConnection socket, string clientUrl, object data)
+        {
+            Logger.LogInfo("Start HandleAuthenticationAsync...");
+
+            // 如果已经认证过，直接返回
+            if (Client != null && Client.ClientID == clientUrl && Client.IsAuthenticated)
+            {
+                return;
+            }
+
+            try
+            {
+                // 反序列化认证请求
+                var authRequest = JsonConvert.DeserializeObject<AuthRequest>(data.ToString());
+                if (authRequest == null)
+                {
+                    Logger.LogError("认证请求格式错误");
+                    return;
+                }
+
+                // 尝试连接云服务 if needed
+                if (AppRuntime.DanmakuManager.SessionId == null)
+                {
+                    var connected = await AppRuntime.DanmakuManager.ConnectAsync();
+                    if (!connected)
+                    {
+                        Logger.LogError("云服务连接失败，无法认证客户端");
+                        return;
+                    }
+                }
+
+                // 验证 session
+                var isValid = AppRuntime.DanmakuManager.SessionId == authRequest.SessionId;
+                if (isValid)
+                {
+                    // 认证成功
+                    // 只有认证成功才赋值给 Global Client
+                    Client = new UserState(socket, clientUrl)
+                    {
+                        IsAuthenticated = true,
+                        SessionId = authRequest.SessionId,
+                        LastPing = DateTime.Now
+                    };
+
+                    Logger.LogInfo($"客户端[{socket.ConnectionInfo.Id}]认证成功");
+                }
+                else
+                {
+                    // 认证失败 - 只记录日志，不关闭连接
+                    Logger.LogWarn($"客户端[{socket.ConnectionInfo.Id}]认证失败: SessionId不匹配");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"处理认证请求时出错: {ex.Message}");
+            }
+
+            return;
+        }
 
         /// <summary>
         /// 广播简单事件
@@ -800,46 +854,20 @@ namespace DanmakuBackend.Server
         public void Broadcast(DanmakuMessagePack pack)
         {
             if (pack == null) return;
-            // 收集需要删除的键，避免在遍历时修改集合
-            var keysToRemove = new List<string>();
-            foreach (var item in socketList)
+            if (Client != null && Client.IsAuthenticated && Client.Socket.IsAvailable)
             {
-                var client = item.Value;
-                if (client.IsAuthenticated && client.Socket.IsAvailable)
+                try
                 {
-                    try
-                    {
-                        client.Socket.Send(pack.ToJson());
-                    }
-                    catch (Exception ex)
-                    {
-                        // 发送失败，标记为需要删除
-                        Logger.LogError($"发送消息到客户端失败: {ex.Message}");
-                        keysToRemove.Add(item.Key);
-                    }
+                    Client.Socket.Send(pack.ToJson());
                 }
-                else if (!client.Socket.IsAvailable)
+                catch (Exception ex)
                 {
-                    keysToRemove.Add(item.Key);
+                    Logger.LogError($"发送消息到客户端失败: {ex.Message}");
                 }
             }
-
-            // 遍历完成后删除无效的客户端
-            foreach (var key in keysToRemove)
+            else if (Client != null && !Client.Socket.IsAvailable)
             {
-                if (socketList.TryRemove(key, out var removedClient))
-                {
-                    try
-                    {
-                        removedClient.Socket?.Close();
-                        removedClient.AuthTimer?.Stop();
-                        removedClient.AuthTimer?.Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"清理客户端连接时出错: {ex.Message}");
-                    }
-                }
+                Client = null;
             }
         }
 
@@ -912,9 +940,10 @@ namespace DanmakuBackend.Server
             {
             }
 
-            public UserState(IWebSocketConnection socket)
+            public UserState(IWebSocketConnection socket, string url)
             {
                 Socket = socket;
+                ClientID = url;
             }
 
             /// <summary>
@@ -941,6 +970,8 @@ namespace DanmakuBackend.Server
             /// 客户端会话ID
             /// </summary>
             public string SessionId { get; set; }
+
+            public string ClientID { get; }
         }
 
         /// <summary>

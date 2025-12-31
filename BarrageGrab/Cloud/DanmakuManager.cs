@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeviceId;
@@ -13,24 +14,22 @@ namespace DanmakuBackend.Cloud
 {
     public class DanmakuManager
     {
-        private readonly Client client;
-        private readonly RealtimeChannel machineChannel;
-        private readonly long roomId;
-
-        private readonly RealtimeChannel sessionChannel;
-        private Timer heartbeatTimer;
-
-        private LicenceInfo licenceInfo;
+        private readonly Client _client;
+        private RealtimeBroadcast<ShutdownBroadcast> _machineBroadcast;
+        private RealtimeBroadcast<ShutdownBroadcast> _sessionBroadcast;
+        private RealtimeChannel _machineChannel;
+        private RealtimeChannel _sessionChannel;
+        private readonly long _roomId;
 
         public DanmakuManager(string accessKey, string roomId)
         {
-            this.roomId = long.Parse(roomId);
-            Logger.LogInfo("初始化云服务...");
-            client = new Client("https://kkuqbesyrhmobaxoespi.supabase.co", accessKey, new SupabaseOptions
+            _roomId = long.Parse(roomId);
+            Logger.LogInfo("正在连接到Danmaku服务...");
+            _client = new Client("https://kkuqbesyrhmobaxoespi.supabase.co", accessKey, new SupabaseOptions
             {
                 AutoConnectRealtime = true
             });
-            client.InitializeAsync().Wait();
+            _client.InitializeAsync().Wait();
             MachineId = new DeviceIdBuilder()
                 .OnWindows(windows =>
                     windows
@@ -38,36 +37,13 @@ namespace DanmakuBackend.Cloud
                         .AddMachineGuid()
                 )
                 .ToString();
-            if (ValidateSessionAsync().Result)
-            {
-                // 订阅授权频道
-                machineChannel = client.Realtime.Channel($"danmaku-licence-{MachineId}");
-                var machineBroadcast = machineChannel.Register<ShutdownBroadcast>();
-                machineBroadcast.AddBroadcastEventHandler((sender, broadcast) =>
-                {
-                    if (broadcast?.Event == "shutdown") OnLicenceShutdown(broadcast.Payload?["message"]?.ToString());
-                });
-                machineChannel.Subscribe();
-                sessionChannel = client.Realtime.Channel($"danmaku-licence-{SessionId}");
-                var sessionBroadcast = sessionChannel.Register<ShutdownBroadcast>();
-                sessionBroadcast.AddBroadcastEventHandler((sender, broadcast) =>
-                {
-                    if (broadcast?.Event == "shutdown") OnLicenceShutdown(broadcast.Payload?["message"]?.ToString());
-                });
-                sessionChannel.Subscribe();
-                Logger.LogInfo("云服务连接成功");
-            }
-            else
-            {
-                Logger.LogFatal("云服务授权失败");
-                Environment.Exit(0);
-            }
+            Logger.LogInfo("Danmaku服务已初始化，等待客户端连接...");
         }
 
         /// <summary>
         /// 机器ID
         /// </summary>
-        private string MachineId { get; }
+        public string MachineId { get; }
 
         /// <summary>
         /// 已验证的客户端 session_id
@@ -75,36 +51,29 @@ namespace DanmakuBackend.Cloud
         public string SessionId { get; private set; }
 
         /// <summary>
-        ///     当前会话的授权信息
+        /// 当前会话的授权信息
         /// </summary>
         public LicenceInfo LicenceInfo { get; private set; }
 
         /// <summary>
         /// 检查房间是否在授权列表中（使用缓存，避免重复解析）
         /// </summary>
-        /// <param name="room">房间ID</param>
+        /// <param name="id">房间ID</param>
         /// <returns>是否在授权列表中</returns>
-        public bool IsAnchorRoom(long room)
+        public bool VerifySession(string id)
         {
-            // 使用缓存的房间ID集合进行快速查找，避免重复解析
-            return roomId == room;
+            return LicenceInfo.Id == id;
         }
 
-        public async void ReportEvent(long room, string eventName, object body, string note = null)
+        public async void ReportEvent(long roomId, string eventName, object body, string note = null)
         {
-            // 仅在调试模式下上传事件
-            if (!AppRuntime.IsDebugMode)
-            {
-                return;
-            }
-
             Logger.LogWarn($@"报告事件<{eventName}> {note}");
             try
             {
-                await client.From<EventLog>().Insert(new EventLog
+                await _client.From<EventLog>().Insert(new EventLog
                 {
                     EventName = eventName,
-                    RoomId = room,
+                    RoomId = roomId,
                     Body = body,
                     Timestamp = DateTime.Now,
                     Note = note
@@ -130,126 +99,123 @@ namespace DanmakuBackend.Cloud
         }
 
         /// <summary>
+        /// 连接到云端并验证会话
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> ConnectAsync()
+        {
+            if (SessionId != null) return true;
+            if (!await ValidateSession()) return false;
+            
+            // 订阅机器频道
+            _machineChannel = _client.Realtime.Channel($"danmaku-machine-{MachineId}");
+            _machineBroadcast = _machineChannel.Register<ShutdownBroadcast>();
+            _machineBroadcast.AddBroadcastEventHandler((sender, broadcast) =>
+            {
+                if (broadcast?.Event == "shutdown") OnLicenceShutdown(broadcast.Payload?["message"]?.ToString());
+            });
+            await _machineChannel.Subscribe();
+            
+            // 订阅会话频道
+            _sessionChannel = _client.Realtime.Channel($"danmaku-session-{SessionId}");
+            _sessionBroadcast = _sessionChannel.Register<ShutdownBroadcast>();
+            _sessionBroadcast.AddBroadcastEventHandler((sender, broadcast) =>
+            {
+                if (broadcast?.Event == "shutdown") OnLicenceShutdown(broadcast.Payload?["message"]?.ToString());
+            });
+            await _sessionChannel.Subscribe();
+            
+            Logger.LogInfo("Danmaku服务会话启动成功");
+            return true;
+        }
+
+        /// <summary>
         /// 验证客户端会话
         /// </summary>
         /// <returns>验证是否成功</returns>
-        private async Task<bool> ValidateSessionAsync()
+        private async Task<bool> ValidateSession()
         {
             try
             {
-                var payload = new Supabase.Functions.Client.InvokeFunctionOptions
+                var options = new Supabase.Functions.Client.InvokeFunctionOptions()
                 {
-                    Body = new Dictionary<string, object>
+                    Body =
                     {
                         { "machine_id", MachineId },
-                        { "room_id", roomId }
+                        { "room_id", _roomId.ToString() }
                     }
                 };
-                var response = await client.Functions.Invoke("validate-session-and-get-licence", options: payload);
-                var result = JsonConvert.DeserializeObject<ValidateSessionResponse>(response);
-                if (result == null || result.Licence == null)
+                var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options);
+                var session = JsonConvert.DeserializeObject<ValidateSessionResponse>(response);
+                if (session == null || session.Licence == null)
                 {
-                    Logger.LogError($"验证失败: {result?.Error ?? "未知原因"}");
+                    Logger.LogDebug($"验证失败: {session?.Error ?? "无授权"}");
                     return false;
                 }
 
-                LicenceInfo = result.Licence;
-                SessionId = result.SessionId;
+                // 验证成功，保存 session_id 和授权信息
+                SessionId = session.SessionId;
+                LicenceInfo = session.Licence;
                 return true;
             }
             catch (Exception e)
             {
-                Logger.LogError($"验证会话时出错: {e.Message}");
+                Logger.LogError($"注册会话时出错: {e.Message}");
                 return false;
             }
         }
 
         public void Destroy()
         {
-            // 安全地停止心跳定时器
-            if (heartbeatTimer != null)
+            try
             {
-                try
-                {
-                    heartbeatTimer.Stop();
-                    heartbeatTimer.Dispose();
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError("停止心跳定时器失败: " + e.Message);
-                }
-
-                heartbeatTimer = null;
+                // 取消订阅频道
+                _sessionChannel?.Unsubscribe();
+                // 取消订阅授权频道
+                _machineChannel?.Unsubscribe();
+                // 释放会话
+                ReleaseSession().ConfigureAwait(false).GetAwaiter().GetResult();
             }
-
-            // 安全地取消订阅频道
-            if (sessionChannel != null)
+            catch (Exception e)
             {
-                try
-                {
-                    sessionChannel.Unsubscribe();
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError("取消订阅频道失败: " + e.Message);
-                }
+                Logger.LogError("Danmaku服务注销异常: " + e.Message);
             }
-
-            // 安全地取消订阅授权频道
-            if (machineChannel != null)
-            {
-                try
-                {
-                    machineChannel.Unsubscribe();
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError("取消订阅授权频道失败: " + e.Message);
-                }
-            }
-
-            // 释放会话
-            ReleaseSessionLock().ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-
-        private async Task ReleaseSessionLock()
-        {
-            Logger.LogInfo(@"释放会话");
-            var payload = new Supabase.Functions.Client.InvokeFunctionOptions
-            {
-                Body = new Dictionary<string, object>
-                {
-                    { "machine_id", MachineId },
-                    { "room_id", roomId }
-                }
-            };
-            var response = await client.Functions.Invoke("danmaku-session-release", options: payload);
-            var result = JsonConvert.DeserializeObject<ReleaseSessionResponse>(response);
-            if (result.ErrorMsg != null) Logger.LogError("会话释放异常: " + result.ErrorMsg);
-        }
-
-        public bool IsSessionMatched(string session)
-        {
-            return SessionId == session;
         }
 
         /// <summary>
-        ///     Edge Function 响应模型
+        /// 会话验证响应
         /// </summary>
         private class ValidateSessionResponse
         {
             [JsonProperty("licence")] public LicenceInfo Licence { get; set; }
-            [JsonProperty("session_id")] public string SessionId { get; set; }
             [JsonProperty("error")] public string Error { get; set; }
+            [JsonProperty("session_id")] public string SessionId { get; set; }
         }
 
         /// <summary>
-        ///     Edge Function 响应模型
+        /// 会话验证响应
         /// </summary>
         private class ReleaseSessionResponse
         {
-            [JsonProperty("error")] public string ErrorMsg { get; set; }
-            [JsonProperty("success")] public string SuccessMsg { get; set; }
+            [JsonProperty("error")] public string Error { get; set; }
+        }
+
+        private async Task ReleaseSession()
+        {
+            if (SessionId == null) return;
+            var options = new Supabase.Functions.Client.InvokeFunctionOptions()
+            {
+                Body =
+                {
+                    { "session_id", SessionId },
+                }
+            };
+            var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options);
+            var res = JsonConvert.DeserializeObject<ReleaseSessionResponse>(response);
+            if (res.Error != null)
+            {
+                Logger.LogDebug($"释放会话异常: {res?.Error ?? "未知错误"}");
+            }
         }
     }
 }
