@@ -62,7 +62,7 @@ namespace DanmakuBackend.Cloud
         /// <returns>是否在授权列表中</returns>
         public bool VerifySession(string id)
         {
-            return LicenceInfo.Id == id;
+            return LicenceInfo?.Id == id;
         }
 
         public async void ReportEvent(long roomId, string eventName, object body, string note = null)
@@ -106,7 +106,7 @@ namespace DanmakuBackend.Cloud
         {
             if (SessionId != null) return true;
             if (!await ValidateSession()) return false;
-            
+
             // 订阅机器频道
             _machineChannel = _client.Realtime.Channel($"danmaku-machine-{MachineId}");
             _machineBroadcast = _machineChannel.Register<ShutdownBroadcast>();
@@ -115,7 +115,7 @@ namespace DanmakuBackend.Cloud
                 if (broadcast?.Event == "shutdown") OnLicenceShutdown(broadcast.Payload?["message"]?.ToString());
             });
             await _machineChannel.Subscribe();
-            
+
             // 订阅会话频道
             _sessionChannel = _client.Realtime.Channel($"danmaku-session-{SessionId}");
             _sessionBroadcast = _sessionChannel.Register<ShutdownBroadcast>();
@@ -124,7 +124,7 @@ namespace DanmakuBackend.Cloud
                 if (broadcast?.Event == "shutdown") OnLicenceShutdown(broadcast.Payload?["message"]?.ToString());
             });
             await _sessionChannel.Subscribe();
-            
+
             Logger.LogInfo("Danmaku服务会话启动成功");
             return true;
         }
