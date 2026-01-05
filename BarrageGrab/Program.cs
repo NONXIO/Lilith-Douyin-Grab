@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using DanmakuBackend.Models.JsonEntity;
 using DanmakuBackend.Utility;
 using DanmakuBackend.Views;
+using Microsoft.Win32;
 
 namespace DanmakuBackend
 {
@@ -26,7 +27,7 @@ namespace DanmakuBackend
             if (!Mutex.WaitOne(TimeSpan.Zero, true))
             {
                 Logger.LogFatal(@"另一个实例已在运行");
-                return;
+                Environment.Exit(100);
             }
 
             // 解析命令行参数
@@ -49,7 +50,7 @@ namespace DanmakuBackend
             {
                 Logger.LogError("参数错误,请使用Danmaku启动此后端服务");
                 MessageBox.Show(@"参数错误,请使用Danmaku启动此后端服务", @"程序初始化错误", MessageBoxButtons.OK);
-                return;
+                Environment.Exit(101);
             }
 
             // 设置调试模式
@@ -57,11 +58,11 @@ namespace DanmakuBackend
             if (isDebugMode) Logger.LogInfo("调试模式已启用");
 
             SetTitle("启动中...");
-            SetTitle("启动中...");
-
             try
             {
-                AppRuntime.PreInit(validArgs.ToArray());
+                // 关闭系统代理防止无法联网的问题
+                CloseProxy();
+                AppRuntime.CheckLicence(validArgs.ToArray());
                 Init();
                 SetTitle("运行中");
                 AppRuntime.WsServer.Broadcast(new DanmakuMessagePack
@@ -101,6 +102,14 @@ namespace DanmakuBackend
 
             // 强制退出，避免等待未完成的异步任务
             Environment.Exit(0);
+        }
+
+        private static void CloseProxy()
+        {
+            var registry =
+                Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+                    true);
+            if (registry != null) registry.SetValue("ProxyEnable", 0);
         }
 
         private static void Init()

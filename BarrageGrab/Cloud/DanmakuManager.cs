@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeviceId;
@@ -8,18 +6,17 @@ using Newtonsoft.Json;
 using Supabase;
 using Supabase.Realtime;
 using Client = Supabase.Client;
-using Timer = System.Timers.Timer;
 
 namespace DanmakuBackend.Cloud
 {
     public class DanmakuManager
     {
         private readonly Client _client;
-        private RealtimeBroadcast<ShutdownBroadcast> _machineBroadcast;
-        private RealtimeBroadcast<ShutdownBroadcast> _sessionBroadcast;
-        private RealtimeChannel _machineChannel;
-        private RealtimeChannel _sessionChannel;
         private readonly long _roomId;
+        private RealtimeBroadcast<ShutdownBroadcast> _machineBroadcast;
+        private RealtimeChannel _machineChannel;
+        private RealtimeBroadcast<ShutdownBroadcast> _sessionBroadcast;
+        private RealtimeChannel _sessionChannel;
 
         public DanmakuManager(string accessKey, string roomId)
         {
@@ -156,6 +153,7 @@ namespace DanmakuBackend.Cloud
                 // 验证成功，保存 session_id 和授权信息
                 SessionId = session.SessionId;
                 LicenceInfo = session.Licence;
+                Logger.LogDebug($"验证: {SessionId} | {LicenceInfo}");
                 return true;
             }
             catch (Exception e)
@@ -182,6 +180,21 @@ namespace DanmakuBackend.Cloud
             }
         }
 
+        private async Task ReleaseSession()
+        {
+            if (SessionId == null) return;
+            var options = new Supabase.Functions.Client.InvokeFunctionOptions
+            {
+                Body =
+                {
+                    { "session_id", SessionId }
+                }
+            };
+            var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options);
+            var res = JsonConvert.DeserializeObject<ReleaseSessionResponse>(response);
+            if (res.Error != null) Logger.LogDebug($"释放会话异常: {res?.Error ?? "未知错误"}");
+        }
+
         /// <summary>
         /// 会话验证响应
         /// </summary>
@@ -198,24 +211,6 @@ namespace DanmakuBackend.Cloud
         private class ReleaseSessionResponse
         {
             [JsonProperty("error")] public string Error { get; set; }
-        }
-
-        private async Task ReleaseSession()
-        {
-            if (SessionId == null) return;
-            var options = new Supabase.Functions.Client.InvokeFunctionOptions()
-            {
-                Body =
-                {
-                    { "session_id", SessionId },
-                }
-            };
-            var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options);
-            var res = JsonConvert.DeserializeObject<ReleaseSessionResponse>(response);
-            if (res.Error != null)
-            {
-                Logger.LogDebug($"释放会话异常: {res?.Error ?? "未知错误"}");
-            }
         }
     }
 }

@@ -57,7 +57,7 @@ if (Test-Path $ConfuserCliPath) {
     $origErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     try {
-        & $ConfuserCliPath -n -v Info $CrprojPath
+        & $ConfuserCliPath -n $CrprojPath
     }
     finally {
         $ErrorActionPreference = $origErrorActionPreference

@@ -5,7 +5,6 @@ using System.Linq;
 using DanmakuBackend.Cloud;
 using DanmakuBackend.Models;
 using DanmakuBackend.Server;
-using DanmakuBackend.Utility;
 
 namespace DanmakuBackend
 {
@@ -40,7 +39,7 @@ namespace DanmakuBackend
         /// </summary>
         public static bool IsDebugMode { get; set; } = false;
 
-        public static void PreInit(string[] args)
+        public static void CheckLicence(string[] args)
         {
             var accessKey = args[0] ?? string.Empty;
             var roomId = args[1] ?? string.Empty;
