@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using DanmakuBackend.Models.JsonEntity;
@@ -20,6 +21,7 @@ namespace DanmakuBackend
 
         static void Main(string[] args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
             if (Debugger.IsAttached) return;
             if (!Mutex.WaitOne(TimeSpan.Zero, true))
             {
@@ -108,6 +110,7 @@ namespace DanmakuBackend
                     _mainForm.Invoke(new Action(Application.Exit));
             };
             AppRuntime.WsServer.StartListen(); //启动WS以及代理服务
+            Logger.LogInfo("后端服务启动完成");
         }
 
         //设置控制台标题
