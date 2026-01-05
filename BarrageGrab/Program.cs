@@ -24,7 +24,6 @@ namespace DanmakuBackend
             if (!Mutex.WaitOne(TimeSpan.Zero, true))
             {
                 Logger.LogFatal(@"另一个实例已在运行");
-                MessageBox.Show(@"另一个实例已在运行", @"程序初始化错误", MessageBoxButtons.OK);
                 return;
             }
 
