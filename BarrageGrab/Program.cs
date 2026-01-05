@@ -57,10 +57,11 @@ namespace DanmakuBackend
             if (isDebugMode) Logger.LogInfo("调试模式已启用");
 
             SetTitle("启动中...");
-            AppRuntime.PreInit(validArgs.ToArray());
+            SetTitle("启动中...");
 
             try
             {
+                AppRuntime.PreInit(validArgs.ToArray());
                 Init();
                 SetTitle("运行中");
                 AppRuntime.WsServer.Broadcast(new DanmakuMessagePack
@@ -72,8 +73,17 @@ namespace DanmakuBackend
             catch (Exception ex)
             {
                 SetTitle("初始化失败");
-                Logger.LogError(ex, $"程序初始化错误，{ex.Message}");
-                MessageBox.Show(ex.Message, @"程序初始化错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                try
+                {
+                    Logger.LogError(ex, $"程序初始化错误，{ex.Message}");
+                }
+                catch
+                {
+                    Logger.LogError($"程序初始化严重错误: {ex.GetType().Name} - {ex.Message}");
+                }
+
+                MessageBox.Show($@"{ex.Message}{Environment.NewLine}{ex.StackTrace}", @"程序初始化错误", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 _exited = true;
             }
 
