@@ -40,8 +40,6 @@ namespace DanmakuBackend.Server
         private ConcurrentDictionary<string, UserState>
             socketList = new ConcurrentDictionary<string, UserState>(); //客户端列表
 
-        private UserState Client { get; set; }
-
         private WebSocketServer socketServer; //Ws服务器对象
 
         public WsBarrageServer()
@@ -74,6 +72,8 @@ namespace DanmakuBackend.Server
             //dieout.Start();
             giftCountTimer.Start();
         }
+
+        private UserState Client { get; set; }
 
         /// <summary>
         /// WS服务器启动地址
@@ -717,8 +717,6 @@ namespace DanmakuBackend.Server
                 {
                     var cmdPack = JsonConvert.DeserializeObject<Command>(message);
                     if (cmdPack == null) return;
-                    if (cmdPack == null) return;
-                    Logger.LogInfo($"收到命令: {cmdPack.Cmd}");
                     switch (cmdPack.Cmd)
                     {
                         case CommandCode.Auth:
@@ -773,8 +771,6 @@ namespace DanmakuBackend.Server
         /// <param name="data">认证数据</param>
         private async Task HandleAuthenticationAsync(IWebSocketConnection socket, string clientUrl, object data)
         {
-            Logger.LogInfo("Start HandleAuthenticationAsync...");
-
             // 如果已经认证过，直接返回
             if (Client != null && Client.ClientID == clientUrl && Client.IsAuthenticated)
             {
@@ -814,7 +810,6 @@ namespace DanmakuBackend.Server
                         SessionId = authRequest.SessionId,
                         LastPing = DateTime.Now
                     };
-
                     Logger.LogInfo($"客户端[{socket.ConnectionInfo.Id}]认证成功");
                 }
                 else
@@ -863,6 +858,8 @@ namespace DanmakuBackend.Server
                 catch (Exception ex)
                 {
                     Logger.LogError($"发送消息到客户端失败: {ex.Message}");
+                    Client.Socket.Close();
+                    Client = null;
                 }
             }
             else if (Client != null && !Client.Socket.IsAvailable)
