@@ -206,7 +206,7 @@ namespace DanmakuBackend.Server
         //判断Rommid是否符合拦截规则
         private static bool CheckRoomId(long roomid)
         {
-            return AppRuntime.DanmakuManager.VerifySession(roomid.ToString());
+            return AppRuntime.DanmakuManager.CheckRoomId(roomid.ToString());
         }
 
         //解析用户
@@ -664,7 +664,6 @@ namespace DanmakuBackend.Server
 
         private void StartAuthHandShare(IWebSocketConnection socket)
         {
-            Logger.LogInfo($"发送握手包到: {socket.ConnectionInfo.Id}");
             try
             {
                 var serverHello = new ServerHello
@@ -678,7 +677,6 @@ namespace DanmakuBackend.Server
                     Data = serverHello
                 };
                 socket.Send(JsonConvert.SerializeObject(helloCommand));
-                Logger.LogInfo("握手包发送调用完成");
             }
             catch (Exception ex)
             {
@@ -703,11 +701,7 @@ namespace DanmakuBackend.Server
                     return;
                 }
 
-                // Client = new UserState(socket, clientUrl); // Don't assign Client yet
-                Logger.LogInfo($"建立与[{socket.ConnectionInfo.Id}]的连接，发送握手...");
                 StartAuthHandShare(socket);
-
-                // No more blocking timer
             };
 
             //接收指令

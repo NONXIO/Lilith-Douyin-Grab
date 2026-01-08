@@ -57,7 +57,14 @@ namespace DanmakuBackend.Cloud
         /// </summary>
         /// <param name="id">房间ID</param>
         /// <returns>是否在授权列表中</returns>
-        public bool VerifySession(string id)
+        public bool VerifySession(string wid, string id)
+        {
+            if (LicenceInfo == null || LicenceInfo.RoomId != wid) return false;
+            LicenceInfo.Id = id;
+            return true;
+        }
+
+        public bool CheckRoomId(string id)
         {
             return LicenceInfo?.Id == id;
         }

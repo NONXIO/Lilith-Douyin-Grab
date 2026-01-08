@@ -117,7 +117,7 @@ namespace DanmakuBackend.Utility
             {
                 dto.LiveUrl = $"https://live.douyin.com/{webRoomid}";
                 dto.WebRoomId = webRoomid;
-                if (AppRuntime.DanmakuManager.VerifySession(dto.RoomId))
+                if (AppRuntime.DanmakuManager.VerifySession(dto.WebRoomId, dto.RoomId))
                 {
                     AppRuntime.RoomCaches.AddRoomInfoCache(dto);
                     Logger.LogInfo($"{dto.Owner.Nickname ?? dto.WebRoomId ?? dto.RoomId} 的直播间信息已添加到缓存");

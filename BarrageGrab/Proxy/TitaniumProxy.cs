@@ -241,16 +241,12 @@ namespace DanmakuBackend.Proxy
             var nickname = jobj["data"]?["owner"]?["nickname"]?.Value<string>();
             var displayId = jobj["data"]?["owner"]?["display_id"]?.Value<string>();
 
-            if (roomInfo != null && !roomid.IsNullOrWhiteSpace())
-            {
-                roomInfo.RoomId = roomid;
-                roomInfo.Title = jobj["data"]?["title"]?.Value<string>();
-                Logger.LogInfo($"直播伴侣开播，开播账号:{displayId} {nickname} ，更新RoomId={roomInfo.RoomId}");
-            }
-
-            if (roomInfo != null && AppRuntime.DanmakuManager.VerifySession(roomid))
+            if (roomInfo != null && !roomid.IsNullOrWhiteSpace() &&
+                AppRuntime.DanmakuManager.VerifySession(displayId, roomid))
             {
                 Logger.LogInfo($"直播伴侣开播，开播信息: {displayId} {nickname}, 房间{roomInfo.RoomId}");
+                roomInfo.RoomId = roomid;
+                roomInfo.Title = jobj["data"]?["title"]?.Value<string>();
                 AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
                 AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(null, PackMsgType.开播, processName));
                 //TODO: 后续移除
@@ -277,7 +273,7 @@ namespace DanmakuBackend.Proxy
                 e.DataReceived += WebSocket_DataReceived;
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
-                if (AppRuntime.DanmakuManager.VerifySession(roomid))
+                if (AppRuntime.DanmakuManager.CheckRoomId(roomid))
                 {
                     Logger.LogInfo($"直播间[{roomid}]订阅到新的弹幕流地址");
                 }
@@ -390,7 +386,7 @@ namespace DanmakuBackend.Proxy
 
                     if (code == 0)
                     {
-                        if (AppRuntime.DanmakuManager.VerifySession(roominfo.RoomId))
+                        if (AppRuntime.DanmakuManager.VerifySession(roominfo.WebRoomId, roominfo.RoomId))
                         {
                             Logger.LogInfo($"已连接 <{webrid}> - [{roominfo.Owner.Nickname}]的直播间");
                             roominfo.WebRoomId = webrid;
@@ -414,7 +410,8 @@ namespace DanmakuBackend.Proxy
                                 UserId = "-1"
                             };
                         }
-                        if (AppRuntime.DanmakuManager.VerifySession(roominfo.RoomId))
+
+                        if (AppRuntime.DanmakuManager.VerifySession(roominfo.WebRoomId, roominfo.RoomId))
                             AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                     }
 

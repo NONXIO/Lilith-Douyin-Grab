@@ -59,7 +59,7 @@ namespace DanmakuBackend.Server
         /// 聊天
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<ChatMessage>> OnChatMessage;
-        
+
         /// <summary>
         /// 聊天
         /// </summary>
@@ -333,7 +333,7 @@ namespace DanmakuBackend.Server
                     case "WebcastActivityEmojiGroupsMessage": // 活动表情包消息
                         break; //不处理
                     default:
-                        Logger.LogInfo("未处理的消息类型:" + msg.Method);
+                        if (AppRuntime.IsDebugMode) Logger.LogInfo("未处理的消息类型:" + msg.Method);
                         break;
                 }
             }
