@@ -71,6 +71,54 @@ namespace DanmakuBackend.Models.JsonEntity
     /// </summary>
     public class FansClubInfo
     {
+        // /// <summary>
+        // /// 粉丝团名称
+        // /// </summary>
+        // [JsonProperty("name")]
+        // public string ClubName { get; set; }
+
+        /// <summary>
+        ///     粉丝团等级，没加入则0
+        /// </summary>
+        [JsonProperty("level")]
+        public int Level { get; set; }
+
+        /// <summary>
+        ///     图标
+        /// </summary>
+        [JsonProperty("icon")]
+        public string Icon { get; set; }
+
+        /// <summary>
+        ///     是否点亮
+        /// </summary>
+        [JsonProperty("lighted")]
+        public bool Lighted { get; set; }
+    }
+
+    /// <summary>
+    ///     VIP 信息
+    /// </summary>
+    public class VipSubscribeInfo
+    {
+        /// <summary>
+        ///     图标
+        /// </summary>
+        [JsonProperty("icon")]
+        public string Icon { get; set; }
+
+        /// <summary>
+        ///     是否是年度
+        /// </summary>
+        [JsonProperty("yearly")]
+        public bool Yearly { get; set; }
+    }
+
+    /// <summary>
+    ///     星守护信息
+    /// </summary>
+    public class StarGuardInfo
+    {
         /// <summary>
         /// 粉丝团名称
         /// </summary>
@@ -82,13 +130,12 @@ namespace DanmakuBackend.Models.JsonEntity
         /// </summary>
         [JsonProperty("level")]
         public int Level { get; set; }
-    }
 
-    /// <summary>
-    /// 星守护信息
-    /// </summary>
-    public class StarGuardInfo : FansClubInfo
-    {
+        /// <summary>
+        ///     图标
+        /// </summary>
+        [JsonProperty("icon")]
+        public string Icon { get; set; }
     }
 
     /// <summary>
@@ -122,6 +169,24 @@ namespace DanmakuBackend.Models.JsonEntity
     }
 
     /// <summary>
+    ///     付费荣耀
+    /// </summary>
+    public class PayGradeInfo
+    {
+        /// <summary>
+        ///     等级
+        /// </summary>
+        [JsonProperty("level")]
+        public int Level { get; set; }
+
+        /// <summary>
+        ///     图标
+        /// </summary>
+        [JsonProperty("icon")]
+        public string Icon { get; set; }
+    }
+
+    /// <summary>
     /// 用户弹幕信息
     /// </summary>
     public class MsgUser : RoomAnchorInfo
@@ -142,7 +207,13 @@ namespace DanmakuBackend.Models.JsonEntity
         /// 是否是VIP会员
         /// </summary>
         [JsonProperty("is_vip")]
-        public bool IsVip { get; set; }
+        public VipSubscribeInfo Vip { get; set; }
+
+        /// <summary>
+        ///     ID
+        /// </summary>
+        [JsonProperty("id")]
+        public string Id { get; set; }
 
         /// <summary>
         /// ShortId
@@ -165,8 +236,8 @@ namespace DanmakuBackend.Models.JsonEntity
         /// <summary>
         /// 支付等级
         /// </summary>
-        [JsonProperty("pay_level")]
-        public int PayLevel { get; set; }
+        [JsonProperty("pay_grade")]
+        public PayGradeInfo Pay { get; set; }
 
         /// <summary>
         /// 性别 1男 2女
@@ -300,14 +371,14 @@ namespace DanmakuBackend.Models.JsonEntity
     public class ChatMsg : Msg
     {
         /// <summary>
-        /// 消息类型
-        /// </summary>
-        [JsonProperty("_type")] public string MsgType = "chat";
-
-        /// <summary>
         /// 语言消息
         /// </summary>
         [JsonProperty("is_audio")] public bool IsAudio;
+
+        /// <summary>
+        ///     消息类型
+        /// </summary>
+        [JsonProperty("_type")] public string MsgType = "chat";
     }
 
     /// <summary>

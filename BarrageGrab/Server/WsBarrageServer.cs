@@ -206,7 +206,8 @@ namespace DanmakuBackend.Server
         //判断Rommid是否符合拦截规则
         private static bool CheckRoomId(long roomid)
         {
-            return AppRuntime.DanmakuManager.CheckRoomId(roomid.ToString());
+            //TODO: 移除
+            return true || AppRuntime.DanmakuManager.CheckRoomId(roomid.ToString());
         }
 
         //解析用户
@@ -215,23 +216,18 @@ namespace DanmakuBackend.Server
             if (data == null) return null;
             var user = new MsgUser
             {
+                Id = data.Id.ToString(),
                 DisplayId = data.displayId,
                 ShortId = data.shortId,
                 Gender = data.Gender,
                 UserId = data.Id,
                 Level = data.Level,
-                PayLevel = (int)(data.payGrade?.Level ?? -1),
                 Nickname = data.Nickname ?? "用户" + data.displayId,
                 HeadImgUrl = data.avatarThumb?.urlList?.FirstOrDefault() ?? "",
                 SecUid = data.Sec_uid,
                 FollowerCount = data.followInfo?.followerCount ?? -1,
                 FollowingCount = data.followInfo?.followingCount ?? -1,
                 FollowStatus = data.followInfo?.followStatus ?? -1,
-                FansClub = new FansClubInfo
-                {
-                    ClubName = data.fansClub?.Data?.clubName ?? "",
-                    Level = data.fansClub?.Data?.Level ?? 0
-                }
             };
 
             // Parse badgeImageListV2
@@ -239,18 +235,43 @@ namespace DanmakuBackend.Server
             {
                 foreach (var badge in data.badgeImageListV2)
                 {
+                    // Pay Grade (imageType 59)
+                    if (badge.imageType == 1)
+                        user.Pay = new PayGradeInfo
+                        {
+                            Icon = badge.urlList.First(),
+                            Level = (int)(data.payGrade?.Level ?? -1)
+                        };
+
                     // VIP (imageType 59)
                     if (badge.imageType == 59)
                     {
-                        user.IsVip = true;
+                        user.Vip = new VipSubscribeInfo
+                        {
+                            Icon = badge.urlList.First(),
+                            Yearly = badge.Uri.Contains("yearly")
+                        };
                     }
+
+                    //fansclub
+                    if (badge.imageType == 7)
+                    {
+                        user.FansClub = new FansClubInfo
+                        {
+                            Level = (int)badge.Content.Level,
+                            Lighted = badge.urlList.First()?.Contains("gray") ?? false,
+                            Icon = badge.urlList.First()
+                        };
+                    }
+
                     // StarGuard (imageType 51)
                     else if (badge.imageType == 51 && badge.Uri.Contains("star_guard"))
                     {
                         user.StarGuard = new StarGuardInfo
                         {
                             Level = (int)badge.Content.Level,
-                            ClubName = badge.Content.Name
+                            ClubName = badge.Content.Name,
+                            Icon = badge.urlList.First()
                         };
                     }
                 }
@@ -287,13 +308,13 @@ namespace DanmakuBackend.Server
             //判断是否是直播间管理员
             if (enty.User != null && roomInfo != null && roomInfo.AdminUserIds.Any())
             {
-                enty.User.IsAdmin = roomInfo.AdminUserIds.Contains(enty.User.UserId.ToString());
+                enty.User.IsAdmin = enty.User.IsAdmin || roomInfo.AdminUserIds.Contains(enty.User.UserId.ToString());
             }
 
             //判断是否是主播
             if (enty.User != null && roomInfo != null && roomInfo.Owner != null)
             {
-                enty.User.IsAnchor = enty.User.UserId.ToString() == roomInfo.Owner.UserId;
+                enty.User.IsAnchor = enty.User.IsAnchor || enty.User.UserId.ToString() == roomInfo.Owner.UserId;
             }
 
             return enty;
@@ -715,6 +736,7 @@ namespace DanmakuBackend.Server
                         Logger.LogWarn("无法解析命令消息");
                         return;
                     }
+
                     switch (cmdPack.Cmd)
                     {
                         case CommandCode.Auth:
@@ -797,7 +819,7 @@ namespace DanmakuBackend.Server
                 {
                     dataJson = JsonConvert.SerializeObject(data);
                 }
-                
+
                 // 反序列化认证请求
                 var authRequest = JsonConvert.DeserializeObject<AuthRequest>(dataJson);
                 if (authRequest == null)
@@ -809,13 +831,13 @@ namespace DanmakuBackend.Server
                 // 验证客户端发送的 session_id
                 // 注意：后端在启动时可能还没有 session_id，需要在验证时获取
                 var isValid = await AppRuntime.DanmakuManager.ValidateClientSession(authRequest.SessionId);
-                
+
                 if (!isValid)
                 {
                     Logger.LogWarn("客户端SessionId验证失败");
                     return;
                 }
-                
+
                 // 确保云服务已连接（订阅频道）
                 if (AppRuntime.DanmakuManager.SessionId != null)
                 {
@@ -826,7 +848,7 @@ namespace DanmakuBackend.Server
                         return;
                     }
                 }
-                
+
                 // 认证成功
                 // 只有认证成功才赋值给 Global Client
                 Client = new UserState(socket, clientUrl)
