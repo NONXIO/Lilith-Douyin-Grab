@@ -135,6 +135,8 @@ namespace DanmakuBackend.Cloud
 
         /// <summary>
         /// 验证客户端会话
+        /// 注意：这个方法在启动时调用，用于获取初始的 session_id 和 licence
+        /// 但实际的 session 验证应该在客户端发送认证响应时进行
         /// </summary>
         /// <returns>验证是否成功</returns>
         private async Task<bool> ValidateSession()
@@ -150,22 +152,58 @@ namespace DanmakuBackend.Cloud
                     }
                 };
                 var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options);
+                
                 var session = JsonConvert.DeserializeObject<ValidateSessionResponse>(response);
                 if (session == null || session.Licence == null)
                 {
-                    Logger.LogDebug($"验证失败: {session?.Error ?? "无授权"}");
+                    var errorMsg = session?.Error ?? "无授权";
+                    Logger.LogWarn($"验证失败: {errorMsg}");
                     return false;
                 }
 
                 // 验证成功，保存 session_id 和授权信息
                 SessionId = session.SessionId;
                 LicenceInfo = session.Licence;
-                Logger.LogDebug($"验证: {SessionId} | {LicenceInfo}");
                 return true;
             }
             catch (Exception e)
             {
                 Logger.LogError($"注册会话时出错: {e.Message}");
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// 验证客户端发送的 session_id 是否有效
+        /// </summary>
+        /// <param name="clientSessionId">客户端发送的 session_id</param>
+        /// <returns>验证是否成功</returns>
+        public async Task<bool> ValidateClientSession(string clientSessionId)
+        {
+            try
+            {
+                // 如果后端还没有 session_id，先获取
+                if (SessionId == null)
+                {
+                    if (!await ValidateSession())
+                    {
+                        Logger.LogError("获取后端SessionId失败");
+                        return false;
+                    }
+                }
+                
+                // 比较后端和客户端的 session_id
+                var isValid = SessionId == clientSessionId;
+                if (!isValid)
+                {
+                    Logger.LogWarn("SessionId不匹配");
+                }
+                
+                return isValid;
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"验证客户端SessionId时出错: {e.Message}");
                 return false;
             }
         }

@@ -710,12 +710,22 @@ namespace DanmakuBackend.Server
                 try
                 {
                     var cmdPack = JsonConvert.DeserializeObject<Command>(message);
-                    if (cmdPack == null) return;
+                    if (cmdPack == null)
+                    {
+                        Logger.LogWarn("无法解析命令消息");
+                        return;
+                    }
                     switch (cmdPack.Cmd)
                     {
                         case CommandCode.Auth:
                             // 处理认证请求
-                            _ = HandleAuthenticationAsync(socket, clientUrl, cmdPack.Data);
+                            _ = HandleAuthenticationAsync(socket, clientUrl, cmdPack.Data).ContinueWith(task =>
+                            {
+                                if (task.IsFaulted)
+                                {
+                                    Logger.LogError($"处理认证请求时发生未捕获的异常: {task.Exception?.GetBaseException()?.Message}");
+                                }
+                            });
                             break;
                         case CommandCode.Close:
                             // 关闭服务器
@@ -773,44 +783,59 @@ namespace DanmakuBackend.Server
 
             try
             {
+                // 处理 data 对象：可能是 JObject、字符串或其他类型
+                string dataJson;
+                if (data is JObject jObj)
+                {
+                    dataJson = jObj.ToString();
+                }
+                else if (data is string str)
+                {
+                    dataJson = str;
+                }
+                else
+                {
+                    dataJson = JsonConvert.SerializeObject(data);
+                }
+                
                 // 反序列化认证请求
-                var authRequest = JsonConvert.DeserializeObject<AuthRequest>(data.ToString());
+                var authRequest = JsonConvert.DeserializeObject<AuthRequest>(dataJson);
                 if (authRequest == null)
                 {
-                    Logger.LogError("认证请求格式错误");
+                    Logger.LogError("认证请求格式错误，无法反序列化");
                     return;
                 }
 
-                // 尝试连接云服务 if needed
-                if (AppRuntime.DanmakuManager.SessionId == null)
+                // 验证客户端发送的 session_id
+                // 注意：后端在启动时可能还没有 session_id，需要在验证时获取
+                var isValid = await AppRuntime.DanmakuManager.ValidateClientSession(authRequest.SessionId);
+                
+                if (!isValid)
+                {
+                    Logger.LogWarn("客户端SessionId验证失败");
+                    return;
+                }
+                
+                // 确保云服务已连接（订阅频道）
+                if (AppRuntime.DanmakuManager.SessionId != null)
                 {
                     var connected = await AppRuntime.DanmakuManager.ConnectAsync();
                     if (!connected)
                     {
-                        Logger.LogError("云服务连接失败，无法认证客户端");
+                        Logger.LogError("云服务连接失败，无法完成认证");
                         return;
                     }
                 }
-
-                // 验证 session
-                var isValid = AppRuntime.DanmakuManager.SessionId == authRequest.SessionId;
-                if (isValid)
+                
+                // 认证成功
+                // 只有认证成功才赋值给 Global Client
+                Client = new UserState(socket, clientUrl)
                 {
-                    // 认证成功
-                    // 只有认证成功才赋值给 Global Client
-                    Client = new UserState(socket, clientUrl)
-                    {
-                        IsAuthenticated = true,
-                        SessionId = authRequest.SessionId,
-                        LastPing = DateTime.Now
-                    };
-                    Logger.LogInfo($"客户端[{socket.ConnectionInfo.Id}]认证成功");
-                }
-                else
-                {
-                    // 认证失败 - 只记录日志，不关闭连接
-                    Logger.LogWarn($"客户端[{socket.ConnectionInfo.Id}]认证失败: SessionId不匹配");
-                }
+                    IsAuthenticated = true,
+                    SessionId = authRequest.SessionId,
+                    LastPing = DateTime.Now
+                };
+                Logger.LogInfo($"客户端[{socket.ConnectionInfo.Id}]认证成功");
             }
             catch (Exception ex)
             {

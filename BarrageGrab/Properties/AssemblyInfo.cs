@@ -25,6 +25,6 @@ using System.Runtime.InteropServices;
 //      修订号
 //
 //可以指定所有这些值，也可以使用“生成号”和“修订号”的默认值
-[assembly: AssemblyVersion("3.0.3")]
-[assembly: AssemblyFileVersion("3.0.3")]
+[assembly: AssemblyVersion("3.0.4")]
+[assembly: AssemblyFileVersion("3.0.4")]
 [assembly: NeutralResourcesLanguage("zh-CN")]
