@@ -57,6 +57,12 @@ namespace DanmakuBackend.Models.JsonEntity
         public string RoomId { get; set; }
 
         /// <summary>
+        ///     房间业务
+        /// </summary>
+        [JsonProperty("id")]
+        public string Rid { get; set; }
+
+        /// <summary>
         /// 应用版本
         /// </summary>
         [JsonProperty("app_version")]

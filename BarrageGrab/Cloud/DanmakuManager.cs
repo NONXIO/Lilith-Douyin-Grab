@@ -12,7 +12,7 @@ namespace DanmakuBackend.Cloud
     public class DanmakuManager
     {
         private readonly Client _client;
-        private readonly long _roomId;
+        private readonly string _roomId;
         private RealtimeBroadcast<ShutdownBroadcast> _machineBroadcast;
         private RealtimeChannel _machineChannel;
         private RealtimeBroadcast<ShutdownBroadcast> _sessionBroadcast;
@@ -20,7 +20,7 @@ namespace DanmakuBackend.Cloud
 
         public DanmakuManager(string accessKey, string roomId)
         {
-            _roomId = long.Parse(roomId);
+            _roomId = roomId;
             Logger.LogInfo("正在连接到Danmaku服务...");
             _client = new Client("https://kkuqbesyrhmobaxoespi.supabase.co", accessKey, new SupabaseOptions
             {
@@ -110,8 +110,7 @@ namespace DanmakuBackend.Cloud
         /// <returns></returns>
         public async Task<bool> ConnectAsync()
         {
-            if (SessionId != null) return true;
-            if (!await ValidateSession()) return false;
+            if (SessionId == null) return false;
 
             // 订阅机器频道
             _machineChannel = _client.Realtime.Channel($"danmaku-machine-{MachineId}");
@@ -141,7 +140,7 @@ namespace DanmakuBackend.Cloud
         /// 但实际的 session 验证应该在客户端发送认证响应时进行
         /// </summary>
         /// <returns>验证是否成功</returns>
-        private async Task<bool> ValidateSession()
+        private async Task<bool> ValidateSession(string rid = null)
         {
             try
             {
@@ -150,11 +149,10 @@ namespace DanmakuBackend.Cloud
                     Body =
                     {
                         { "machine_id", MachineId },
-                        { "room_id", _roomId.ToString() }
+                        { "room_id", _roomId }
                     }
                 };
                 var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options);
-
                 var session = JsonConvert.DeserializeObject<ValidateSessionResponse>(response);
                 if (session == null || session.Licence == null)
                 {
@@ -166,6 +164,7 @@ namespace DanmakuBackend.Cloud
                 // 验证成功，保存 session_id 和授权信息
                 SessionId = session.SessionId;
                 LicenceInfo = session.Licence;
+                if (rid != null) LicenceInfo.Id = rid;
                 return true;
             }
             catch (Exception e)
@@ -180,14 +179,14 @@ namespace DanmakuBackend.Cloud
         /// </summary>
         /// <param name="clientSessionId">客户端发送的 session_id</param>
         /// <returns>验证是否成功</returns>
-        public async Task<bool> ValidateClientSession(string clientSessionId)
+        public async Task<bool> ValidateClientSession(string clientSessionId, string rid)
         {
             try
             {
                 // 如果后端还没有 session_id，先获取
                 if (SessionId == null)
                 {
-                    if (!await ValidateSession())
+                    if (!await ValidateSession(rid))
                     {
                         Logger.LogError("获取后端SessionId失败");
                         return false;

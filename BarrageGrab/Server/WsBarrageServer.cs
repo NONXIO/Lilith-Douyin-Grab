@@ -827,7 +827,8 @@ namespace DanmakuBackend.Server
 
                 // 验证客户端发送的 session_id
                 // 注意：后端在启动时可能还没有 session_id，需要在验证时获取
-                var isValid = await AppRuntime.DanmakuManager.ValidateClientSession(authRequest.SessionId);
+                var isValid =
+                    await AppRuntime.DanmakuManager.ValidateClientSession(authRequest.SessionId, authRequest.Rid);
                 if (!isValid)
                 {
                     Logger.LogWarn("客户端SessionId验证失败");
@@ -835,14 +836,10 @@ namespace DanmakuBackend.Server
                 }
 
                 // 确保云服务已连接（订阅频道）
-                if (AppRuntime.DanmakuManager.SessionId != null)
+                if (!await AppRuntime.DanmakuManager.ConnectAsync())
                 {
-                    var connected = await AppRuntime.DanmakuManager.ConnectAsync();
-                    if (!connected)
-                    {
-                        Logger.LogError("云服务连接失败，无法完成认证");
-                        return;
-                    }
+                    Logger.LogError("云服务连接失败，无法完成认证");
+                    return;
                 }
 
                 // 认证成功
