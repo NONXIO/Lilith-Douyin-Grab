@@ -249,9 +249,6 @@ namespace DanmakuBackend.Proxy
                 roomInfo.Title = jobj["data"]?["title"]?.Value<string>();
                 AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
                 AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(null, PackMsgType.开播, processName));
-                //TODO: 后续移除
-                AppRuntime.DanmakuManager.ReportEvent(long.Parse(roomInfo.WebRoomId), "直播伴侣开播", jobj.ToJson(),
-                    $"房间ID:{roomInfo.RoomId}");
             }
         }
 

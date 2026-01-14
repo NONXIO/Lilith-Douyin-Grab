@@ -61,11 +61,13 @@ namespace DanmakuBackend.Cloud
         {
             if (LicenceInfo == null || LicenceInfo.RoomId != wid) return false;
             LicenceInfo.Id = id;
+            Logger.LogInfo($"直播间[{id}]添加到授权列表");
             return true;
         }
 
         public bool CheckRoomId(string id)
         {
+            if (LicenceInfo == null) Logger.LogWarn("没有信息");
             return LicenceInfo?.Id == id;
         }
 
@@ -152,7 +154,7 @@ namespace DanmakuBackend.Cloud
                     }
                 };
                 var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options);
-                
+
                 var session = JsonConvert.DeserializeObject<ValidateSessionResponse>(response);
                 if (session == null || session.Licence == null)
                 {
@@ -172,7 +174,7 @@ namespace DanmakuBackend.Cloud
                 return false;
             }
         }
-        
+
         /// <summary>
         /// 验证客户端发送的 session_id 是否有效
         /// </summary>
@@ -191,14 +193,14 @@ namespace DanmakuBackend.Cloud
                         return false;
                     }
                 }
-                
+
                 // 比较后端和客户端的 session_id
                 var isValid = SessionId == clientSessionId;
                 if (!isValid)
                 {
                     Logger.LogWarn("SessionId不匹配");
                 }
-                
+
                 return isValid;
             }
             catch (Exception e)

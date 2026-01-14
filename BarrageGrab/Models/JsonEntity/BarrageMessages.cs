@@ -206,7 +206,7 @@ namespace DanmakuBackend.Models.JsonEntity
         /// <summary>
         /// 是否是VIP会员
         /// </summary>
-        [JsonProperty("is_vip")]
+        [JsonProperty("vip")]
         public VipSubscribeInfo Vip { get; set; }
 
         /// <summary>

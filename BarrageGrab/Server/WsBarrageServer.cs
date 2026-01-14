@@ -206,8 +206,7 @@ namespace DanmakuBackend.Server
         //判断Rommid是否符合拦截规则
         private static bool CheckRoomId(long roomid)
         {
-            //TODO: 移除
-            return true || AppRuntime.DanmakuManager.CheckRoomId(roomid.ToString());
+            return AppRuntime.DanmakuManager.CheckRoomId(roomid.ToString());
         }
 
         //解析用户
@@ -549,6 +548,7 @@ namespace DanmakuBackend.Server
             Broadcast(pack);
         }
 
+        //语言弹幕
         private void Grab_OnAudioChatMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<AudioChatMessage> e)
         {
             var msg = e.Message;
@@ -798,10 +798,7 @@ namespace DanmakuBackend.Server
         private async Task HandleAuthenticationAsync(IWebSocketConnection socket, string clientUrl, object data)
         {
             // 如果已经认证过，直接返回
-            if (Client != null && Client.ClientID == clientUrl && Client.IsAuthenticated)
-            {
-                return;
-            }
+            if (Client != null && Client.ClientID == clientUrl && Client.IsAuthenticated) return;
 
             try
             {
@@ -831,7 +828,6 @@ namespace DanmakuBackend.Server
                 // 验证客户端发送的 session_id
                 // 注意：后端在启动时可能还没有 session_id，需要在验证时获取
                 var isValid = await AppRuntime.DanmakuManager.ValidateClientSession(authRequest.SessionId);
-
                 if (!isValid)
                 {
                     Logger.LogWarn("客户端SessionId验证失败");
