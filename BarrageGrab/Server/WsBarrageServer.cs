@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -14,6 +15,11 @@ using DanmakuBackend.Proxy.ProxyEventArgs;
 using Fleck;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
+using Timer = System.Timers.Timer;
 
 namespace DanmakuBackend.Server
 {
@@ -27,6 +33,10 @@ namespace DanmakuBackend.Server
     /// </summary>
     public class WsBarrageServer : IDisposable
     {
+        private const string EncryptionScheme = "A256GCM";
+        private const int GcmTagBits = 128;
+        private const int GcmIvSize = 12;
+
         private static int printCount = 0; //控制台输出计数，用于判断清理控制台
         private AppSetting Appsetting = AppSetting.Current; //全局配置文件实例
         private Timer dieout = new Timer(10000); //离线客户端清理计时器
@@ -158,11 +168,6 @@ namespace DanmakuBackend.Server
         }
 
         /// <summary>
-        /// 控制台打印事件
-        /// </summary>
-        public event EventHandler<PrintEventArgs> OnPrint;
-
-        /// <summary>
         /// 服务关闭后触发
         /// </summary>
         public event EventHandler OnClose;
@@ -234,7 +239,7 @@ namespace DanmakuBackend.Server
             {
                 foreach (var badge in data.badgeImageListV2)
                 {
-                    // Pay Grade (imageType 59)
+                    // Pay Grade (imageType 1)
                     if (badge.imageType == 1)
                         user.Pay = new PayGradeInfo
                         {
@@ -304,6 +309,7 @@ namespace DanmakuBackend.Server
                 WebRoomId = roomInfo?.WebRoomId ?? "",
                 User = hasUser ? GetUser(msg.User) : user
             };
+
             //判断是否是直播间管理员
             if (enty.User != null && roomInfo != null && roomInfo.AdminUserIds.Any())
             {
@@ -346,14 +352,17 @@ namespace DanmakuBackend.Server
         private void Grab_OnFansclubMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<FansclubMessage> e)
         {
             var msg = e.Message;
+            if (msg?.Common == null) return;
             if (!CheckRoomId(msg.Common.roomId)) return;
+            AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "粉丝团消息");
             var enty = CreateMsg<FansclubMsg>(msg);
             enty.Content = msg.Content;
             enty.Type = (FansclubType)msg.Action;
-            enty.Level = enty.User.FansClub.Level;
-            var msgType = PackMsgType.粉丝团消息;
+            if (enty.User?.FansClub != null) enty.Level = enty.User.FansClub.Level;
 
-            if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
+            var msgType = PackMsgType.粉丝团消息;
+            if (msg.User?.badgeImageListV2 != null &&
+                msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
                 AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
             }
@@ -434,9 +443,7 @@ namespace DanmakuBackend.Server
 
             //比上次小，则说明先后顺序出了问题，直接丢掉，应为比它大的消息已经处理过了
             if (backward) return;
-
             var count = currCount - lastCount;
-
             var enty = CreateMsg<GiftMsg>(msg);
             enty.Content =
                 $"{msg.User.Nickname} 送出 {msg.Gift.Name}{(msg.Gift.Combo ? "(可连击)" : "")} x {msg.repeatCount}个，增量{count}个";
@@ -572,7 +579,6 @@ namespace DanmakuBackend.Server
             enty.Content = $"[会员表情]";
             AttachRoomInfo(enty);
             Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.会员表情, e.Process));
-            AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "会员表情");
         }
 
         //直播间状态变更
@@ -685,6 +691,7 @@ namespace DanmakuBackend.Server
 
         private void StartAuthHandShare(IWebSocketConnection socket)
         {
+            Logger.LogInfo("开始客户端认证");
             try
             {
                 var serverHello = new ServerHello
@@ -726,7 +733,7 @@ namespace DanmakuBackend.Server
             };
 
             //接收指令
-            socket.OnMessage = (message) =>
+            socket.OnMessage = async message =>
             {
                 try
                 {
@@ -740,14 +747,17 @@ namespace DanmakuBackend.Server
                     switch (cmdPack.Cmd)
                     {
                         case CommandCode.Auth:
-                            // 处理认证请求
-                            _ = HandleAuthenticationAsync(socket, clientUrl, cmdPack.Data).ContinueWith(task =>
+                            try
                             {
-                                if (task.IsFaulted)
-                                {
-                                    Logger.LogError($"处理认证请求时发生未捕获的异常: {task.Exception?.GetBaseException()?.Message}");
-                                }
-                            });
+                                // 处理认证请求
+                                await HandleAuthenticationAsync(socket, clientUrl, cmdPack.Data).ConfigureAwait(false);
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.LogError($"客户端认证失败: {e.Message}");
+                                throw;
+                            }
+
                             break;
                         case CommandCode.Close:
                             // 关闭服务器
@@ -773,11 +783,12 @@ namespace DanmakuBackend.Server
 
             socket.OnClose = () =>
             {
-                Logger.LogInfo($"客户端<{socket.ConnectionInfo.Id}>关闭");
+                Logger.LogInfo("客户端关闭");
                 if (Client?.ClientID == clientUrl)
                 {
                     Client?.Socket.Close();
                     Client = null;
+                    AppRuntime.DanmakuManager.CleanSession();
                 }
             };
 
@@ -799,7 +810,6 @@ namespace DanmakuBackend.Server
         {
             // 如果已经认证过，直接返回
             if (Client != null && Client.ClientID == clientUrl && Client.IsAuthenticated) return;
-
             try
             {
                 // 处理 data 对象：可能是 JObject、字符串或其他类型
@@ -821,43 +831,48 @@ namespace DanmakuBackend.Server
                 var authRequest = JsonConvert.DeserializeObject<AuthRequest>(dataJson);
                 if (authRequest == null)
                 {
-                    Logger.LogError("认证请求格式错误，无法反序列化");
+                    Logger.LogError("认证请求格式错误");
                     return;
                 }
 
                 // 验证客户端发送的 session_id
-                // 注意：后端在启动时可能还没有 session_id，需要在验证时获取
-                var isValid =
-                    await AppRuntime.DanmakuManager.ValidateClientSession(authRequest.SessionId, authRequest.Rid);
+                Logger.LogInfo("开始验证客户端 Session");
+                var isValid = await AppRuntime.DanmakuManager
+                    .ValidateClientSession(authRequest.SessionId, authRequest.Rid).ConfigureAwait(false);
                 if (!isValid)
                 {
-                    Logger.LogWarn("客户端SessionId验证失败");
+                    Logger.LogWarn("客户端 Session 验证失败");
                     return;
                 }
 
-                // 确保云服务已连接（订阅频道）
-                if (!await AppRuntime.DanmakuManager.ConnectAsync())
+                byte[] encryptionKey;
+                try
                 {
-                    Logger.LogError("云服务连接失败，无法完成认证");
+                    encryptionKey = DeriveEncryptionKey(
+                        authRequest.SessionId,
+                        AppRuntime.DanmakuManager.MachineId
+                    );
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"客户端协议错误: {ex.Message}");
                     return;
                 }
 
                 // 认证成功
-                // 只有认证成功才赋值给 Global Client
                 Client = new UserState(socket, clientUrl)
                 {
                     IsAuthenticated = true,
                     SessionId = authRequest.SessionId,
-                    LastPing = DateTime.Now
+                    LastPing = DateTime.Now,
+                    EncryptionKey = encryptionKey
                 };
-                Logger.LogInfo($"客户端[{socket.ConnectionInfo.Id}]认证成功");
+                Logger.LogInfo("客户端认证成功");
             }
             catch (Exception ex)
             {
                 Logger.LogError($"处理认证请求时出错: {ex.Message}");
             }
-
-            return;
         }
 
         /// <summary>
@@ -871,7 +886,6 @@ namespace DanmakuBackend.Server
                 Content = eventType.ToString(),
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             };
-
             var pack = new DanmakuMessagePack(eventMsg.ToJson(), eventType, Process.GetCurrentProcess().ProcessName);
             Broadcast(pack);
         }
@@ -883,11 +897,21 @@ namespace DanmakuBackend.Server
         public void Broadcast(DanmakuMessagePack pack)
         {
             if (pack == null) return;
-            if (Client != null && Client.IsAuthenticated && Client.Socket.IsAvailable)
+            if (Client != null && !Client.Socket.IsAvailable) Client = null;
+
+            if (Client != null && Client.IsAuthenticated)
             {
                 try
                 {
-                    Client.Socket.Send(pack.ToJson());
+                    if (Client.EncryptionKey == null || Client.EncryptionKey.Length == 0)
+                    {
+                        Logger.LogWarn("客户端协议错误，消息未发送");
+                        return;
+                    }
+
+                    var payload = pack.ToJson();
+                    var encryptedPayload = EncryptPayload(Client.EncryptionKey, payload);
+                    Client.Socket.Send(encryptedPayload);
                 }
                 catch (Exception ex)
                 {
@@ -896,10 +920,48 @@ namespace DanmakuBackend.Server
                     Client = null;
                 }
             }
-            else if (Client != null && !Client.Socket.IsAvailable)
+            else
             {
-                Client = null;
+                if (AppRuntime.IsDebugMode) Logger.LogWarn("没有已认证的客户端连接，消息未发送");
             }
+        }
+
+        private static byte[] DeriveEncryptionKey(string sessionId, string machineId)
+        {
+            var material = $"danmaku|{sessionId}|{machineId}";
+            using (var sha256 = SHA256.Create())
+            {
+                return sha256.ComputeHash(Encoding.UTF8.GetBytes(material));
+            }
+        }
+
+        private static string EncryptPayload(byte[] key, string plaintext)
+        {
+            var iv = new byte[GcmIvSize];
+            new SecureRandom().NextBytes(iv);
+            var cipher = new GcmBlockCipher(new AesEngine());
+            var parameters = new AeadParameters(new KeyParameter(key), GcmTagBits, iv, null);
+            cipher.Init(true, parameters);
+            var input = Encoding.UTF8.GetBytes(plaintext);
+            var output = new byte[cipher.GetOutputSize(input.Length)];
+            var length = cipher.ProcessBytes(input, 0, input.Length, output, 0);
+            length += cipher.DoFinal(output, length);
+            var tagLength = GcmTagBits / 8;
+            if (length < tagLength) throw new InvalidOperationException("加密失败: 输出长度不足");
+
+            var cipherText = new byte[length - tagLength];
+            var tag = new byte[tagLength];
+            Buffer.BlockCopy(output, 0, cipherText, 0, cipherText.Length);
+            Buffer.BlockCopy(output, cipherText.Length, tag, 0, tag.Length);
+
+            var envelope = new
+            {
+                enc = EncryptionScheme,
+                iv = Convert.ToBase64String(iv),
+                tag = Convert.ToBase64String(tag),
+                data = Convert.ToBase64String(cipherText)
+            };
+            return JsonConvert.SerializeObject(envelope);
         }
 
         /// <summary>
@@ -1002,19 +1064,12 @@ namespace DanmakuBackend.Server
             /// </summary>
             public string SessionId { get; set; }
 
+            /// <summary>
+            ///     加密密钥
+            /// </summary>
+            public byte[] EncryptionKey { get; set; }
+
             public string ClientID { get; }
-        }
-
-        /// <summary>
-        /// Print事件参数
-        /// </summary>
-        public class PrintEventArgs : EventArgs
-        {
-            public string Message { get; set; }
-
-            public ConsoleColor Color { get; set; }
-
-            public PackMsgType MsgType { get; set; }
         }
 
         /// <summary>

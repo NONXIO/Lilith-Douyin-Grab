@@ -1,32 +1,23 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using DeviceId;
 using Newtonsoft.Json;
 using Supabase;
-using Supabase.Realtime;
 using Client = Supabase.Client;
 
 namespace DanmakuBackend.Cloud
 {
     public class DanmakuManager
     {
+        private readonly SemaphoreSlim _authLock = new SemaphoreSlim(1, 1);
         private readonly Client _client;
         private readonly string _roomId;
-        private RealtimeBroadcast<ShutdownBroadcast> _machineBroadcast;
-        private RealtimeChannel _machineChannel;
-        private RealtimeBroadcast<ShutdownBroadcast> _sessionBroadcast;
-        private RealtimeChannel _sessionChannel;
+        private string _sessionRoomId;
 
         public DanmakuManager(string accessKey, string roomId)
         {
-            _roomId = roomId;
-            Logger.LogInfo("正在连接到Danmaku服务...");
-            _client = new Client("https://kkuqbesyrhmobaxoespi.supabase.co", accessKey, new SupabaseOptions
-            {
-                AutoConnectRealtime = true
-            });
-            _client.InitializeAsync().Wait();
+            // 生成机器ID
             MachineId = new DeviceIdBuilder()
                 .OnWindows(windows =>
                     windows
@@ -34,7 +25,18 @@ namespace DanmakuBackend.Cloud
                         .AddMachineGuid()
                 )
                 .ToString();
-            Logger.LogInfo("Danmaku服务已初始化，等待客户端连接...");
+
+            // 注册房间号 (全局不可变)
+            _roomId = roomId;
+
+            // 初始化 Supabase 客户端
+            _client = new Client("https://kkuqbesyrhmobaxoespi.supabase.co", accessKey, new SupabaseOptions
+            {
+                AutoConnectRealtime = true
+            });
+
+            _client.InitializeAsync().Wait();
+            Logger.LogInfo("Danmaku服务初始化完成");
         }
 
         /// <summary>
@@ -55,20 +57,19 @@ namespace DanmakuBackend.Cloud
         /// <summary>
         /// 检查房间是否在授权列表中（使用缓存，避免重复解析）
         /// </summary>
-        /// <param name="id">房间ID</param>
+        /// <param name="sessionRoomId">房间ID</param>
         /// <returns>是否在授权列表中</returns>
-        public bool VerifySession(string wid, string id)
+        public bool SetSessionRoomId(string roomid, string sessionRoomId)
         {
-            if (LicenceInfo == null || LicenceInfo.RoomId != wid) return false;
-            LicenceInfo.Id = id;
-            Logger.LogInfo($"直播间[{id}]添加到授权列表");
+            if (LicenceInfo == null || LicenceInfo.RoomId != roomid) return false;
+            _sessionRoomId = sessionRoomId;
+            Logger.LogInfo($"直播间[{sessionRoomId}]添加到授权列表");
             return true;
         }
 
         public bool CheckRoomId(string id)
         {
-            if (LicenceInfo == null) Logger.LogWarn("没有信息");
-            return LicenceInfo?.Id == id;
+            return _sessionRoomId == id;
         }
 
         public async void ReportEvent(long roomId, string eventName, object body, string note = null)
@@ -91,48 +92,6 @@ namespace DanmakuBackend.Cloud
             }
         }
 
-        private void OnLicenceShutdown(string reason = null)
-        {
-            Logger.LogError("未授权，程序即将退出");
-            MessageBox.Show(
-                $@"原因: {reason ?? "授权已被终止，程序即将退出"}",
-                @"未授权",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning
-            );
-            AppRuntime.WsServer.Dispose();
-            Environment.Exit(0);
-        }
-
-        /// <summary>
-        /// 连接到云端并验证会话
-        /// </summary>
-        /// <returns></returns>
-        public async Task<bool> ConnectAsync()
-        {
-            if (SessionId == null) return false;
-
-            // 订阅机器频道
-            _machineChannel = _client.Realtime.Channel($"danmaku-machine-{MachineId}");
-            _machineBroadcast = _machineChannel.Register<ShutdownBroadcast>();
-            _machineBroadcast.AddBroadcastEventHandler((sender, broadcast) =>
-            {
-                if (broadcast?.Event == "shutdown") OnLicenceShutdown(broadcast.Payload?["message"]?.ToString());
-            });
-            await _machineChannel.Subscribe();
-
-            // 订阅会话频道
-            _sessionChannel = _client.Realtime.Channel($"danmaku-session-{SessionId}");
-            _sessionBroadcast = _sessionChannel.Register<ShutdownBroadcast>();
-            _sessionBroadcast.AddBroadcastEventHandler((sender, broadcast) =>
-            {
-                if (broadcast?.Event == "shutdown") OnLicenceShutdown(broadcast.Payload?["message"]?.ToString());
-            });
-            await _sessionChannel.Subscribe();
-
-            Logger.LogInfo("Danmaku服务会话启动成功");
-            return true;
-        }
 
         /// <summary>
         /// 验证客户端会话
@@ -140,7 +99,7 @@ namespace DanmakuBackend.Cloud
         /// 但实际的 session 验证应该在客户端发送认证响应时进行
         /// </summary>
         /// <returns>验证是否成功</returns>
-        private async Task<bool> ValidateSession(string rid = null)
+        private async Task<bool> ValidateSession()
         {
             try
             {
@@ -152,7 +111,8 @@ namespace DanmakuBackend.Cloud
                         { "room_id", _roomId }
                     }
                 };
-                var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options);
+                var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options)
+                    .ConfigureAwait(false);
                 var session = JsonConvert.DeserializeObject<ValidateSessionResponse>(response);
                 if (session == null || session.Licence == null)
                 {
@@ -164,7 +124,6 @@ namespace DanmakuBackend.Cloud
                 // 验证成功，保存 session_id 和授权信息
                 SessionId = session.SessionId;
                 LicenceInfo = session.Licence;
-                if (rid != null) LicenceInfo.Id = rid;
                 return true;
             }
             catch (Exception e)
@@ -181,42 +140,52 @@ namespace DanmakuBackend.Cloud
         /// <returns>验证是否成功</returns>
         public async Task<bool> ValidateClientSession(string clientSessionId, string rid)
         {
+            await _authLock.WaitAsync().ConfigureAwait(false);
             try
             {
                 // 如果后端还没有 session_id，先获取
                 if (SessionId == null)
                 {
-                    if (!await ValidateSession(rid))
+                    if (!await ValidateSession().ConfigureAwait(false))
                     {
-                        Logger.LogError("获取后端SessionId失败");
+                        Logger.LogError("获取Session失败");
                         return false;
                     }
                 }
 
                 // 比较后端和客户端的 session_id
-                var isValid = SessionId == clientSessionId;
-                if (!isValid)
+                if (SessionId != clientSessionId)
                 {
-                    Logger.LogWarn("SessionId不匹配");
+                    Logger.LogWarn("Session无效");
+                    return false;
                 }
 
-                return isValid;
+                if (_sessionRoomId.IsNullOrEmpty()) _sessionRoomId = rid;
+                return true;
             }
             catch (Exception e)
             {
-                Logger.LogError($"验证客户端SessionId时出错: {e.Message}");
+                Logger.LogError($"验证客户端 Session 时出错: {e.Message}");
                 return false;
             }
+            finally
+            {
+                // 释放锁
+                _authLock.Release();
+            }
+        }
+
+        public void CleanSession()
+        {
+            SessionId = null;
+            LicenceInfo = null;
+            Logger.LogInfo("会话已清理");
         }
 
         public void Destroy()
         {
             try
             {
-                // 取消订阅频道
-                _sessionChannel?.Unsubscribe();
-                // 取消订阅授权频道
-                _machineChannel?.Unsubscribe();
                 // 释放会话
                 ReleaseSession().ConfigureAwait(false).GetAwaiter().GetResult();
             }

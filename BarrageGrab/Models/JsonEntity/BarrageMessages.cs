@@ -274,12 +274,6 @@ namespace DanmakuBackend.Models.JsonEntity
         /// </summary>
         [JsonProperty("follow_status")]
         public long FollowStatus { get; set; }
-
-
-        public string GenderToString()
-        {
-            return Gender == 1 ? "男" : Gender == 2 ? "女" : "妖";
-        }
     }
 
     /// <summary>

@@ -10,6 +10,17 @@ namespace DanmakuBackend.Proxy
     internal abstract class SystemProxy : ISystemProxy
     {
         /// <summary>
+        ///     进程名称缓存（避免重复调用 Process.GetProcessById）
+        /// </summary>
+        private static readonly ConcurrentDictionary<int, string> _processNameCache =
+            new ConcurrentDictionary<int, string>();
+
+        /// <summary>
+        ///     代理端口
+        /// </summary>
+        public int ProxyPort => AppSetting.Current.ProxyPort;
+
+        /// <summary>
         /// 接收到websocket消息事件
         /// </summary>
         public event EventHandler<WsMessageEventArgs> OnWebSocketData;
@@ -29,16 +40,6 @@ namespace DanmakuBackend.Proxy
         /// </summary>
         public event EventHandler<RoomStatusEventArgs> OnRoomStatusChange;
 
-        /// <summary>
-        /// 进程名称缓存（避免重复调用 Process.GetProcessById）
-        /// </summary>
-        private static readonly ConcurrentDictionary<int, string> _processNameCache = new ConcurrentDictionary<int, string>();
-
-        /// <summary>
-        /// 代理端口
-        /// </summary>
-        public int ProxyPort { get { return AppSetting.Current.ProxyPort; } }
-
         public abstract string HttpUpstreamProxy { get; }
 
         public abstract string HttpsUpstreamProxy { get; }
@@ -48,6 +49,40 @@ namespace DanmakuBackend.Proxy
         public abstract void Start();
 
         public abstract void SetUpstreamProxy(string addr);
+
+        /// <summary>
+        ///     注册为系统代�?
+        /// </summary>
+        public void RegisterSystemProxy()
+        {
+            var registry =
+                Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+                    true);
+            registry.SetValue("ProxyEnable", 1);
+            registry.SetValue("ProxyServer", $"127.0.0.1:{ProxyPort}");
+            registry.SetValue("ProxyOverride", BuildProxyOverride(registry));
+
+            OnProxyStatus?.Invoke(this, new SystemProxyChangeEventArgs
+            {
+                Open = true
+            });
+        }
+
+        /// <summary>
+        ///     关闭系统代理
+        /// </summary>
+        public void CloseSystemProxy()
+        {
+            var registry =
+                Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+                    true);
+            registry.SetValue("ProxyEnable", 0);
+            registry.SetValue("ProxyServer", $"http=localhost:{ProxyPort};https=localhost:{ProxyPort}");
+            OnProxyStatus?.Invoke(this, new SystemProxyChangeEventArgs
+            {
+                Open = false
+            });
+        }
 
         //https://live.douyin.com/webcast/gift/list/ [礼物数据接口]
 
@@ -120,6 +155,7 @@ namespace DanmakuBackend.Proxy
                     {
                         _processNameCache.TryAdd(processID, processName);
                     }
+
                     return processName;
                 }
             }
@@ -131,48 +167,47 @@ namespace DanmakuBackend.Proxy
                 {
                     _processNameCache.TryAdd(processID, placeholder);
                 }
+
                 return placeholder;
             }
+
             return $"<{processID}>";
         }
 
-        /// <summary>
-        /// 注册为系统代�?
-        /// </summary>
-        public void RegisterSystemProxy()
+        private static string BuildProxyOverride(RegistryKey registry)
         {
-            RegistryKey registry = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", true);
-            registry.SetValue("ProxyEnable", 1);
-            registry.SetValue("ProxyServer", $"127.0.0.1:{ProxyPort}");
+            var current = registry.GetValue("ProxyOverride")?.ToString() ?? string.Empty;
+            var items = current.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrEmpty(x))
+                .ToList();
 
-            OnProxyStatus?.Invoke(this, new SystemProxyChangeEventArgs()
+            // 避免 Supabase Realtime 通过本地代理，防止订阅卡住
+            var required = new[]
             {
-                Open = true
-            });
-        }
+                "<local>",
+                "*.supabase.co",
+                "*.supabase.net"
+            };
 
-        /// <summary>
-        /// 关闭系统代理
-        /// </summary>
-        public void CloseSystemProxy()
-        {
-            RegistryKey registry = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", true);
-            registry.SetValue("ProxyEnable", 0);
-            registry.SetValue("ProxyServer", $"http=localhost:{ProxyPort};https=localhost:{ProxyPort}");
-            OnProxyStatus?.Invoke(this, new SystemProxyChangeEventArgs()
-            {
-                Open = false
-            });
+            foreach (var item in required)
+                if (!items.Contains(item, StringComparer.OrdinalIgnoreCase))
+                    items.Add(item);
+
+            return string.Join(";", items);
         }
 
         public static bool ProxyIsOpen()
         {
-            RegistryKey registry = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", true);
+            var registry =
+                Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+                    true);
             var proxyEnable = registry.GetValue("ProxyEnable");
             if (proxyEnable != null && proxyEnable.ToString() == "1")
             {
                 return true;
             }
+
             return false;
         }
     }

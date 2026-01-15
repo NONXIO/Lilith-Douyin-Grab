@@ -47,7 +47,8 @@ namespace DanmakuBackend.Proxy
                 "localhost", "127.*", "10.*", "172.16.*", "172.17.*", "172.18.*", "172.19.*",
                 "172.20.*", "172.21.*", "172.22.*", "172.23.*", "172.24.*", "172.25.*",
                 "172.26.*", "172.27.*", "172.28.*", "172.29.*", "172.30.*", "172.31.*",
-                "192.168.*"
+                "192.168.*",
+                ".*\\.supabase\\.co", ".*\\.supabase\\.net"
             };
 
             // 创建WebProxy对象，并设置代理过滤规则
@@ -243,8 +244,8 @@ namespace DanmakuBackend.Proxy
 
             Logger.LogInfo($"直播伴侣开播，开播信息: {displayId} {nickname}, 房间[{displayId}|{roomid}]");
 
-            if (roomInfo != null && !roomid.IsNullOrWhiteSpace() &&
-                AppRuntime.DanmakuManager.VerifySession(displayId, roomid))
+            if (roomInfo != null && !roomInfo.RoomId.IsNullOrWhiteSpace() && !roomInfo.WebRoomId.IsNullOrEmpty() &&
+                AppRuntime.DanmakuManager.SetSessionRoomId(roomInfo.WebRoomId, roomInfo.RoomId))
             {
                 AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
                 AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(roomInfo.ToJson(), PackMsgType.开播, processName));
@@ -382,7 +383,9 @@ namespace DanmakuBackend.Proxy
 
                     if (code == 0)
                     {
-                        if (AppRuntime.DanmakuManager.VerifySession(roominfo.WebRoomId, roominfo.RoomId))
+                        roominfo.WebRoomId = webrid;
+                        roominfo.LiveUrl = url;
+                        if (AppRuntime.DanmakuManager.SetSessionRoomId(roominfo.WebRoomId, roominfo.RoomId))
                         {
                             AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                             Logger.LogInfo(
@@ -406,8 +409,12 @@ namespace DanmakuBackend.Proxy
                             };
                         }
 
-                        if (AppRuntime.DanmakuManager.VerifySession(roominfo.WebRoomId, roominfo.RoomId))
+                        if (AppRuntime.DanmakuManager.SetSessionRoomId(roominfo.WebRoomId, roominfo.RoomId))
+                        {
                             AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
+                            Logger.LogInfo(
+                                $"已连接 <{roominfo.WebRoomId}|{roominfo.RoomId}> {roominfo.Owner.Nickname}的直播间");
+                        }
                     }
 
                     try

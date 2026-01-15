@@ -3,7 +3,6 @@
   <rule pattern="match('DanmakuBackend.exe')" preset="maximum" />
   <packer id="compressor" />
   <module path="DanmakuBackend.exe" />  <module path="Acornima.dll" />
-  <module path="BouncyCastle.Crypto.dll" />
   <module path="BouncyCastle.Cryptography.dll" />
   <module path="BrotliSharpLib.dll" />
   <module path="Costura.dll" />

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace DanmakuBackend.Models.JsonEntity
 {
@@ -73,6 +73,12 @@ namespace DanmakuBackend.Models.JsonEntity
         /// </summary>
         [JsonProperty("session_id")]
         public string SessionId { get; set; }
+
+        /// <summary>
+        ///     认证后的用户数据凭证
+        /// </summary>
+        [JsonProperty("credential")]
+        public string Credential { get; set; }
     }
 
     /// <summary>
