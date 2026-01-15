@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using DanmakuBackend.Models.JsonEntity;
 using DanmakuBackend.Utility;
 using DanmakuBackend.Views;
 using Microsoft.Win32;
@@ -24,6 +23,8 @@ namespace DanmakuBackend
         {
             Console.OutputEncoding = Encoding.UTF8;
             if (Debugger.IsAttached) return;
+
+            // 注册全局唯一实例 Mutex
             if (!Mutex.WaitOne(TimeSpan.Zero, true))
             {
                 Logger.LogFatal(@"另一个实例已在运行");
@@ -31,13 +32,13 @@ namespace DanmakuBackend
             }
 
             // 解析命令行参数
-            bool isDebugMode = false;
             var validArgs = new List<string>();
             foreach (var arg in args)
             {
                 if (arg.Equals("--debug", StringComparison.OrdinalIgnoreCase))
                 {
-                    isDebugMode = true;
+                    AppRuntime.IsDebugMode = true;
+                    Logger.LogInfo("调试模式已启用");
                 }
                 else
                 {
@@ -53,10 +54,6 @@ namespace DanmakuBackend
                 Environment.Exit(101);
             }
 
-            // 设置调试模式
-            AppRuntime.IsDebugMode = isDebugMode;
-            if (isDebugMode) Logger.LogInfo("调试模式已启用");
-
             SetTitle("启动中...");
             try
             {
@@ -65,11 +62,6 @@ namespace DanmakuBackend
                 AppRuntime.CheckLicence(validArgs.ToArray());
                 Init();
                 SetTitle("运行中");
-                AppRuntime.WsServer.Broadcast(new DanmakuMessagePack
-                {
-                    Type = PackMsgType.后端初始化,
-                    Data = LiveCompanHelper.LiveCompanExePath
-                });
             }
             catch (Exception ex)
             {

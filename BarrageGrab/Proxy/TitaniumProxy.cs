@@ -224,6 +224,7 @@ namespace DanmakuBackend.Proxy
             if (response.StatusCode != 200) return;
             var reponse = await e.GetResponseBodyAsString();
             RoomInfo roomInfo;
+
             //缓存直播间信息
             var tupe = RoomInfo.TryParseStreamPusherCreate(reponse, out roomInfo);
             var code = tupe.Item1;
@@ -237,18 +238,16 @@ namespace DanmakuBackend.Proxy
 
             var jobj = JsonConvert.DeserializeObject<JObject>(reponse);
             var roomid = jobj["data"]?["id_str"]?.Value<string>();
-            var sec_uid = jobj["data"]?["owner"]?["sec_uid"]?.Value<string>();
             var nickname = jobj["data"]?["owner"]?["nickname"]?.Value<string>();
             var displayId = jobj["data"]?["owner"]?["display_id"]?.Value<string>();
+
+            Logger.LogInfo($"直播伴侣开播，开播信息: {displayId} {nickname}, 房间[{displayId}|{roomid}]");
 
             if (roomInfo != null && !roomid.IsNullOrWhiteSpace() &&
                 AppRuntime.DanmakuManager.VerifySession(displayId, roomid))
             {
-                Logger.LogInfo($"直播伴侣开播，开播信息: {displayId} {nickname}, 房间{roomInfo.RoomId}");
-                roomInfo.RoomId = roomid;
-                roomInfo.Title = jobj["data"]?["title"]?.Value<string>();
                 AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
-                AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(null, PackMsgType.开播, processName));
+                AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(roomInfo.ToJson(), PackMsgType.开播, processName));
             }
         }
 
@@ -267,12 +266,12 @@ namespace DanmakuBackend.Proxy
                 webcastBarrageReg.IsMatch(uri)
             )
             {
-                e.DataReceived += WebSocket_DataReceived;
                 var urix = new Uri(uri);
                 var roomid = urix.GetQueryParam("room_id");
                 if (AppRuntime.DanmakuManager.CheckRoomId(roomid))
                 {
                     Logger.LogInfo($"直播间[{roomid}]订阅到新的弹幕流地址");
+                    e.DataReceived += WebSocket_DataReceived;
                 }
                 else
                 {
@@ -385,10 +384,9 @@ namespace DanmakuBackend.Proxy
                     {
                         if (AppRuntime.DanmakuManager.VerifySession(roominfo.WebRoomId, roominfo.RoomId))
                         {
-                            Logger.LogInfo($"已连接 <{webrid}> - [{roominfo.Owner.Nickname}]的直播间");
-                            roominfo.WebRoomId = webrid;
-                            roominfo.LiveUrl = url;
                             AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
+                            Logger.LogInfo(
+                                $"已连接 <{roominfo.WebRoomId}|{roominfo.RoomId}> {roominfo.Owner.Nickname}的直播间");
                         }
                     }
                     else
@@ -635,13 +633,9 @@ namespace DanmakuBackend.Proxy
         private async void WebSocket_DataReceived(object sender, DataEventArgs e)
         {
             var args = (SessionEventArgs)sender;
-
             string hostname = args.HttpClient.Request.RequestUri.Host;
-
             var processid = args.HttpClient.ProcessId.Value;
-
             List<byte> messageData = new List<byte>();
-
             try
             {
                 foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))

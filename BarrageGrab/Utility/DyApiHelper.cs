@@ -121,6 +121,7 @@ namespace DanmakuBackend.Utility
                 {
                     AppRuntime.RoomCaches.AddRoomInfoCache(dto);
                     Logger.LogInfo($"{dto.Owner.Nickname ?? dto.WebRoomId ?? dto.RoomId} 的直播间信息已添加到缓存");
+                    Logger.LogInfo($"已连接 <{dto.WebRoomId}|{dto.RoomId}> {dto.Owner.Nickname}的直播间");
                 }
             }
             else

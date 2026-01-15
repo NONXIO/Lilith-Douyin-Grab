@@ -42,10 +42,10 @@ namespace DanmakuBackend
         public static void CheckLicence(string[] args)
         {
             var accessKey = args[0] ?? string.Empty;
-            var roomId = args[1] ?? string.Empty;
+            var liveId = args[1] ?? string.Empty;
             if (string.IsNullOrEmpty(accessKey)) throw new DanmakuException("未授权");
-            if (string.IsNullOrEmpty(roomId)) throw new DanmakuException("参数错误");
-            DanmakuManager = new DanmakuManager(accessKey, roomId);
+            if (string.IsNullOrEmpty(liveId)) throw new DanmakuException("参数错误");
+            DanmakuManager = new DanmakuManager(accessKey, liveId);
         }
 
         public static void Init()
