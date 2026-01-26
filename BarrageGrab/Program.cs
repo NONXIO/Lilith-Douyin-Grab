@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using DanmakuBackend.Models.JsonEntity;
 using DanmakuBackend.Utility;
 using DanmakuBackend.Views;
 using Microsoft.Win32;
@@ -122,6 +124,38 @@ namespace DanmakuBackend
             };
             AppRuntime.WsServer.StartListen(); //启动WS以及代理服务
             Logger.LogInfo("后端服务启动完成");
+
+            // 检查是否需要自动启动直播伴侣
+            if (AppSetting.Current.LiveCompanHookSwitch)
+            {
+                var exePath = LiveCompanHelper.GetExePath();
+                if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                {
+                    Logger.LogInfo("正在启动直播伴侣...");
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = $"/c start \"\" \"{exePath}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    };
+                    using (var process = Process.Start(startInfo))
+                    {
+                        // 启动cmd后不需要做任何事情，cmd会启动直播伴侣然后立即退出
+                        Logger.LogInfo("直播伴侣启动完成");
+                        process?.WaitForExit();
+                        AppRuntime.WsServer.Broadcast(new DanmakuMessagePack("直播伴侣启动成功", PackMsgType.直播伴侣启动,
+                            Process.GetCurrentProcess().ProcessName));
+                    }
+                }
+            }
+            else
+            {
+                AppRuntime.WsServer.Broadcast(new DanmakuMessagePack("代理启动成功", PackMsgType.代理启动,
+                    Process.GetCurrentProcess().ProcessName));
+            }
         }
 
         //设置控制台标题

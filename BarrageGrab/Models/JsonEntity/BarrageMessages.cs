@@ -28,7 +28,10 @@ namespace DanmakuBackend.Models.JsonEntity
         [Description("连接")] 直播间连接 = 15,
         [Description("断开")] 直播间断开 = 16,
         [Description("后端初始化")] 后端初始化 = 17,
-        [Description("开播")] 开播 = 18
+        [Description("开播")] 开播 = 18,
+        [Description("直播伴侣启动")] 直播伴侣启动 = 19,
+        [Description("数据捕获")] 数据捕获成功 = 20,
+        [Description("代理启动")] 代理启动 = 21
     }
 
     /// <summary>

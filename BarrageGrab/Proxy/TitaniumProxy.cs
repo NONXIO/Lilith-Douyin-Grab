@@ -220,7 +220,14 @@ namespace DanmakuBackend.Proxy
             var processid = e.HttpClient.ProcessId.Value;
             var processName = base.GetProcessName(processid);
             var response = e.HttpClient.Response;
-            if (!uri.Contains("/webcast/room/create")) return;
+
+            if (uri.Contains("/webcast/room/create_info/"))
+            {
+                Logger.LogInfo("捕获直播伴侣信息");
+                AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(null, PackMsgType.数据捕获成功, "后端服务"));
+            }
+
+            if (!uri.Contains("/webcast/room/create/")) return;
             if (processName != "直播伴侣") return;
             if (response.StatusCode != 200) return;
             var reponse = await e.GetResponseBodyAsString();
@@ -230,7 +237,6 @@ namespace DanmakuBackend.Proxy
             var tupe = RoomInfo.TryParseStreamPusherCreate(reponse, out roomInfo);
             var code = tupe.Item1;
             var msg = tupe.Item2;
-
             if (code != 0)
             {
                 Logger.LogWarn($"直播伴侣开播房间资料缓存失败，原因:{msg}");
@@ -241,9 +247,7 @@ namespace DanmakuBackend.Proxy
             var roomid = jobj["data"]?["id_str"]?.Value<string>();
             var nickname = jobj["data"]?["owner"]?["nickname"]?.Value<string>();
             var displayId = jobj["data"]?["owner"]?["display_id"]?.Value<string>();
-
             Logger.LogInfo($"直播伴侣开播，开播信息: {displayId} {nickname}, 房间[{displayId}|{roomid}]");
-
             if (roomInfo != null && !roomInfo.RoomId.IsNullOrWhiteSpace() && !roomInfo.WebRoomId.IsNullOrEmpty() &&
                 AppRuntime.DanmakuManager.SetSessionRoomId(roomInfo.WebRoomId, roomInfo.RoomId))
             {
@@ -272,6 +276,7 @@ namespace DanmakuBackend.Proxy
                 if (AppRuntime.DanmakuManager.CheckRoomId(roomid))
                 {
                     Logger.LogInfo($"直播间[{roomid}]订阅到新的弹幕流地址");
+                    AppRuntime.WsServer.Broadcast(new DanmakuMessagePack("数据捕获成功", PackMsgType.数据捕获成功, processName));
                     e.DataReceived += WebSocket_DataReceived;
                 }
                 else
