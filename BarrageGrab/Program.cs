@@ -131,12 +131,8 @@ namespace DanmakuBackend
                 var exePath = LiveCompanHelper.GetExePath();
                 if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
                 {
-                    Logger.LogInfo("正在启动直播伴侣...");
-
-                    // 使用 explorer.exe 启动，完全脱离当前进程树的环境变量污染
+                    Logger.LogInfo("启动直播伴侣...");
                     Process.Start("explorer.exe", $"\"{exePath}\"");
-
-                    Logger.LogInfo("直播伴侣启动请求已发送");
                     AppRuntime.WsServer.Broadcast(new DanmakuMessagePack("直播伴侣启动成功", PackMsgType.直播伴侣启动,
                         Process.GetCurrentProcess().ProcessName));
                 }

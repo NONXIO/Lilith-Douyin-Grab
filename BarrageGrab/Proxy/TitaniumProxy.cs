@@ -223,7 +223,6 @@ namespace DanmakuBackend.Proxy
 
             if (uri.Contains("/webcast/room/create_info/"))
             {
-                Logger.LogInfo("捕获直播伴侣信息");
                 AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(null, PackMsgType.数据捕获成功, "后端服务"));
             }
 
