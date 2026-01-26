@@ -39,6 +39,11 @@ namespace DanmakuBackend
         /// </summary>
         public static bool IsDebugMode { get; set; } = false;
 
+        /// <summary>
+        ///     直播伴侣是否已经启动（或尝试启动过）
+        /// </summary>
+        public static bool IsLiveCompanLaunched { get; set; } = false;
+
         public static void CheckLicence(string[] args)
         {
             var accessKey = args[0] ?? string.Empty;

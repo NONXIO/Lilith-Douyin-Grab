@@ -132,23 +132,13 @@ namespace DanmakuBackend
                 if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
                 {
                     Logger.LogInfo("正在启动直播伴侣...");
-                    var startInfo = new ProcessStartInfo
-                    {
-                        FileName = "cmd.exe",
-                        Arguments = $"/c start \"\" \"{exePath}\"",
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true
-                    };
-                    using (var process = Process.Start(startInfo))
-                    {
-                        // 启动cmd后不需要做任何事情，cmd会启动直播伴侣然后立即退出
-                        Logger.LogInfo("直播伴侣启动完成");
-                        process?.WaitForExit();
-                        AppRuntime.WsServer.Broadcast(new DanmakuMessagePack("直播伴侣启动成功", PackMsgType.直播伴侣启动,
-                            Process.GetCurrentProcess().ProcessName));
-                    }
+
+                    // 使用 explorer.exe 启动，完全脱离当前进程树的环境变量污染
+                    Process.Start("explorer.exe", $"\"{exePath}\"");
+
+                    Logger.LogInfo("直播伴侣启动请求已发送");
+                    AppRuntime.WsServer.Broadcast(new DanmakuMessagePack("直播伴侣启动成功", PackMsgType.直播伴侣启动,
+                        Process.GetCurrentProcess().ProcessName));
                 }
             }
             else
