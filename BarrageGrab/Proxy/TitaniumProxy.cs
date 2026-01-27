@@ -223,7 +223,8 @@ namespace DanmakuBackend.Proxy
 
             if (uri.Contains("/webcast/room/create_info/"))
             {
-                AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(null, PackMsgType.数据捕获成功, "后端服务"));
+                var msgData = JsonConvert.SerializeObject("数据捕获成功");
+                AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(msgData, PackMsgType.数据捕获成功, "后端服务"));
             }
 
             if (!uri.Contains("/webcast/room/create/")) return;

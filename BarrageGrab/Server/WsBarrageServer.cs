@@ -872,7 +872,7 @@ namespace DanmakuBackend.Server
                 // 如果直播伴侣已经启动（或者尝试启动过），则在客户端连接后立即同步状态
                 if (AppRuntime.IsLiveCompanLaunched)
                 {
-                    var pack = new DanmakuMessagePack("直播伴侣已启动", PackMsgType.直播伴侣启动,
+                    var pack = new DanmakuMessagePack(JsonConvert.SerializeObject("直播伴侣已启动"), PackMsgType.直播伴侣启动,
                         Process.GetCurrentProcess().ProcessName);
                     var json = JsonConvert.SerializeObject(pack);
                     socket.Send(json);

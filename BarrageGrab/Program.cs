@@ -11,6 +11,7 @@ using DanmakuBackend.Models.JsonEntity;
 using DanmakuBackend.Utility;
 using DanmakuBackend.Views;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 
 namespace DanmakuBackend
 {
@@ -133,7 +134,8 @@ namespace DanmakuBackend
                 {
                     Logger.LogInfo("启动直播伴侣...");
                     Process.Start("explorer.exe", $"\"{exePath}\"");
-                    AppRuntime.WsServer.Broadcast(new DanmakuMessagePack("直播伴侣启动成功", PackMsgType.直播伴侣启动,
+                    AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(JsonConvert.SerializeObject("直播伴侣启动成功"),
+                        PackMsgType.直播伴侣启动,
                         Process.GetCurrentProcess().ProcessName));
                 }
             }
