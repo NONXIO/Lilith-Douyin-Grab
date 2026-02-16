@@ -354,7 +354,6 @@ namespace DanmakuBackend.Server
             var msg = e.Message;
             if (msg?.Common == null) return;
             if (!CheckRoomId(msg.Common.roomId)) return;
-            AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "粉丝团消息");
             var enty = CreateMsg<FansclubMsg>(msg);
             enty.Content = msg.Content;
             enty.Type = (FansclubType)msg.Action;
@@ -364,7 +363,8 @@ namespace DanmakuBackend.Server
             if (msg.User?.badgeImageListV2 != null &&
                 msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
+                AppRuntime.DanmakuManager.ReportEvent(AppRuntime.DanmakuManager.LicenceInfo?.RoomId, msg.Common.Method,
+                    msg.ToJson(), "新守护相关");
             }
 
             AttachRoomInfo(enty);
@@ -519,10 +519,8 @@ namespace DanmakuBackend.Server
             enty.EnterTipType = enterType;
             AttachRoomInfo(enty);
             Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.进直播间, e.Process));
-            if (msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
-            {
-                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
-            }
+            AppRuntime.DanmakuManager.ReportEvent(AppRuntime.DanmakuManager.LicenceInfo?.RoomId, msg.Common.Method,
+                msg.ToJson(), "会员相关");
         }
 
         //点赞
@@ -576,8 +574,10 @@ namespace DanmakuBackend.Server
             if (!CheckRoomId(msg.Common.roomId)) return;
             var enty = CreateMsg<VipEmojiMsg>(msg);
             enty.EmojiUrl = msg.emojiContent.Pieces.First().imageValue.Image.urlList.First();
-            enty.Content = $"[会员表情]";
+            enty.Content = "[会员表情]";
             AttachRoomInfo(enty);
+            AppRuntime.DanmakuManager.ReportEvent(AppRuntime.DanmakuManager.LicenceInfo?.RoomId, "会员表情", msg.ToJson(),
+                "会员表情消息");
             Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.会员表情, e.Process));
         }
 
@@ -675,7 +675,8 @@ namespace DanmakuBackend.Server
             if (msg.Common.User != null && msg.Common.User.badgeImageListV2 != null &&
                 msg.Common.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
             {
-                AppRuntime.DanmakuManager.ReportEvent(msg.Common.roomId, msg.Common.Method, msg.ToJson(), "新守护相关");
+                AppRuntime.DanmakuManager.ReportEvent(AppRuntime.DanmakuManager.LicenceInfo?.RoomId, msg.Common.Method,
+                    msg.ToJson(), "新守护相关");
             }
         }
 

@@ -72,7 +72,7 @@ namespace DanmakuBackend.Cloud
             return _sessionRoomId == id;
         }
 
-        public async void ReportEvent(long roomId, string eventName, object body, string note = null)
+        public async void ReportEvent(string roomId, string eventName, object body, string note = null)
         {
             Logger.LogWarn($@"报告事件<{eventName}> {note}");
             try
