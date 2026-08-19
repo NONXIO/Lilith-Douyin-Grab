@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
-using static System.Configuration.ConfigurationManager;
 
 namespace DanmakuBackend
 {
@@ -13,20 +12,7 @@ namespace DanmakuBackend
         {
             try
             {
-                ProcessFilter = (AppSettings["processFilter"] ?? "直播伴侣,douyin,chrome,firefox").Trim().Split(',');
-                WsProt = int.Parse(AppSettings["wsListenPort"] ?? "8801");
-                ProxyPort = int.Parse(AppSettings["proxyPort"] ?? "8800");
-                FilterHostName = bool.Parse((AppSettings["filterHostName"] ?? "true").Trim());
-                HostNameFilter = (AppSettings["hostNameFilter"] ?? "").Trim().Split(',')
-                    .Where(w => !string.IsNullOrWhiteSpace(w)).ToArray();
-                UsedProxy = bool.Parse((AppSettings["sysProxy"] ?? "true").Trim());
-                UpstreamProxy = (AppSettings["upstreamProxy"] ?? "").Trim();
-                AutoPause = bool.Parse((AppSettings["autoPause"] ?? "true").Trim());
-                ForcePolling = bool.Parse((AppSettings["forcePolling"] ?? "false").Trim());
-                PollingInterval = int.Parse((AppSettings["pollingInterval"] ?? "3000").Trim());
-                DisableLivePageScriptCache = bool.Parse((AppSettings["disableLivePageScriptCache"] ?? "false").Trim());
-                LiveCompanPath = (AppSettings["liveCompanPath"] ?? "").Trim();
-                LiveCompanHookSwitch = bool.Parse((AppSettings["liveCompanHookSwitch"] ?? "false").Trim());
+                LoadFromFile();
             }
             catch (Exception ex)
             {
@@ -38,9 +24,15 @@ namespace DanmakuBackend
         public static AppSetting Current { get; } = new AppSetting();
 
         /// <summary>
+        /// JSON 配置文件路径
+        /// </summary>
+        public static string ConfigFilePath =>
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
+
+        /// <summary>
         /// 使用系统代理
         /// </summary>
-        public bool UsedProxy { get; private set; }
+        public bool UsedProxy { get; private set; } = false;
 
         /// <summary>
         /// 过滤的进程
@@ -50,12 +42,12 @@ namespace DanmakuBackend
         /// <summary>
         /// 端口号
         /// </summary>
-        public int WsProt { get; set; } = 8880;
+        public int WsProt { get; set; } = 8801;
 
         /// <summary>
         /// 代理端口
         /// </summary>
-        public int ProxyPort { get; private set; } = 8123;
+        public int ProxyPort { get; private set; } = 8800;
 
         /// <summary>
         /// 使用域名过滤
@@ -75,7 +67,7 @@ namespace DanmakuBackend
         /// <summary>
         /// 进入直播间自动暂停播放
         /// </summary>
-        public bool AutoPause { get; private set; } = false;
+        public bool AutoPause { get; private set; } = true;
 
         /// <summary>
         /// 强制启用轮询模式获取弹幕(仅对浏览器和客户端生效)
@@ -90,7 +82,7 @@ namespace DanmakuBackend
         /// <summary>
         /// 禁用直播页面脚本缓存
         /// </summary>
-        public bool DisableLivePageScriptCache { get; private set; } = true;
+        public bool DisableLivePageScriptCache { get; private set; } = false;
 
         /// <summary>
         /// 直播伴侣文件位置
@@ -103,9 +95,25 @@ namespace DanmakuBackend
         public bool LiveCompanHookSwitch { get; set; } = true;
 
         /// <summary>
-        /// 从JSON文件加载配置
+        /// 从 JSON 配置文件加载设置；若文件不存在则使用默认值并生成配置文件
         /// </summary>
-        /// <param name="jsonFilePath">JSON配置文件路径</param>
+        private void LoadFromFile()
+        {
+            if (!File.Exists(ConfigFilePath))
+            {
+                Logger.LogInfo($"未找到配置文件[{ConfigFilePath}]，使用默认设置");
+                Save();
+                return;
+            }
+
+            var jsonStr = File.ReadAllText(ConfigFilePath);
+            LoadFromJson(jsonStr);
+        }
+
+        /// <summary>
+        /// 从JSON字符串加载配置
+        /// </summary>
+        /// <param name="jsonStr">JSON配置内容</param>
         public void LoadFromJson(string jsonStr = null)
         {
             try
@@ -122,15 +130,15 @@ namespace DanmakuBackend
                 // 网络配置
                 var network = app?["network"];
                 var proxy = network?["proxy"];
-                ProxyPort = proxy?["port"]?.Value<int>() ?? 8827;
-                UsedProxy = proxy?["enabled"]?.Value<bool>() ?? true;
+                ProxyPort = proxy?["port"]?.Value<int>() ?? 8800;
+                UsedProxy = proxy?["enabled"]?.Value<bool>() ?? false;
                 UpstreamProxy = proxy?["upstreamAddress"]?.Value<string>() ?? string.Empty;
 
                 var websocket = network?["websocket"];
-                WsProt = websocket?["listenPort"]?.Value<int>() ?? 8888;
+                WsProt = websocket?["listenPort"]?.Value<int>() ?? 8801;
                 // 过滤配置
                 var filtering = app?["filtering"];
-                var processFilterStr = filtering?["processFilter"]?.Value<string>() ?? "直播伴侣,douyin,chrome";
+                var processFilterStr = filtering?["processFilter"]?.Value<string>() ?? "直播伴侣";
                 ProcessFilter = processFilterStr.Split(',');
                 FilterHostName = filtering?["hostNameEnabled"]?.Value<bool>() ?? true;
                 var hostNameFilterStr = filtering?["hostNameList"]?.Value<string>() ?? string.Empty;
@@ -146,7 +154,7 @@ namespace DanmakuBackend
                 // 直播伴侣配置
                 var liveCompanion = app?["liveCompanion"];
                 LiveCompanPath = liveCompanion?["path"]?.Value<string>() ?? string.Empty;
-                LiveCompanHookSwitch = liveCompanion?["hookEnabled"]?.Value<bool>() ?? false;
+                LiveCompanHookSwitch = liveCompanion?["hookEnabled"]?.Value<bool>() ?? true;
                 AutoPause = liveCompanion?["autoPause"]?.Value<bool>() ?? true;
                 Logger.LogInfo("已从JSON配置文件加载设置");
             }
@@ -156,7 +164,7 @@ namespace DanmakuBackend
             }
         }
 
-        public string SaveToJson()
+        public string SaveToJson(bool indented = false)
         {
             var config = new
             {
@@ -198,27 +206,24 @@ namespace DanmakuBackend
                     }
                 }
             };
-            return JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = false });
+            return JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = indented });
         }
 
         /// <summary>
-        /// 解析布尔值字符串
+        /// 保存设置到 JSON 配置文件
         /// </summary>
-        private bool ParseBool(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return false;
-            value = value.ToLower().Trim();
-            return value == "true" || value == "1" || value == "yes" || value == "y" || value == "on";
-        }
-
         public void Save()
         {
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            config.AppSettings.Settings["wsListenPort"].Value = WsProt.ToString();
-            config.AppSettings.Settings["upstreamProxy"].Value = UpstreamProxy;
-            config.Save(ConfigurationSaveMode.Modified);
-            RefreshSection(config.AppSettings.SectionInformation.Name);
+            try
+            {
+                var json = SaveToJson(true);
+                File.WriteAllText(ConfigFilePath, json);
+                Logger.LogInfo("配置已保存到 config.json");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"保存配置到文件失败: {ex.Message}");
+            }
         }
     }
 }

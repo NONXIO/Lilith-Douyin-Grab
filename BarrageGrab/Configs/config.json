@@ -1,0 +1,31 @@
+{
+  "app": {
+    "network": {
+      "proxy": {
+        "port": 8800,
+        "enabled": false,
+        "upstreamAddress": ""
+      },
+      "websocket": {
+        "listenPort": 8801
+      }
+    },
+    "filtering": {
+      "processFilter": "直播伴侣",
+      "hostNameEnabled": true,
+      "hostNameList": ""
+    },
+    "barrage": {
+      "polling": {
+        "enabled": false,
+        "interval": 3000,
+        "disableScriptCache": false
+      }
+    },
+    "liveCompanion": {
+      "path": "",
+      "hookEnabled": true,
+      "autoPause": true
+    }
+  }
+}

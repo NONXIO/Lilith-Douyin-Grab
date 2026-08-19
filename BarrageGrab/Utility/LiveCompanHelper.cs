@@ -21,6 +21,20 @@ namespace DanmakuBackend.Utility
         /// <returns></returns>
         public static string GetExePath()
         {
+            try
+            {
+                return GetExePathInternal();
+            }
+            catch (Exception ex)
+            {
+                // 直播伴侣路径探测是非关键逻辑，任何异常都不应影响后端启动
+                Logger.LogWarn($"获取直播伴侣路径失败，跳过直播伴侣配置: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        private static string GetExePathInternal()
+        {
             string appName = "直播伴侣";
             appName = Path.GetFileNameWithoutExtension(appName);
             string exePath = "";
@@ -83,16 +97,21 @@ namespace DanmakuBackend.Utility
                 var dir = Path.GetDirectoryName(exePath);
                 //读取目录下 launcher_config.json
                 var launcherConfigPath = Path.Combine(dir, "launcher_config.json");
-                if (!File.Exists(launcherConfigPath))
+                if (File.Exists(launcherConfigPath))
                 {
-                    throw new Exception("未找到直播伴侣版本选择器的 launcher_config.json 文件");
+                   
+                    var json = File.ReadAllText(launcherConfigPath, Encoding.UTF8);
+                    var jobj = JsonConvert.DeserializeObject<dynamic>(json);
+                    string curPath = jobj.cur_path;
+                    exePath = Path.Combine(dir, curPath, "直播伴侣.exe");
+                    LiveCompanExePath = exePath;
                 }
-
-                var json = File.ReadAllText(launcherConfigPath, Encoding.UTF8);
-                var jobj = JsonConvert.DeserializeObject<dynamic>(json);
-                string curPath = jobj.cur_path;
-                exePath = Path.Combine(dir, curPath, "直播伴侣.exe");
-                LiveCompanExePath = exePath;
+                else
+                {
+                    // 缺少 launcher_config.json 无法定位真实程序路径，返回空串跳过配置
+                    Logger.LogWarn("未找到直播伴侣版本选择器的 launcher_config.json 文件，跳过直播伴侣配置");
+                    return string.Empty;
+                }
             }
 
             // 如果没有找到相关信息，则返回空字符串
@@ -150,6 +169,19 @@ namespace DanmakuBackend.Utility
         public static void SwitchSetup()
         {
             if (!AppSetting.Current.LiveCompanHookSwitch) return;
+            try
+            {
+                SwitchSetupInternal();
+            }
+            catch (Exception ex)
+            {
+                // 直播伴侣环境设置失败不应影响后端启动
+                Logger.LogWarn($"直播伴侣环境设置失败，已跳过: {ex.Message}");
+            }
+        }
+
+        private static void SwitchSetupInternal()
+        {
             var exePath = GetExePath();
             if (string.IsNullOrEmpty(exePath))
             {

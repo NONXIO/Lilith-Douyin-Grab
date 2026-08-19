@@ -34,7 +34,6 @@ namespace DanmakuBackend.Cloud
             {
                 AutoConnectRealtime = true
             });
-
             _client.InitializeAsync().Wait();
             Logger.LogInfo("Danmaku服务初始化完成");
         }
@@ -57,11 +56,30 @@ namespace DanmakuBackend.Cloud
         /// <summary>
         /// 检查房间是否在授权列表中（使用缓存，避免重复解析）
         /// </summary>
-        /// <param name="sessionRoomId">房间ID</param>
+        /// <param name="roomid">Web房间号(display_id/web_rid)</param>
+        /// <param name="sessionRoomId">抖音内部房间号(id_str)</param>
         /// <returns>是否在授权列表中</returns>
         public bool SetSessionRoomId(string roomid, string sessionRoomId)
         {
-            if (LicenceInfo == null || LicenceInfo.RoomId != roomid) return false;
+            if (LicenceInfo == null) return false;
+            // 弹幕消息使用抖音内部房间号(id_str)校验，拿不到内部房间号则无法建立会话
+            if (sessionRoomId.IsNullOrWhiteSpace()) return false;
+
+            // 授权房间可能以 Web房间号(display_id/web_rid) 或 内部房间号(id_str) 任一形式存在，
+            // 直播伴侣开播时返回的 web_rid 可能与授权时注册的 display_id 不一致，需要兼容匹配
+            var authorized =
+                LicenceInfo.RoomId == roomid ||
+                LicenceInfo.RoomId == sessionRoomId ||
+                sessionRoomId == LicenceInfo.Id ||
+                sessionRoomId == _sessionRoomId ||
+                roomid == _sessionRoomId;
+            if (!authorized)
+            {
+                Logger.LogWarn(
+                    $"直播间[{sessionRoomId}](web:{roomid})不在授权列表，授权房间:{LicenceInfo.RoomId}(业务:{LicenceInfo.Id})");
+                return false;
+            }
+
             _sessionRoomId = sessionRoomId;
             Logger.LogInfo($"直播间[{sessionRoomId}]添加到授权列表");
             return true;

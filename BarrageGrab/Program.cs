@@ -26,7 +26,6 @@ namespace DanmakuBackend
         {
             Console.OutputEncoding = Encoding.UTF8;
             if (Debugger.IsAttached) return;
-
             // 注册全局唯一实例 Mutex
             if (!Mutex.WaitOne(TimeSpan.Zero, true))
             {

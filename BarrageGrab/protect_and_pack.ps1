@@ -65,17 +65,15 @@ if (Test-Path $ConfuserCliPath) {
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Protection and Packing Complete!" -ForegroundColor Green
-        # Copy App.config to output
+        # binding redirects 已内嵌进程序集清单，无需随包携带 exe.config
+        # 清理输出目录中可能残留的 exe.config，保证最终产物只有单个 exe
         $ConfigName = "$MainExe.config"
-        $SourceConfig = Join-Path $BinDir $ConfigName
         $DestConfig = Join-Path $OutputDir $ConfigName
-        if (Test-Path $SourceConfig) {
-            Copy-Item $SourceConfig $DestConfig -Force
-            Write-Host "Copied config file to $DestConfig" -ForegroundColor Green
+        if (Test-Path $DestConfig) {
+            Remove-Item $DestConfig -Force
+            Write-Host "Removed redundant config file $DestConfig" -ForegroundColor Yellow
         }
-        else {
-            Write-Host "Warning: Config file not found at $SourceConfig" -ForegroundColor Yellow
-        }
+        Write-Host "Binding redirects are embedded in the assembly manifest; no external config shipped." -ForegroundColor Cyan
 
         # Cleanup PDB files
         Get-ChildItem -Path $OutputDir -Filter "*.pdb" | Remove-Item -Force
