@@ -11,6 +11,6 @@ namespace DanmakuBackend.Cloud
         [JsonProperty("room_id")] public string RoomId { get; set; }
         [JsonProperty("id")] public string Id { get; set; }
         [JsonProperty("expired_at")] public DateTime? ExpiredAt { get; set; }
-        [JsonProperty("anchor_name")] public object Cache { get; set; }
+        [JsonProperty("anchor_name")] public string AnchorName { get; set; }
     }
 }

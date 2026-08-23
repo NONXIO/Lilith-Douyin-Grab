@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DeviceId;
@@ -56,27 +58,32 @@ namespace DanmakuBackend.Cloud
         /// <summary>
         /// 检查房间是否在授权列表中（使用缓存，避免重复解析）
         /// </summary>
-        /// <param name="roomid">Web房间号(display_id/web_rid)</param>
-        /// <param name="sessionRoomId">抖音内部房间号(id_str)</param>
+        /// <param name="roomid">Web房间号(display_id/web_rid)，可能是数字也可能是用户名</param>
+        /// <param name="sessionRoomId">抖音内部房间号(id_str)，每次开播会变化</param>
+        /// <param name="ownerNames">主播标识(用户名/昵称)，用于授权信息只记录了主播名时的匹配</param>
         /// <returns>是否在授权列表中</returns>
-        public bool SetSessionRoomId(string roomid, string sessionRoomId)
+        public bool SetSessionRoomId(string roomid, string sessionRoomId, params string[] ownerNames)
         {
             if (LicenceInfo == null) return false;
             // 弹幕消息使用抖音内部房间号(id_str)校验，拿不到内部房间号则无法建立会话
             if (sessionRoomId.IsNullOrWhiteSpace()) return false;
 
-            // 授权房间可能以 Web房间号(display_id/web_rid) 或 内部房间号(id_str) 任一形式存在，
-            // 直播伴侣开播时返回的 web_rid 可能与授权时注册的 display_id 不一致，需要兼容匹配
-            var authorized =
-                LicenceInfo.RoomId == roomid ||
-                LicenceInfo.RoomId == sessionRoomId ||
-                sessionRoomId == LicenceInfo.Id ||
-                sessionRoomId == _sessionRoomId ||
-                roomid == _sessionRoomId;
+            // 授权房间可能以 Web房间号(web_rid/display_id)、内部房间号(id_str)、
+            // 主播名(anchor_name/用户名/昵称) 任一形式存在。
+            // 直播伴侣开播时 id_str 每次都会变化，web_rid 缺失时回退为用户名(如 Senna_Akkad)，需要兼容匹配
+            var candidates = new List<string> { roomid, sessionRoomId, _sessionRoomId };
+            if (ownerNames != null) candidates.AddRange(ownerNames);
+            candidates.RemoveAll(string.IsNullOrWhiteSpace);
+
+            var authorizedValues = new[] { LicenceInfo.RoomId, LicenceInfo.AnchorName };
+            var authorized = candidates.Any(candidate => authorizedValues.Any(authorizedValue =>
+                !authorizedValue.IsNullOrWhiteSpace() &&
+                string.Equals(candidate.Trim(), authorizedValue.Trim(), StringComparison.OrdinalIgnoreCase)));
+
             if (!authorized)
             {
                 Logger.LogWarn(
-                    $"直播间[{sessionRoomId}](web:{roomid})不在授权列表，授权房间:{LicenceInfo.RoomId}(业务:{LicenceInfo.Id})");
+                    $"直播间[{sessionRoomId}](web:{roomid})不在授权列表，授权房间:{LicenceInfo.RoomId}(主播:{LicenceInfo.AnchorName})");
                 return false;
             }
 

@@ -249,7 +249,7 @@ namespace DanmakuBackend.Proxy
             var displayId = jobj["data"]?["owner"]?["display_id"]?.Value<string>();
             Logger.LogInfo($"直播伴侣开播，开播信息: {displayId} {nickname}, 房间[{displayId}|{roomid}]");
             if (roomInfo != null && !roomInfo.RoomId.IsNullOrWhiteSpace() && !roomInfo.WebRoomId.IsNullOrEmpty() &&
-                AppRuntime.DanmakuManager.SetSessionRoomId(roomInfo.WebRoomId, roomInfo.RoomId))
+                AppRuntime.DanmakuManager.SetSessionRoomId(roomInfo.WebRoomId, roomInfo.RoomId, displayId, nickname))
             {
                 AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
                 AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(roomInfo.ToJson(), PackMsgType.开播, processName));
@@ -390,7 +390,8 @@ namespace DanmakuBackend.Proxy
                     {
                         roominfo.WebRoomId = webrid;
                         roominfo.LiveUrl = url;
-                        if (AppRuntime.DanmakuManager.SetSessionRoomId(roominfo.WebRoomId, roominfo.RoomId))
+                        if (AppRuntime.DanmakuManager.SetSessionRoomId(roominfo.WebRoomId, roominfo.RoomId,
+                                null, roominfo.Owner?.Nickname))
                         {
                             AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                             Logger.LogInfo(
@@ -414,7 +415,8 @@ namespace DanmakuBackend.Proxy
                             };
                         }
 
-                        if (AppRuntime.DanmakuManager.SetSessionRoomId(roominfo.WebRoomId, roominfo.RoomId))
+                        if (AppRuntime.DanmakuManager.SetSessionRoomId(roominfo.WebRoomId, roominfo.RoomId,
+                                null, roominfo.Owner?.Nickname))
                         {
                             AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
                             Logger.LogInfo(
