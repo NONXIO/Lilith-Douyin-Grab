@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using DanmakuBackend.Proxy.ProxyEventArgs;
 using Microsoft.Win32;
 
@@ -14,6 +15,13 @@ namespace DanmakuBackend.Proxy
         /// </summary>
         private static readonly ConcurrentDictionary<int, string> _processNameCache =
             new ConcurrentDictionary<int, string>();
+
+        /// <summary>
+        ///     弹幕事件队列：代理网络线程只做入队，重活由专用后台线程消费，
+        ///     避免解析/序列化/同步发送阻塞代理数据泵导致直播伴侣卡顿
+        /// </summary>
+        private readonly BlockingCollection<Action> _eventQueue =
+            new BlockingCollection<Action>(new ConcurrentQueue<Action>(), 50000);
 
         /// <summary>
         ///     代理端口
@@ -49,6 +57,46 @@ namespace DanmakuBackend.Proxy
         public abstract void Start();
 
         public abstract void SetUpstreamProxy(string addr);
+
+        protected SystemProxy()
+        {
+            var worker = new Thread(EventWorkerLoop)
+            {
+                IsBackground = true,
+                Name = "ProxyEventWorker"
+            };
+            worker.Start();
+        }
+
+        private void EventWorkerLoop()
+        {
+            foreach (var action in _eventQueue.GetConsumingEnumerable())
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"处理弹幕事件时出错: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        ///     停止事件消费线程（应在代理 Dispose 时调用）
+        /// </summary>
+        protected void CompleteEventQueue()
+        {
+            try
+            {
+                _eventQueue.CompleteAdding();
+            }
+            catch (Exception)
+            {
+                // 忽略重复完成
+            }
+        }
 
         /// <summary>
         ///     注册为系统代�?
@@ -105,21 +153,42 @@ namespace DanmakuBackend.Proxy
         }
 
         /// <summary>
-        /// 触发websocket消息事件
+        /// 触发websocket消息事件（入队由后台线程处理，不阻塞代理网络线程）
         /// </summary>
         /// <param name="args"></param>
         protected void FireWsEvent(WsMessageEventArgs args)
         {
-            OnWebSocketData?.Invoke(this, args);
+            var queuedAt = DateTime.Now;
+            if (!_eventQueue.TryAdd(() =>
+                {
+                    var delay = (DateTime.Now - queuedAt).TotalMilliseconds;
+                    // 性能探针：队列积压说明弹幕处理链路消费不过来
+                    if (delay > 500)
+                        Logger.LogWarn($"[性能探针] WS弹幕事件排队延迟 {delay:F0}ms，处理链路可能积压");
+                    OnWebSocketData?.Invoke(this, args);
+                }))
+            {
+                Logger.LogError("弹幕事件队列已满，丢弃一条WS消息");
+            }
         }
 
         /// <summary>
-        /// 触发弹幕http弹幕事件
+        /// 触发弹幕http弹幕事件（入队由后台线程处理，不阻塞代理网络线程）
         /// </summary>
         /// <param name="args"></param>
         protected void FireOnFetchResponse(HttpResponseEventArgs args)
         {
-            OnFetchResponse?.Invoke(this, args);
+            var queuedAt = DateTime.Now;
+            if (!_eventQueue.TryAdd(() =>
+                {
+                    var delay = (DateTime.Now - queuedAt).TotalMilliseconds;
+                    if (delay > 500)
+                        Logger.LogWarn($"[性能探针] HTTP弹幕事件排队延迟 {delay:F0}ms，处理链路可能积压");
+                    OnFetchResponse?.Invoke(this, args);
+                }))
+            {
+                Logger.LogError("弹幕事件队列已满，丢弃一条HTTP弹幕响应");
+            }
         }
 
         /// <summary>

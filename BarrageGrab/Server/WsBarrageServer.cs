@@ -519,8 +519,6 @@ namespace DanmakuBackend.Server
             enty.EnterTipType = enterType;
             AttachRoomInfo(enty);
             Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.进直播间, e.Process));
-            AppRuntime.DanmakuManager.ReportEvent(AppRuntime.DanmakuManager.LicenceInfo?.RoomId, msg.Common.Method,
-                msg.ToJson(), "会员相关");
         }
 
         //点赞
@@ -921,7 +919,9 @@ namespace DanmakuBackend.Server
 
                     var payload = pack.ToJson();
                     var encryptedPayload = EncryptPayload(Client.EncryptionKey, payload);
-                    Client.Socket.Send(encryptedPayload);
+                    var socket = Client.Socket;
+                    //异步发送，避免慢客户端阻塞弹幕处理链路（代理线程/事件消费线程）
+                    _ = SendToClientAsync(socket, encryptedPayload);
                 }
                 catch (Exception ex)
                 {
@@ -933,6 +933,31 @@ namespace DanmakuBackend.Server
             else
             {
                 if (AppRuntime.IsDebugMode) Logger.LogWarn("没有已认证的客户端连接，消息未发送");
+            }
+        }
+
+        /// <summary>
+        /// 异步发送数据到客户端，失败时清理连接
+        /// </summary>
+        private async Task SendToClientAsync(IWebSocketConnection socket, string data)
+        {
+            try
+            {
+                await socket.Send(data).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"发送消息到客户端失败: {ex.Message}");
+                try
+                {
+                    socket.Close();
+                }
+                catch (Exception closeEx)
+                {
+                    Logger.LogError($"关闭客户端连接失败: {closeEx.Message}");
+                }
+
+                if (Client != null && Client.Socket == socket) Client = null;
             }
         }
 

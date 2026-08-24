@@ -202,6 +202,7 @@ namespace DanmakuBackend.Proxy
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             // 并行执行多个 Hook 方法，因为它们之间没有依赖关系，可以提升性能
             await Task.WhenAll(
                 HookSelfLive(e),
@@ -209,6 +210,12 @@ namespace DanmakuBackend.Proxy
                 HookPageAsync(e),
                 HookScriptAsync(e)
             );
+
+            // 性能探针：定位造成下游(如直播伴侣)周期性卡顿的慢响应
+            if (sw.ElapsedMilliseconds > 300)
+            {
+                Logger.LogWarn($"[性能探针] 响应处理耗时 {sw.ElapsedMilliseconds}ms: {e.HttpClient.Request.RequestUri}");
+            }
         }
 
         // Hook 直播伴侣开播信息并更新
@@ -701,6 +708,9 @@ namespace DanmakuBackend.Proxy
         /// </summary>
         public override void Dispose()
         {
+            //先停止事件消费线程，避免停代理期间残留任务
+            CompleteEventQueue();
+
             try
             {
                 if (proxyServer != null && proxyServer.ProxyRunning)
