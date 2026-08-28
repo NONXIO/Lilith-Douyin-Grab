@@ -2,7 +2,7 @@ syntax = "proto3";
 
 
 // 定义消息结构
-mmessage Response{
+message Response{
     repeated Message messages = 1;
     string cursor = 2;
     int64 fetchInterval = 3;
@@ -45,7 +45,14 @@ message Common{
     Room room = 16;
     int64 anchorFoldTypeV2 = 17;
     int64 processAtSeiTimeMs = 18;
+    int64 randomDispatchMs = 19;
+    bool isDispatch = 20;
+    int64 channelId = 21;
+    int64 diffSei2AbsSecond = 22;
+    int64 anchorFoldDuration = 23;
     int64 appId = 24;
+    map<string, string> custom = 26;
+    string roomIdStr = 27;
 }
 
 message Text{
@@ -177,9 +184,16 @@ message User{
     string webRid = 67;
     Subscribe subscribe = 70;
     string webcastUid = 73;
+    int32 webcastPrivate = 84;
+    int32 canViewWebcastPrivate = 85;
+    string webcastNick = 86;
+    Image webcastAvatar = 87;
+    int32 hideByRoom = 88;
+    int32 linkMask = 89;
     string sec_uid = 46; //用户主页ID
     int32 user_role = 47; //用户角色
     bool is_follower = 1029;
+    BottomEntry bottomEntry = 1048;
 
     message UserAttr {
         bool isMuted = 1;
@@ -524,6 +538,7 @@ message GiftMessage {
     int64 bannedDisplayEffects = 20;
     GiftTrayInfo trayInfo = 21;
     AssetEffectMixInfo assetEffectMixInfo = 24;
+    string videoLinkmicRoomId = 45;
 
     message TextEffect{
         Detail portrait = 1;
@@ -568,6 +583,26 @@ message ChatMessage {
     Image backgroundImageV2 = 7;
     PublicAreaCommon publicAreaCommon = 9;
     Image giftImage = 10;
+}
+
+message HotChatMessage {
+    Common common = 1;
+    string title = 2;
+    string content = 3;
+    repeated int64 num = 4;
+    int64 duration = 5;
+    repeated int64 showDuration = 6;
+    int64 sequenceId = 7;
+    repeated string hotList = 8;
+    Text rtfContent = 9;
+    int64 chatContentType = 10;
+    HighlightAreaPriorityConfig highlightAreaPriorityConfig = 11;
+    map<string, string> extra = 200;
+}
+
+message HighlightAreaPriorityConfig {
+    int64 locationPriority = 1;
+    int64 showPriority = 2;
 }
 
 message SocialMessage {
@@ -633,6 +668,7 @@ message MemberMessage {
         int64 alignmentOffset = 22;
         string effectScene = 23;
         map<string, TextPiece> pieceValues = 24;
+        repeated Image badgeList = 25;
     }
 
     message PicoEffectConfig{
@@ -690,7 +726,9 @@ message FansclubMessage {
 	string content = 3;
 	User user = 4;
   UpgradePrivilege upgrade_privilege = 5;
+  PublicAreaCommon public_area_common = 6;
   int64 left_diamond = 7;
+  string left_deci_diamond = 8;
   
   message UpgradePrivilege {
     string content = 1;
@@ -727,4 +765,13 @@ message RoomRankMessage{
 message ExhibitionChatMessage {
     Common common = 1;
     Text displayText = 2;
+}
+
+message BottomEntry {
+    int32 status = 1;
+    string icon = 2;
+    string schema = 3;
+    bool mysteryMan = 4;
+    int64 gradeLevel = 6;
+    bool hideGradeLevel = 7;
 }

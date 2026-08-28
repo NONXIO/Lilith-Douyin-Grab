@@ -63,6 +63,7 @@ namespace DanmakuBackend.Server
             giftCountTimer.Elapsed += GiftCountTimer_Elapsed;
 
             this.grab.OnChatMessage += Grab_OnChatMessage;
+            grab.OnHotChatMessage += Grab_OnHotChatMessage;
             this.grab.OnAudioChatMessage += Grab_OnAudioChatMessage;
             this.grab.OnLikeMessage += Grab_OnLikeMessage;
             this.grab.OnMemberMessage += Grab_OnMemberMessage;
@@ -215,6 +216,18 @@ namespace DanmakuBackend.Server
         }
 
         //解析用户
+        private static bool BadgeContains(Image badge, string value)
+        {
+            if (badge == null || value.IsNullOrWhiteSpace()) return false;
+            if (!badge.Uri.IsNullOrWhiteSpace() &&
+                badge.Uri.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            return badge.urlList?.Any(url =>
+                !url.IsNullOrWhiteSpace() &&
+                url.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0) == true;
+        }
+
         private static MsgUser GetUser(User data)
         {
             if (data == null) return null;
@@ -232,6 +245,7 @@ namespace DanmakuBackend.Server
                 FollowerCount = data.followInfo?.followerCount ?? -1,
                 FollowingCount = data.followInfo?.followingCount ?? -1,
                 FollowStatus = data.followInfo?.followStatus ?? -1,
+                IsAdmin = data.userAttr?.isAdmin ?? false
             };
 
             // Parse badgeImageListV2
@@ -239,11 +253,18 @@ namespace DanmakuBackend.Server
             {
                 foreach (var badge in data.badgeImageListV2)
                 {
+                    if (badge == null) continue;
+                    var badgeIcon = badge.urlList?.FirstOrDefault() ?? "";
+
+                    // Admin (imageType 3). userAttr.isAdmin remains the
+                    // authoritative source, while the badge is a fallback.
+                    if (badge.imageType == 3) user.IsAdmin = true;
+
                     // Pay Grade (imageType 1)
                     if (badge.imageType == 1)
                         user.Pay = new PayGradeInfo
                         {
-                            Icon = badge.urlList.First(),
+                            Icon = badgeIcon,
                             Level = (int)(data.payGrade?.Level ?? -1)
                         };
 
@@ -252,8 +273,8 @@ namespace DanmakuBackend.Server
                     {
                         user.Vip = new VipSubscribeInfo
                         {
-                            Icon = badge.urlList.First(),
-                            Yearly = badge.Uri.Contains("yearly")
+                            Icon = badgeIcon,
+                            Yearly = BadgeContains(badge, "yearly")
                         };
                     }
 
@@ -262,20 +283,20 @@ namespace DanmakuBackend.Server
                     {
                         user.FansClub = new FansClubInfo
                         {
-                            Level = (int)badge.Content.Level,
-                            Lighted = badge.urlList.First()?.Contains("gray") ?? false,
-                            Icon = badge.urlList.First()
+                            Level = (int)(badge.Content?.Level ?? data.fansClub?.Data?.Level ?? 0),
+                            Lighted = !BadgeContains(badge, "gray"),
+                            Icon = badgeIcon
                         };
                     }
 
                     // StarGuard (imageType 51)
-                    else if (badge.imageType == 51 && badge.Uri.Contains("star_guard"))
+                    else if (badge.imageType == 51 && BadgeContains(badge, "star_guard"))
                     {
                         user.StarGuard = new StarGuardInfo
                         {
-                            Level = (int)badge.Content.Level,
-                            ClubName = badge.Content.Name,
-                            Icon = badge.urlList.First()
+                            Level = (int)(badge.Content?.Level ?? data.fansClub?.Data?.Level ?? 0),
+                            ClubName = badge.Content?.Name ?? data.fansClub?.Data?.clubName ?? "",
+                            Icon = badgeIcon
                         };
                     }
                 }
@@ -549,6 +570,35 @@ namespace DanmakuBackend.Server
             AttachRoomInfo(enty);
             var pack = new DanmakuMessagePack(enty.ToJson(), msgType, e.Process);
             Broadcast(pack);
+        }
+
+        // 高热聊天聚合事件
+        private void Grab_OnHotChatMessage(object sender, WssBarrageGrab.RoomMessageEventArgs<HotChatMessage> e)
+        {
+            var msg = e.Message;
+            if (msg?.Common == null || !CheckRoomId(msg.Common.roomId)) return;
+
+            var enty = CreateMsg<HotChatMsg>(msg);
+            enty.Title = msg.Title;
+            enty.Content = msg.Content;
+            enty.Numbers = msg.Num?.ToList() ?? new List<long>();
+            enty.Duration = msg.Duration;
+            enty.ShowDuration = msg.showDuration?.ToList() ?? new List<long>();
+            enty.SequenceId = msg.sequenceId;
+            enty.HotList = msg.hotList?.ToList() ?? new List<string>();
+            enty.ChatContentType = msg.chatContentType;
+            enty.RtfContent = msg.rtfContent;
+            if (msg.highlightAreaPriorityConfig != null)
+                enty.HighlightAreaPriority = new HotChatPriorityInfo
+                {
+                    LocationPriority = msg.highlightAreaPriorityConfig.locationPriority,
+                    ShowPriority = msg.highlightAreaPriorityConfig.showPriority
+                };
+
+            enty.Extra = msg.Extra?.ToDictionary(item => item.Key, item => item.Value)
+                         ?? new Dictionary<string, string>();
+            AttachRoomInfo(enty);
+            Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.高热聊天, e.Process));
         }
 
         //语言弹幕

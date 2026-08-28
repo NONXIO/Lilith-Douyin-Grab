@@ -31,7 +31,8 @@ namespace DanmakuBackend.Models.JsonEntity
         [Description("开播")] 开播 = 18,
         [Description("直播伴侣启动")] 直播伴侣启动 = 19,
         [Description("数据捕获")] 数据捕获成功 = 20,
-        [Description("代理启动")] 代理启动 = 21
+        [Description("代理启动")] 代理启动 = 21,
+        [Description("高热聊天")] 高热聊天 = 22
     }
 
     /// <summary>
@@ -376,6 +377,42 @@ namespace DanmakuBackend.Models.JsonEntity
         ///     消息类型
         /// </summary>
         [JsonProperty("_type")] public string MsgType = "chat";
+    }
+
+    /// <summary>
+    ///     高热聊天聚合事件
+    /// </summary>
+    public class HotChatMsg : Msg
+    {
+        [JsonProperty("_type")] public string MsgType = "hot-chat";
+
+        [JsonProperty("title")] public string Title { get; set; }
+
+        [JsonProperty("numbers")] public List<long> Numbers { get; set; }
+
+        [JsonProperty("duration")] public long Duration { get; set; }
+
+        [JsonProperty("show_duration")] public List<long> ShowDuration { get; set; }
+
+        [JsonProperty("sequence_id")] public long SequenceId { get; set; }
+
+        [JsonProperty("hot_list")] public List<string> HotList { get; set; }
+
+        [JsonProperty("chat_content_type")] public long ChatContentType { get; set; }
+
+        [JsonProperty("rtf_content")] public object RtfContent { get; set; }
+
+        [JsonProperty("highlight_area_priority")]
+        public HotChatPriorityInfo HighlightAreaPriority { get; set; }
+
+        [JsonProperty("extra")] public Dictionary<string, string> Extra { get; set; }
+    }
+
+    public class HotChatPriorityInfo
+    {
+        [JsonProperty("location_priority")] public long LocationPriority { get; set; }
+
+        [JsonProperty("show_priority")] public long ShowPriority { get; set; }
     }
 
     /// <summary>

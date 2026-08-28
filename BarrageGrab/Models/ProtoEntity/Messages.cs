@@ -151,8 +151,31 @@ namespace DanmakuBackend.Models.ProtoEntity
         [global::ProtoBuf.ProtoMember(18, Name = @"processAtSeiTimeMs")]
         public long processAtSeiTimeMs { get; set; }
 
+        [global::ProtoBuf.ProtoMember(19, Name = @"randomDispatchMs")]
+        public long randomDispatchMs { get; set; }
+
+        [global::ProtoBuf.ProtoMember(20, Name = @"isDispatch")]
+        public bool isDispatch { get; set; }
+
+        [global::ProtoBuf.ProtoMember(21, Name = @"channelId")]
+        public long channelId { get; set; }
+
+        [global::ProtoBuf.ProtoMember(22, Name = @"diffSei2AbsSecond")]
+        public long diffSei2AbsSecond { get; set; }
+
+        [global::ProtoBuf.ProtoMember(23, Name = @"anchorFoldDuration")]
+        public long anchorFoldDuration { get; set; }
+
         [global::ProtoBuf.ProtoMember(24, Name = @"appId")]
         public long appId { get; set; }
+
+        [global::ProtoBuf.ProtoMember(26)]
+        [global::ProtoBuf.ProtoMap]
+        public global::System.Collections.Generic.Dictionary<string, string> Custom { get; } = new global::System.Collections.Generic.Dictionary<string, string>();
+
+        [global::ProtoBuf.ProtoMember(27, Name = @"roomIdStr")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string roomIdStr { get; set; } = "";
 
     }
 
@@ -550,6 +573,25 @@ namespace DanmakuBackend.Models.ProtoEntity
         [global::System.ComponentModel.DefaultValue("")]
         public string webcastUid { get; set; } = "";
 
+        [global::ProtoBuf.ProtoMember(84, Name = @"webcastPrivate")]
+        public int webcastPrivate { get; set; }
+
+        [global::ProtoBuf.ProtoMember(85, Name = @"canViewWebcastPrivate")]
+        public int canViewWebcastPrivate { get; set; }
+
+        [global::ProtoBuf.ProtoMember(86, Name = @"webcastNick")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string webcastNick { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(87, Name = @"webcastAvatar")]
+        public Image webcastAvatar { get; set; }
+
+        [global::ProtoBuf.ProtoMember(88, Name = @"hideByRoom")]
+        public int hideByRoom { get; set; }
+
+        [global::ProtoBuf.ProtoMember(89, Name = @"linkMask")]
+        public int linkMask { get; set; }
+
         [global::ProtoBuf.ProtoMember(46, Name = @"sec_uid")]
         [global::System.ComponentModel.DefaultValue("")]
         public string Sec_uid { get; set; } = "";
@@ -559,6 +601,9 @@ namespace DanmakuBackend.Models.ProtoEntity
 
         [global::ProtoBuf.ProtoMember(1029, Name = @"is_follower")]
         public bool Is_follower { get; set; }
+
+        [global::ProtoBuf.ProtoMember(1048, Name = @"bottomEntry")]
+        public BottomEntry bottomEntry { get; set; }
 
         [global::ProtoBuf.ProtoContract()]
         public partial class UserAttr : global::ProtoBuf.IExtensible
@@ -1598,6 +1643,10 @@ namespace DanmakuBackend.Models.ProtoEntity
         [global::ProtoBuf.ProtoMember(24, Name = @"assetEffectMixInfo")]
         public AssetEffectMixInfo assetEffectMixInfo { get; set; }
 
+        [global::ProtoBuf.ProtoMember(45, Name = @"videoLinkmicRoomId")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string videoLinkmicRoomId { get; set; } = "";
+
         [global::ProtoBuf.ProtoContract()]
         public partial class TextEffect : global::ProtoBuf.IExtensible
         {
@@ -1734,6 +1783,69 @@ namespace DanmakuBackend.Models.ProtoEntity
 
         [global::ProtoBuf.ProtoMember(10, Name = @"giftImage")]
         public Image giftImage { get; set; }
+
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public partial class HotChatMessage : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"common")]
+        public Common Common { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"title")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string Title { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(3, Name = @"content")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string Content { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(4, Name = @"num")]
+        public global::System.Collections.Generic.List<long> Num { get; } = new global::System.Collections.Generic.List<long>();
+
+        [global::ProtoBuf.ProtoMember(5, Name = @"duration")]
+        public long Duration { get; set; }
+
+        [global::ProtoBuf.ProtoMember(6, Name = @"showDuration")]
+        public global::System.Collections.Generic.List<long> showDuration { get; } = new global::System.Collections.Generic.List<long>();
+
+        [global::ProtoBuf.ProtoMember(7, Name = @"sequenceId")]
+        public long sequenceId { get; set; }
+
+        [global::ProtoBuf.ProtoMember(8, Name = @"hotList")]
+        public global::System.Collections.Generic.List<string> hotList { get; } = new global::System.Collections.Generic.List<string>();
+
+        [global::ProtoBuf.ProtoMember(9, Name = @"rtfContent")]
+        public Text rtfContent { get; set; }
+
+        [global::ProtoBuf.ProtoMember(10, Name = @"chatContentType")]
+        public long chatContentType { get; set; }
+
+        [global::ProtoBuf.ProtoMember(11, Name = @"highlightAreaPriorityConfig")]
+        public HighlightAreaPriorityConfig highlightAreaPriorityConfig { get; set; }
+
+        [global::ProtoBuf.ProtoMember(200)]
+        [global::ProtoBuf.ProtoMap]
+        public global::System.Collections.Generic.Dictionary<string, string> Extra { get; } = new global::System.Collections.Generic.Dictionary<string, string>();
+
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public partial class HighlightAreaPriorityConfig : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"locationPriority")]
+        public long locationPriority { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"showPriority")]
+        public long showPriority { get; set; }
 
     }
 
@@ -1941,6 +2053,9 @@ namespace DanmakuBackend.Models.ProtoEntity
             [global::ProtoBuf.ProtoMap]
             public global::System.Collections.Generic.Dictionary<string, TextPiece> pieceValues { get; } = new global::System.Collections.Generic.Dictionary<string, TextPiece>();
 
+            [global::ProtoBuf.ProtoMember(25, Name = @"badgeList")]
+            public global::System.Collections.Generic.List<Image> badgeList { get; } = new global::System.Collections.Generic.List<Image>();
+
         }
 
         [global::ProtoBuf.ProtoContract()]
@@ -2115,8 +2230,15 @@ namespace DanmakuBackend.Models.ProtoEntity
         [global::ProtoBuf.ProtoMember(5, Name = @"upgrade_privilege")]
         public UpgradePrivilege Upgrade_privilege { get; set; }
 
+        [global::ProtoBuf.ProtoMember(6, Name = @"public_area_common")]
+        public PublicAreaCommon Public_area_common { get; set; }
+
         [global::ProtoBuf.ProtoMember(7, Name = @"left_diamond")]
         public long Left_diamond { get; set; }
+
+        [global::ProtoBuf.ProtoMember(8, Name = @"left_deci_diamond")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string Left_deci_diamond { get; set; } = "";
 
         [global::ProtoBuf.ProtoContract()]
         public partial class UpgradePrivilege : global::ProtoBuf.IExtensible
@@ -2231,6 +2353,35 @@ namespace DanmakuBackend.Models.ProtoEntity
 
         [global::ProtoBuf.ProtoMember(2, Name = @"displayText")]
         public Text displayText { get; set; }
+
+    }
+
+    [global::ProtoBuf.ProtoContract()]
+    public partial class BottomEntry : global::ProtoBuf.IExtensible
+    {
+        private global::ProtoBuf.IExtension __pbn__extensionData;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+            => global::ProtoBuf.Extensible.GetExtensionObject(ref __pbn__extensionData, createIfMissing);
+
+        [global::ProtoBuf.ProtoMember(1, Name = @"status")]
+        public int Status { get; set; }
+
+        [global::ProtoBuf.ProtoMember(2, Name = @"icon")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string Icon { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(3, Name = @"schema")]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string Schema { get; set; } = "";
+
+        [global::ProtoBuf.ProtoMember(4, Name = @"mysteryMan")]
+        public bool mysteryMan { get; set; }
+
+        [global::ProtoBuf.ProtoMember(6, Name = @"gradeLevel")]
+        public long gradeLevel { get; set; }
+
+        [global::ProtoBuf.ProtoMember(7, Name = @"hideGradeLevel")]
+        public bool hideGradeLevel { get; set; }
 
     }
 

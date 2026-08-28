@@ -1,9 +1,21 @@
 const protobuf = require('protobufjs');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
-const PROTO_PATH = path.resolve(__dirname, '../proto/message.proto');
-const OUT_PATH = path.resolve(__dirname, '../Modles/ProtoEntity/Messages.cs');
+function readArg(name, fallback) {
+    const index = process.argv.indexOf(name);
+    return index >= 0 && process.argv[index + 1]
+        ? path.resolve(process.cwd(), process.argv[index + 1])
+        : fallback;
+}
+
+const PROTO_PATH = readArg('--input', path.resolve(__dirname, '../proto/message.proto'));
+const OUT_PATH = readArg(
+    '--output',
+    path.join(os.tmpdir(), 'DanmakuBackend.GenProto', 'Messages.cs')
+);
+const NAMESPACE = process.env.GENPROTO_NAMESPACE || 'DanmakuBackend.Models.ProtoEntity';
 
 // Type mapping for C#
 const typeMap = {
@@ -45,7 +57,7 @@ function generateHeader() {
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace BarrageGrab.Models.ProtoEntity
+namespace ${NAMESPACE}
 {
 #pragma warning disable CS0612, CS0618, CS1591, CS3021, IDE0079, IDE1006, RCS1036, RCS1057, RCS1085, RCS1192
 `;
@@ -139,6 +151,7 @@ function main() {
 
     code += generateFooter();
 
+    fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
     fs.writeFileSync(OUT_PATH, code, 'utf8');
     console.log(`Successfully generated C# code at ${OUT_PATH}`);
 }

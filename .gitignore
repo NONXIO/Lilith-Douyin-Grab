@@ -372,3 +372,5 @@ FodyWeavers.xsd
 
 .snk
 *log*.txt
+
+live-schema-im.*

@@ -61,6 +61,11 @@ namespace DanmakuBackend.Server
         public event EventHandler<RoomMessageEventArgs<ChatMessage>> OnChatMessage;
 
         /// <summary>
+        ///     高热聊天
+        /// </summary>
+        public event EventHandler<RoomMessageEventArgs<HotChatMessage>> OnHotChatMessage;
+
+        /// <summary>
         /// 聊天
         /// </summary>
         public event EventHandler<RoomMessageEventArgs<AudioChatMessage>> OnAudioChatMessage;
@@ -226,6 +231,12 @@ namespace DanmakuBackend.Server
                         OnChatMessage?.Invoke(this, new RoomMessageEventArgs<ChatMessage>(processName, arg));
                         break;
                     }
+                    case "WebcastHotChatMessage":
+                    {
+                        var arg = DeserializeProto<HotChatMessage>(msg.Payload);
+                        OnHotChatMessage?.Invoke(this, new RoomMessageEventArgs<HotChatMessage>(processName, arg));
+                        break;
+                    }
                     //点赞
                     case "WebcastLikeMessage":
                     {
@@ -323,7 +334,6 @@ namespace DanmakuBackend.Server
                     case "WebcastBindingGiftMessage":
                     case "WebcastAssetEffectUtilMessage":
                     /* 未来可能需要处理的事件 */
-                    case "WebcastHotChatMessage":
                     case "WebcastResidentGuestMessage": // 常驻嘉宾事件
                     case "WebcastGiftEffectGameMessage": // 礼物特效小游戏事件
                     case "WebcastChatLikeMessage": // 聊天点赞事件?
