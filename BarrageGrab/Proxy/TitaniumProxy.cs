@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DanmakuBackend.Models;
@@ -38,6 +39,9 @@ namespace DanmakuBackend.Proxy
         private ProxyServer proxyServer = null;
         private List<string> rinfoRequestings = new List<string>();
         private ExternalProxy upStreamProxy = null;
+        // 每条 WebSocket 连接对应一个自实现的帧解码器（替代有 Bug 的 Titanium.WebSocketDecoder）
+        private readonly ConditionalWeakTable<SessionEventArgs, WebSocketStreamDecoder> wsDecoders =
+            new ConditionalWeakTable<SessionEventArgs, WebSocketStreamDecoder>();
 
         static TitaniumProxy()
         {
@@ -656,49 +660,27 @@ namespace DanmakuBackend.Proxy
             var args = (SessionEventArgs)sender;
             string hostname = args.HttpClient.Request.RequestUri.Host;
             var processid = args.HttpClient.ProcessId.Value;
-            List<byte> messageData = new List<byte>();
             try
             {
-                foreach (var frame in args.WebSocketDecoderReceive.Decode(e.Buffer, e.Offset, e.Count))
+                // 使用自实现解码器，规避 Titanium.Web.Proxy.WebSocketDecoder 的
+                // "Destination is too short"（Math.Min 扩容 Bug）。已对各消息做跨帧重组，
+                // 不再需要手动拼接 Continuation。
+                var decoder = wsDecoders.GetValue(args, k => new WebSocketStreamDecoder());
+                var frames = decoder.Decode(e.Buffer, e.Offset, e.Count);
+                foreach (var frame in frames)
                 {
-                    if (frame.OpCode == WebsocketOpCode.Continuation)
+                    FireWsEvent(new WsMessageEventArgs
                     {
-                        messageData.AddRange(frame.Data.ToArray());
-                        continue;
-                    }
-                    else
-                    {
-                        //读取完毕
-                        byte[] payload;
-                        if (messageData.Count > 0)
-                        {
-                            messageData.AddRange(frame.Data.ToArray());
-                            payload = messageData.ToArray();
-                            messageData.Clear();
-                        }
-                        else
-                        {
-                            payload = frame.Data.ToArray();
-                        }
-
-                        FireWsEvent(new WsMessageEventArgs
-                        {
-                            ProcessID = processid,
-                            HostName = hostname,
-                            Payload = payload,
-                            ProcessName = GetProcessName(processid)
-                        });
-                    }
+                        ProcessID = processid,
+                        HostName = hostname,
+                        Payload = frame.Data,
+                        ProcessName = GetProcessName(processid)
+                    });
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError($"解析WS数据包错误：" + ex.Message + "\n" + ex.StackTrace);
-            }
-
-            if (messageData.Count > 0)
-            {
-                // 没有收到 WebSocket 帧的结束帧，抛出异常或者进行处理
             }
         }
 

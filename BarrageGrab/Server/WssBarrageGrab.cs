@@ -333,6 +333,8 @@ namespace DanmakuBackend.Server
                     case "WebcastPrivilegeScreenChatMessage":
                     case "WebcastBindingGiftMessage":
                     case "WebcastAssetEffectUtilMessage":
+                    case "WebcastRoomIndicatorMessage":
+                    case "WebcastTaskCenterEntranceMessage":
                     /* 未来可能需要处理的事件 */
                     case "WebcastResidentGuestMessage": // 常驻嘉宾事件
                     case "WebcastGiftEffectGameMessage": // 礼物特效小游戏事件
@@ -341,6 +343,7 @@ namespace DanmakuBackend.Server
                     case "WebcastLotteryEventNewMessage": // 新抽奖事件
                     case "WebcastLotteryEventMessage": // 新抽奖事件
                     case "WebcastActivityEmojiGroupsMessage": // 活动表情包消息
+                    case "WebcastRoomCommentTopicMessage": //
                         break; //不处理
                     default:
                         if (AppRuntime.IsDebugMode) Logger.LogInfo("未处理的消息类型:" + msg.Method);

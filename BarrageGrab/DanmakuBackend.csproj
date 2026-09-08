@@ -318,6 +318,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Proxy\SystemProxy.cs" />
     <Compile Include="Proxy\TitaniumProxy.cs" />
+    <Compile Include="Proxy\WebSocketStreamDecoder.cs" />
     <Compile Include="Utility\WinApi.cs" />
     <Compile Include="Server\WssBarrageGrab.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
