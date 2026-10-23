@@ -4,230 +4,240 @@ using Titanium.Web.Proxy;
 
 namespace DanmakuBackend.Proxy
 {
-    /// <summary>
-    /// 注意：Titanium.Web.Proxy.WebSocketDecoder 内部缓存扩容用的是 Math.Min，
-    /// 当单次读取超过其内部缓冲的 2 倍时会崩溃（"Destination is too short"）。
-    /// 该 Bug 在 3.2.2-beta 乃至最新的 3.2.3 稳定版中都未修复（仅未发布的 develop 分支改为 Math.Max）。
-    /// 因此这里自实现一个 WebSocket 帧解码器，仅在需要时扩容（Math.Max），
-    /// 并对跨读取、跨帧（continuation）的拆分消息做重组。
-    /// </summary>
+    // Connection-scoped replacement for the dependency's unsafe buffer growth.
+    // A protocol fault disables capture for this connection, not proxy forwarding.
     internal sealed class WebSocketStreamDecoder
     {
-        // 每条连接持有一个实例，内部维护跨读取的缓冲状态。
-        private byte[] buffer = new byte[8192];
+        private static long nextGeneration;
+        internal readonly long CaptureGeneration = System.Threading.Interlocked.Increment(ref nextGeneration);
+        internal const int DefaultMaxPayload = 64 * 1024 * 1024;
+        private const int MaxHeaderBytes = 14;
+        private const int MaxOutputFrames = 4096;
+        private readonly object gate = new object();
+        private readonly int maxFramePayload, maxMessagePayload, maxBufferedBytes, initialCapacity;
+        private byte[] buffer;
         private int bufferLength;
-
-        // 跨帧消息重组状态（Text/Binary 起始帧 + 若干 Continuation 帧）。
         private byte[] messageBuffer;
         private int messageLength;
+        private bool fragmented, faulted, closed;
         private WebsocketOpCode messageOpCode;
 
-        // 单帧载荷上限（防止畸形长度导致无限扩容/内存占用）。
-        private const int MaxFramePayload = 64 * 1024 * 1024;
+        public WebSocketStreamDecoder(int maxFramePayload = DefaultMaxPayload,
+            int maxMessagePayload = DefaultMaxPayload,
+            int maxBufferedBytes = DefaultMaxPayload + MaxHeaderBytes)
+        {
+            if (maxFramePayload < 1 || maxFramePayload > int.MaxValue - MaxHeaderBytes ||
+                maxMessagePayload < 1 || maxBufferedBytes < maxFramePayload + MaxHeaderBytes)
+                throw new ArgumentOutOfRangeException(nameof(maxFramePayload));
+            this.maxFramePayload = maxFramePayload;
+            this.maxMessagePayload = maxMessagePayload;
+            this.maxBufferedBytes = maxBufferedBytes;
+            initialCapacity = Math.Min(8192, maxBufferedBytes);
+            buffer = new byte[initialCapacity];
+        }
+
+        internal bool IsFaulted { get { lock (gate) return faulted; } }
+        internal int RetainedCapacity { get { lock (gate) return buffer.Length + (messageBuffer?.Length ?? 0); } }
 
         public IEnumerable<WebSocketFrame> Decode(byte[] data, int offset, int count)
         {
-            Append(data, offset, count);
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (offset < 0 || count < 0 || offset > data.Length - count)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            lock (gate)
+            {
+                if (faulted || closed) return Array.Empty<WebSocketFrame>();
+                var frames = new List<WebSocketFrame>();
+                int outputBytes = 0;
+                try
+                {
+                    // A read may contain many valid frames: inspect bounded pieces.
+                    while (count > 0 && !closed)
+                    {
+                        int take = Math.Min(count, maxBufferedBytes - bufferLength);
+                        if (take == 0) throw new ProtocolException("WebSocket 接收缓冲超限");
+                        Append(data, offset, take);
+                        offset += take;
+                        count -= take;
+                        ParseAvailable(frames, ref outputBytes);
+                    }
+                    TrimBuffer();
+                    return frames;
+                }
+                catch (ProtocolException)
+                {
+                    faulted = true;
+                    ReleaseBuffers();
+                    throw; // Only the first fault throws; later reads retain nothing.
+                }
+            }
+        }
 
-            var frames = new List<WebSocketFrame>();
+        private void ParseAvailable(List<WebSocketFrame> frames, ref int outputBytes)
+        {
             int pos = 0;
-
             while (pos < bufferLength)
             {
-                if (!TryParseHeader(pos, out int headerBaseLength, out WebsocketOpCode opcode,
-                    out bool isFinal, out bool masked, out int payloadLength))
+                if (!TryParseHeader(pos, out int headerLength, out WebsocketOpCode opcode,
+                    out bool final, out bool masked, out int length)) break;
+                bool control = (int)opcode >= 8;
+                if (!control)
                 {
-                    // 头部不足，等待更多数据
-                    break;
+                    if (opcode == WebsocketOpCode.Continuation && !fragmented)
+                        throw new ProtocolException("WebSocket 孤立的续帧");
+                    if (opcode != WebsocketOpCode.Continuation && fragmented)
+                        throw new ProtocolException("WebSocket 分片未完成时出现新消息");
+                    if (length > maxMessagePayload - messageLength)
+                        throw new ProtocolException("WebSocket 累计消息超限");
                 }
-
-                int maskKeyLength = masked ? 4 : 0;
-                int frameLength = headerBaseLength + maskKeyLength + payloadLength;
-                if (pos + frameLength > bufferLength)
+                int maskLength = masked ? 4 : 0;
+                int frameLength = headerLength + maskLength + length;
+                if (frameLength > bufferLength - pos) break;
+                int payloadOffset = pos + headerLength + maskLength;
+                if (control)
                 {
-                    // 载荷尚未到齐
-                    break;
-                }
-
-                // 复制载荷（客户端->服务端帧通常带掩码，需解掩码）
-                byte[] payload = new byte[payloadLength];
-                int payloadOffset = pos + headerBaseLength + maskKeyLength;
-                if (masked)
-                {
-                    int maskPos = pos + headerBaseLength;
-                    for (int i = 0; i < payloadLength; i++)
+                    pos += frameLength;
+                    if (opcode == WebsocketOpCode.ConnectionClose)
                     {
-                        payload[i] = (byte)(buffer[payloadOffset + i] ^ buffer[maskPos + (i & 3)]);
+                        closed = true;
+                        ReleaseBuffers();
+                        return;
                     }
-                }
-                else
-                {
-                    Buffer.BlockCopy(buffer, payloadOffset, payload, 0, payloadLength);
-                }
-
-                pos += frameLength;
-
-                // 控制帧不参与消息重组，直接忽略（无需交给上层）。
-                if (opcode == WebsocketOpCode.Ping ||
-                    opcode == WebsocketOpCode.Pong ||
-                    opcode == WebsocketOpCode.ConnectionClose)
-                {
                     continue;
                 }
 
-                // 数据帧：Text(1)/Binary(2) 起始帧 + Continuation(0) 续帧
-                if (opcode == WebsocketOpCode.Text || opcode == WebsocketOpCode.Binary)
+                byte[] payload = new byte[length];
+                if (masked)
                 {
-                    if (isFinal)
+                    int maskPos = pos + headerLength;
+                    for (int i = 0; i < length; i++)
+                        payload[i] = (byte)(buffer[payloadOffset + i] ^ buffer[maskPos + (i & 3)]);
+                }
+                else Buffer.BlockCopy(buffer, payloadOffset, payload, 0, length);
+                pos += frameLength;
+
+                if (opcode != WebsocketOpCode.Continuation && final)
+                    AddOutput(frames, opcode, payload, ref outputBytes);
+                else
+                {
+                    if (opcode != WebsocketOpCode.Continuation)
                     {
-                        // 无续帧的完整消息
-                        frames.Add(new WebSocketFrame(opcode, payload, true));
-                    }
-                    else
-                    {
-                        // 开始一条可能被拆分的新消息
-                        EnsureMessageCapacity(payloadLength);
-                        Buffer.BlockCopy(payload, 0, messageBuffer, messageLength, payloadLength);
-                        messageLength += payloadLength;
+                        fragmented = true;
                         messageOpCode = opcode;
                     }
-                }
-                else if (opcode == WebsocketOpCode.Continuation)
-                {
-                    EnsureMessageCapacity(payloadLength);
-                    Buffer.BlockCopy(payload, 0, messageBuffer, messageLength, payloadLength);
-                    messageLength += payloadLength;
-
-                    if (isFinal)
+                    EnsureMessageCapacity(length);
+                    Buffer.BlockCopy(payload, 0, messageBuffer, messageLength, length);
+                    messageLength += length;
+                    if (final)
                     {
                         byte[] full = new byte[messageLength];
-                        Buffer.BlockCopy(messageBuffer, 0, full, 0, messageLength);
-                        frames.Add(new WebSocketFrame(messageOpCode, full, true));
+                        if (messageLength > 0) Buffer.BlockCopy(messageBuffer, 0, full, 0, messageLength);
+                        AddOutput(frames, messageOpCode, full, ref outputBytes);
+                        messageBuffer = null;
                         messageLength = 0;
+                        fragmented = false;
                     }
                 }
             }
-
-            // 压缩缓冲，把未消费的剩余字节挪到最前
             if (pos > 0)
             {
                 int remaining = bufferLength - pos;
-                if (remaining > 0)
-                {
-                    Buffer.BlockCopy(buffer, pos, buffer, 0, remaining);
-                }
+                if (remaining > 0) Buffer.BlockCopy(buffer, pos, buffer, 0, remaining);
                 bufferLength = remaining;
             }
-
-            return frames;
         }
 
-        /// <summary>
-        /// 追加新读取到的字节，必要时按 Math.Max 扩容（修复库中 Math.Min 的 Bug）。
-        /// </summary>
+        private void AddOutput(List<WebSocketFrame> frames, WebsocketOpCode opcode, byte[] data, ref int bytes)
+        {
+            if (frames.Count >= MaxOutputFrames || data.Length > maxMessagePayload - bytes)
+                throw new ProtocolException("WebSocket 单次解码输出超限");
+            bytes += data.Length;
+            frames.Add(new WebSocketFrame(opcode, data, true));
+        }
+
         private void Append(byte[] data, int offset, int count)
         {
-            if (count == 0) return;
-
-            int requiredLength = bufferLength + count;
-            if (requiredLength > buffer.Length)
-            {
-                Array.Resize(ref buffer, (int)Math.Max(requiredLength, buffer.Length * 2));
-            }
-
+            int required = bufferLength + count;
+            if (required > buffer.Length)
+                Array.Resize(ref buffer, (int)Math.Min(maxBufferedBytes,
+                    Math.Max((long)required, (long)buffer.Length * 2)));
             Buffer.BlockCopy(data, offset, buffer, bufferLength, count);
-            bufferLength += count;
+            bufferLength = required;
         }
 
         private void EnsureMessageCapacity(int additional)
         {
-            int requiredLength = messageLength + additional;
-            if (messageBuffer == null || requiredLength > messageBuffer.Length)
-            {
-                int newLength = messageBuffer == null
-                    ? Math.Max(requiredLength, 1024)
-                    : (int)Math.Max(requiredLength, messageBuffer.Length * 2);
-                if (messageBuffer == null)
-                {
-                    messageBuffer = new byte[newLength];
-                }
-                else
-                {
-                    Array.Resize(ref messageBuffer, newLength);
-                }
-            }
+            if (additional > maxMessagePayload - messageLength)
+                throw new ProtocolException("WebSocket 累计消息超限");
+            int required = messageLength + additional;
+            if (messageBuffer == null || required > messageBuffer.Length)
+                Array.Resize(ref messageBuffer, (int)Math.Min(maxMessagePayload,
+                    Math.Max((long)required, messageBuffer == null ? 1024 : (long)messageBuffer.Length * 2)));
         }
 
-        /// <summary>
-        /// 解析单个 WebSocket 帧的头部。headerBaseLength 不含掩码 4 字节。
-        /// </summary>
-        private bool TryParseHeader(int pos, out int headerBaseLength, out WebsocketOpCode opcode,
-            out bool isFinal, out bool masked, out int payloadLength)
+        private void TrimBuffer()
         {
-            headerBaseLength = 0;
+            if (!closed && buffer.Length > initialCapacity && bufferLength <= initialCapacity)
+                Array.Resize(ref buffer, initialCapacity);
+        }
+
+        private void ReleaseBuffers()
+        {
+            buffer = Array.Empty<byte>();
+            messageBuffer = null;
+            bufferLength = messageLength = 0;
+            fragmented = false;
+        }
+
+        private bool TryParseHeader(int pos, out int headerLength, out WebsocketOpCode opcode,
+            out bool final, out bool masked, out int length)
+        {
+            headerLength = length = 0;
             opcode = 0;
-            isFinal = false;
-            masked = false;
-            payloadLength = 0;
-
-            // 至少 2 字节：FIN+opcode 和 mask+len
+            final = masked = false;
             if (bufferLength - pos < 2) return false;
-
-            byte b0 = buffer[pos];
-            byte b1 = buffer[pos + 1];
-
-            isFinal = (b0 & 0x80) != 0;
-            opcode = (WebsocketOpCode)(b0 & 0x0F);
+            byte b0 = buffer[pos], b1 = buffer[pos + 1];
+            final = (b0 & 0x80) != 0;
+            opcode = (WebsocketOpCode)(b0 & 0x0f);
             masked = (b1 & 0x80) != 0;
-            int len7 = b1 & 0x7F;
-
-            int index = pos + 2;
-            long size;
-
+            int code = (int)opcode;
+            if ((b0 & 0x70) != 0) throw new ProtocolException("WebSocket 不支持的扩展位");
+            if (code != 0 && code != 1 && code != 2 && code != 8 && code != 9 && code != 10)
+                throw new ProtocolException("WebSocket 非法操作码");
+            int len7 = b1 & 0x7f, index = pos + 2;
+            if (code >= 8 && (!final || len7 > 125 || (code == 8 && len7 == 1)))
+                throw new ProtocolException("WebSocket 非法控制帧");
+            long size = len7;
             if (len7 == 126)
             {
                 if (bufferLength - index < 2) return false;
                 size = (buffer[index] << 8) | buffer[index + 1];
                 index += 2;
+                if (size < 126) throw new ProtocolException("WebSocket 非最短长度编码");
             }
             else if (len7 == 127)
             {
                 if (bufferLength - index < 8) return false;
-                if ((buffer[index] & 0x80) != 0) throw new ProtocolException("非法 WebSocket 帧长度");
-                size = ((long)buffer[index] << 56) | ((long)buffer[index + 1] << 48) |
-                       ((long)buffer[index + 2] << 40) | ((long)buffer[index + 3] << 32) |
-                       ((long)buffer[index + 4] << 24) | ((long)buffer[index + 5] << 16) |
-                       ((long)buffer[index + 6] << 8) | buffer[index + 7];
+                if ((buffer[index] & 0x80) != 0) throw new ProtocolException("WebSocket 非法帧长度");
+                size = 0;
+                for (int i = 0; i < 8; i++) size = (size << 8) | buffer[index + i];
                 index += 8;
+                if (size <= ushort.MaxValue) throw new ProtocolException("WebSocket 非最短长度编码");
             }
-            else
-            {
-                size = len7;
-            }
-
-            if (size > MaxFramePayload) throw new ProtocolException($"WebSocket 帧载荷过大: {size}");
-
-            payloadLength = (int)size;
-            headerBaseLength = index - pos;
+            if (size > maxFramePayload) throw new ProtocolException("WebSocket 帧载荷过大: " + size);
+            length = (int)size;
+            headerLength = index - pos;
             return true;
         }
     }
 
-    /// <summary>
-    /// 解码后的 WebSocket 帧结果。
-    /// </summary>
     internal sealed class WebSocketFrame
     {
         public WebsocketOpCode OpCode { get; }
         public byte[] Data { get; }
         public bool IsFinal { get; }
-
         public WebSocketFrame(WebsocketOpCode opCode, byte[] data, bool isFinal)
-        {
-            OpCode = opCode;
-            Data = data;
-            IsFinal = isFinal;
-        }
+        { OpCode = opCode; Data = data; IsFinal = isFinal; }
     }
 
     internal sealed class ProtocolException : Exception

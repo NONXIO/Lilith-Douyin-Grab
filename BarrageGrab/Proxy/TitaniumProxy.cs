@@ -32,12 +32,14 @@ namespace DanmakuBackend.Proxy
         const string DOUYIN_HOST = "www.douyin.com";
         const string USER_INFO_PATH = "/webcast/user/me/";
         const string BARRAGE_POOL_PATH = "/webcast/im/fetch";
-        const string LIVE_SCRIPT_PATH = "/obj/static/webcast/douyin_live";
         const string WEBCAST_AMEMV_HOST = "webcast.amemv.com";
         private readonly Regex webcastBarrageReg = new Regex(@"webcast\d+-ws-web-\w+\.(douyin|amemv)\.com");
         private ExplicitProxyEndPoint explicitEndPoint = null;
         private ProxyServer proxyServer = null;
-        private List<string> rinfoRequestings = new List<string>();
+        private readonly RoomRequestCoordinator<RoomInfo> roomRequests = new RoomRequestCoordinator<RoomInfo>();
+        private int disposing;
+        private readonly CaptureErrorThrottle responseErrorThrottle = new CaptureErrorThrottle();
+        private readonly CaptureErrorThrottle unexpectedWsErrorThrottle = new CaptureErrorThrottle();
         private ExternalProxy upStreamProxy = null;
         // 每条 WebSocket 连接对应一个自实现的帧解码器（替代有 Bug 的 Titanium.WebSocketDecoder）
         private readonly ConditionalWeakTable<SessionEventArgs, WebSocketStreamDecoder> wsDecoders =
@@ -206,19 +208,32 @@ namespace DanmakuBackend.Proxy
 
         private async Task ProxyServer_BeforeResponse(object sender, SessionEventArgs e)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            // 并行执行多个 Hook 方法，因为它们之间没有依赖关系，可以提升性能
-            await Task.WhenAll(
-                HookSelfLive(e),
-                HookBarrage(e),
-                HookPageAsync(e),
-                HookScriptAsync(e)
-            );
-
-            // 性能探针：定位造成下游(如直播伴侣)周期性卡顿的慢响应
-            if (sw.ElapsedMilliseconds > 300)
+            if (System.Threading.Volatile.Read(ref disposing) != 0) return;
+            try
             {
-                Logger.LogWarn($"[性能探针] 响应处理耗时 {sw.ElapsedMilliseconds}ms: {e.HttpClient.Request.RequestUri}");
+                var processId = e.HttpClient.ProcessId;
+                if (processId == null || processId.Value <= 0) return;
+                var process = GetProcessName(processId.Value);
+                if (!AppSetting.Current.ProcessFilter.Contains(process)) return;
+                var uri = e.HttpClient.Request.RequestUri;
+                var route = UpstreamCompatibility.Route(uri, process, e.HttpClient.Response.StatusCode,
+                    e.HttpClient.Response.ContentType,
+                    e.HttpClient.ConnectRequest?.TunnelType == TunnelType.Websocket && webcastBarrageReg.IsMatch(uri.ToString()),
+                    AppSetting.Current.ForcePolling);
+                switch (route)
+                {
+                    case UpstreamCompatibility.ResponseRoute.Companion: await HookSelfLive(e); break;
+                    case UpstreamCompatibility.ResponseRoute.Barrage: await HookBarrage(e); break;
+                    case UpstreamCompatibility.ResponseRoute.Page: await HookPageAsync(e); break;
+                    case UpstreamCompatibility.ResponseRoute.Script:
+                        if (CheckHost(uri.Host)) await HookScriptAsync(e);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (responseErrorThrottle.ShouldLog())
+                    Logger.LogWarn("代理目标响应处理失败（10秒限频）: " + ex.GetType().Name + ": " + ex.Message);
             }
         }
 
@@ -232,13 +247,27 @@ namespace DanmakuBackend.Proxy
             var processName = base.GetProcessName(processid);
             var response = e.HttpClient.Response;
 
-            if (uri.Contains("/webcast/room/create_info/"))
+            if (processName != "直播伴侣" || response.StatusCode != 200) return;
+            if (UpstreamCompatibility.IsPath(urix, "/webcast/room/anchor_finish_info"))
+            {
+                var body = await e.GetResponseBodyAsString();
+                var finish = UpstreamCompatibility.ParseFinish(body,
+                    AppRuntime.DanmakuManager.CheckRoomId, AppRuntime.RoomCaches.GetCachedWebRoomid);
+                if (finish != null)
+                {
+                    Logger.LogInfo($"直播伴侣关播，房间[{finish.WebRoomId}|{finish.RoomId}]");
+                    AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(finish.ToJson(), PackMsgType.下播, processName));
+                }
+                return;
+            }
+
+            if (UpstreamCompatibility.IsPath(urix, "/webcast/room/create_info"))
             {
                 var msgData = JsonConvert.SerializeObject("数据捕获成功");
                 AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(msgData, PackMsgType.数据捕获成功, "后端服务"));
             }
 
-            if (!uri.Contains("/webcast/room/create/")) return;
+            if (!UpstreamCompatibility.IsPath(urix, "/webcast/room/create")) return;
             if (processName != "直播伴侣") return;
             if (response.StatusCode != 200) return;
             var reponse = await e.GetResponseBodyAsString();
@@ -300,6 +329,7 @@ namespace DanmakuBackend.Proxy
             if (uri.Contains(BARRAGE_POOL_PATH) && contentType.Contains("application/protobuffer"))
             {
                 var payload = await e.GetResponseBody();
+                BoundedCapturePayload.Validate(payload);
                 var referrer = e.HttpClient.Request.Headers.GetFirstHeader("Referer")?.Value;
                 //https://live.douyin.com/22404217360
 
@@ -312,27 +342,16 @@ namespace DanmakuBackend.Proxy
                     var cookie = e.HttpClient.Request.Headers.GetFirstHeader("Cookie")?.Value;
 
                     var roomInfo = AppRuntime.RoomCaches.GetCachedWebRoomInfo(roomid);
-                    if (roomInfo == null && cookie != null && !rinfoRequestings.Contains(webroomid))
+                    if ((roomInfo == null || roomInfo.Owner == null) && cookie != null)
                     {
-                        lock (rinfoRequestings) rinfoRequestings.Add(webroomid);
-                        //查询后会自动缓存 - 使用异步方式，避免阻塞
-                        _ = Task.Run(async () =>
-                        {
-                            try
+                        var expectedRoom = AppRuntime.DanmakuManager.ActiveRoomId;
+                        _ = roomRequests.Run(webroomid,
+                            token => DyApiHelper.GetRoomInfoForApi(webroomid, cookie, token), rinfo =>
                             {
-                                var rinfo = await DyApiHelper.GetRoomInfoForApi(webroomid, cookie);
-                                //限制只尝试一次
-                                if (rinfo != null)
-                                {
-                                    lock (rinfoRequestings) rinfoRequestings.Remove(webroomid);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.LogError($"获取房间信息失败: {ex.Message}");
-                                lock (rinfoRequestings) rinfoRequestings.Remove(webroomid);
-                            }
-                        });
+                                if (AppRuntime.DanmakuManager.ActiveRoomId != expectedRoom && rinfo.RoomId != AppRuntime.DanmakuManager.ActiveRoomId) return;
+                                if (AppRuntime.DanmakuManager.SetSessionRoomId(rinfo.WebRoomId, rinfo.RoomId, null, rinfo.Owner?.Nickname))
+                                    AppRuntime.RoomCaches.AddRoomInfoCache(rinfo);
+                            });
                     }
 
                     AppRuntime.RoomCaches.SetRoomCache(roomid, webroomid);
@@ -340,7 +359,6 @@ namespace DanmakuBackend.Proxy
 
                 base.FireOnFetchResponse(new HttpResponseEventArgs()
                 {
-                    HttpClient = e.HttpClient,
                     ProcessID = processid,
                     HostName = hostname,
                     ProcessName = base.GetProcessName(processid),
@@ -349,160 +367,38 @@ namespace DanmakuBackend.Proxy
             }
         }
 
-        // Hook 直播页面
+        // Upstream's body-only pause avoids global WebSocket.close overrides and timers.
         private async Task HookPageAsync(SessionEventArgs e)
         {
-            string uri = e.HttpClient.Request.RequestUri.ToString();
-            string hostname = e.HttpClient.Request.RequestUri.Host;
-            string url = e.HttpClient.Request.Url;
-            var urlNoQuery = url.Split('?')[0];
-            var processid = e.HttpClient.ProcessId.Value;
-            var processName = base.GetProcessName(processid);
-            var liveRoomMactch = Regex.Match(uri.Trim(), @".*:\/\/live.douyin\.com\/([0-9a-zA-Z_]+)");
-            var liveHomeMatch = Regex.Match(uri.Trim(), @".*:\/\/live.douyin\.com\/?$");
-            var contentType = e.HttpClient.Response.ContentType ?? "";
-
-            //检测是否为dom页，用于脚本注入
-            if (!contentType.Contains("text/html")) return;
-
-            //如果响应头含有 CSP(https://blog.csdn.net/qq_30436011/article/details/127485927 会阻止内嵌脚本执行) 则删除
-            var csp = e.HttpClient.Response.Headers.GetFirstHeader("Content-Security-Policy");
-            if (csp != null)
+            var uri = e.HttpClient.Request.RequestUri;
+            var html = await e.GetResponseBodyAsString();
+            var webRoomId = uri.AbsolutePath.Trim('/');
+            if (webRoomId.Length > 0)
             {
-                e.HttpClient.Response.Headers.RemoveHeader("Content-Security-Policy");
-            }
-
-            //获取 content-type                
-            if (liveRoomMactch.Success)
-            {
-                string webrid = liveRoomMactch.Groups[1].Value;
-                //获取直播页注入js
-                string liveRoomInjectScript = EmbResource.GetFileContent("livePage.js");
-                //注入上下文变量;
-                var scriptContext = BuildContext(new Dictionary<string, string>()
+                var result = RoomInfo.TryParseRoomPageHtml(html, out var roomInfo);
+                if (result.Item1 == 0 && roomInfo != null)
                 {
-                    { "PROCESS_NAME", "'{processName}'" },
-                    { "AUTOPAUSE", AppSetting.Current.AutoPause.ToString().ToLower() }
-                });
-                liveRoomInjectScript = scriptContext + liveRoomInjectScript;
-                var html = await e.GetResponseBodyAsString();
+                    roomInfo.WebRoomId = webRoomId;
+                    roomInfo.LiveUrl = uri.ToString();
+                    if (AppRuntime.DanmakuManager.SetSessionRoomId(webRoomId, roomInfo.RoomId,
+                        null, roomInfo.Owner?.Nickname))
+                        AppRuntime.RoomCaches.AddRoomInfoCache(roomInfo);
+                }
+            }
+            var updated = UpstreamCompatibility.PausePage(html, AppSetting.Current.AutoPause, uri);
+            if (AppSetting.Current.DisableLivePageScriptCache)
+            {
                 var doc = new HtmlDocument();
-                doc.LoadHtml(html);
-
-                if (!liveRoomInjectScript.IsNullOrWhiteSpace())
-                {
-                    //利用 HtmlAgilityPack 在尾部注入script 标签
-                    RoomInfo roominfo;
-                    var tup = RoomInfo.TryParseRoomPageHtml(html, out roominfo);
-                    int code = tup.Item1;
-                    string msg = tup.Item2;
-
-                    if (code == 0)
-                    {
-                        roominfo.WebRoomId = webrid;
-                        roominfo.LiveUrl = url;
-                        if (AppRuntime.DanmakuManager.SetSessionRoomId(roominfo.WebRoomId, roominfo.RoomId,
-                                null, roominfo.Owner?.Nickname))
-                        {
-                            AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
-                            Logger.LogInfo(
-                                $"已连接 <{roominfo.WebRoomId}|{roominfo.RoomId}> {roominfo.Owner.Nickname}的直播间");
-                        }
-                    }
-                    else
-                    {
-                        roominfo = new RoomInfo();
-                        roominfo.WebRoomId = webrid;
-                        roominfo.LiveUrl = url;
-                        //正则匹配主播标题
-                        //<div class="st8eGKi4" data-e2e="live-room-nickname">和平精英小夜y</div>
-                        var match = Regex.Match(html, @"(?<=live-room-nickname""\>).+(?=<\/div>)");
-                        if (match.Success)
-                        {
-                            roominfo.Owner = new RoomInfo.RoomAnchor()
-                            {
-                                Nickname = match.Value,
-                                UserId = "-1"
-                            };
-                        }
-
-                        if (AppRuntime.DanmakuManager.SetSessionRoomId(roominfo.WebRoomId, roominfo.RoomId,
-                                null, roominfo.Owner?.Nickname))
-                        {
-                            AppRuntime.RoomCaches.AddRoomInfoCache(roominfo);
-                            Logger.LogInfo(
-                                $"已连接 <{roominfo.WebRoomId}|{roominfo.RoomId}> {roominfo.Owner.Nickname}的直播间");
-                        }
-                    }
-
-                    try
-                    {
-                        //找到body标签,在尾部注入script标签
-                        var body = doc.DocumentNode.SelectSingleNode("//body");
-                        if (body != null)
-                        {
-                            var script = doc.CreateElement("script");
-                            script.InnerHtml = liveRoomInjectScript;
-                            body.AppendChild(script);
-                            html = doc.DocumentNode.OuterHtml;
-                            Logger.LogDebug($"直播页{urlNoQuery},用户脚本已注入!\n");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, $"直播页{url},用户脚本注入异常");
-                    }
-                }
-
-                //给script标签 src加上时间戳避免缓存
-                if (AppSetting.Current.DisableLivePageScriptCache)
-                {
-                    ScriptAddTocks(doc);
-                }
-
-                html = doc.DocumentNode.OuterHtml;
-
-                e.SetResponseBodyString(html);
+                doc.LoadHtml(updated);
+                ScriptAddTocks(doc, uri);
+                updated = doc.DocumentNode.OuterHtml;
             }
-
-            //直播主页
-            if (liveHomeMatch.Success)
-            {
-                //获取直播页注入js
-                string liveHoomInjectScript = EmbResource.GetFileContent("livePage.js");
-
-                //注入上下文变量;
-                var scriptContext = BuildContext(new Dictionary<string, string>()
-                {
-                    { "PROCESS_NAME", "'{processName}'" },
-                    { "AUTOPAUSE", AppSetting.Current.AutoPause.ToString().ToLower() }
-                });
-                liveHoomInjectScript = scriptContext + liveHoomInjectScript;
-
-
-                if (!liveHoomInjectScript.IsNullOrWhiteSpace())
-                {
-                    //利用 HtmlAgilityPack 在尾部注入script 标签
-                    var html = await e.GetResponseBodyAsString();
-                    var doc = new HtmlDocument();
-                    doc.LoadHtml(html);
-                    //找到body标签,在尾部注入script标签
-                    var body = doc.DocumentNode.SelectSingleNode("//body");
-                    if (body != null)
-                    {
-                        var script = doc.CreateElement("script");
-                        script.InnerHtml = liveHoomInjectScript;
-                        body.AppendChild(script);
-                        var newHtml = doc.DocumentNode.OuterHtml;
-                        e.SetResponseBodyString(newHtml);
-                        Logger.LogDebug($"直播首页{urlNoQuery},用户脚本已注入!\n");
-                    }
-                }
-            }
+            // No injection means CSP can remain intact.
+            if (updated != html) e.SetResponseBodyString(updated);
         }
 
         //给部分脚本加上时间戳避免缓存
-        private void ScriptAddTocks(HtmlDocument doc)
+        private void ScriptAddTocks(HtmlDocument doc, Uri pageUri)
         {
             var scripts = doc.DocumentNode.SelectNodes("//script[@src]");
             if (scripts != null)
@@ -512,12 +408,12 @@ namespace DanmakuBackend.Proxy
                 {
                     var src = script.Attributes["src"].Value;
 
-                    var srcUri = new Uri(src);
+                    if (!UpstreamCompatibility.TryResolveScriptUri(pageUri, src, out var srcUri)) continue;
                     if (!CheckHost(srcUri.Host)) continue;
 
                     var fileName = Path.GetFileName(src.Split('?')[0]);
                     //目前只需要用到相关这些js
-                    if (!fileName.StartsWith("island") && !src.Contains(LIVE_SCRIPT_PATH)) continue;
+                    if (!UpstreamCompatibility.IsIdleScript(fileName) && !UpstreamCompatibility.IsPollingScript(srcUri)) continue;
 
                     if (src.Contains("?"))
                     {
@@ -533,67 +429,19 @@ namespace DanmakuBackend.Proxy
             }
         }
 
-        //生成注入上下文
-        private string BuildContext(IDictionary<string, string> constVals)
-        {
-            var scriptContext = string.Join("\r\n",
-                constVals.Select(s => { return "const " + s.Key + " = " + s.Value + ";"; }));
-            return scriptContext;
-        }
-
-        // Hook Script 脚本
         private async Task HookScriptAsync(SessionEventArgs e)
         {
-            string uri = e.HttpClient.Request.RequestUri.ToString();
-            string hostname = e.HttpClient.Request.RequestUri.Host;
-            string url = e.HttpClient.Request.Url;
-            var urlNoQuery = url.Split('?')[0];
-            var processid = e.HttpClient.ProcessId.Value;
-            var processName = base.GetProcessName(processid);
-            var contentType = e.HttpClient.Response.ContentType ?? "";
-            var fileName = Path.GetFileName(urlNoQuery);
-
-            if (contentType == null) return;
-            if (!contentType.Trim().ToLower().Contains("application/javascript")) return;
-            if (e.HttpClient.Response.StatusCode != 200) return;
-
-            //https://lf-webcast-platform.bytetos.com/obj/webcast-platform-cdn/webcast/douyin_live/chunks/island_a74ce.b55095a0.js
-            //判断响应内容是否为js application/javascript
-            if (processName != "直播伴侣" && processName != "douyin"
-                                      && fileName.StartsWith("island")
-               )
+            var uri = e.HttpClient.Request.RequestUri;
+            var process = GetProcessName(e.HttpClient.ProcessId.Value);
+            bool disableIdle = CheckBrowser(process) && UpstreamCompatibility.IsIdleScript(Path.GetFileName(uri.AbsolutePath));
+            bool forcePolling = AppSetting.Current.ForcePolling && UpstreamCompatibility.IsPollingScript(uri);
+            if (!disableIdle && !forcePolling) return;
+            var original = await e.GetResponseBodyAsString();
+            var updated = UpstreamCompatibility.RewriteScript(original, disableIdle, forcePolling, AppSetting.Current.PollingInterval);
+            if (updated != original)
             {
-                var js = await e.GetResponseBodyAsString();
-                var reg = new Regex(@"if\(!\(\d{1,},\w{1,}\.DJ\)\(\).+\w{1,}\.includes\(""live""\)\)\)\{");
-                var match = reg.Match(js);
-                if (match.Success)
-                {
-                    js = reg.Replace(js, "if(false){");
-                    e.SetResponseBodyString(js);
-                    Logger.PrintColor($"已成功绕过JS页面无操作检测 {urlNoQuery}\n", ConsoleColor.Green);
-                }
-            }
-
-            if (url.Contains(LIVE_SCRIPT_PATH) && AppSetting.Current.ForcePolling)
-            {
-                var reg = new Regex(@"if\s*\((?<patt>!this\.stopPolling)\)");
-                var js = await e.GetResponseBodyAsString();
-                var match = reg.Match(js);
-                if (match.Success)
-                {
-                    var pollingIntervalReg = new Regex(@"this\.errorInterval\s*=(?<value>.+?),");
-                    var pollingIntervalMatch = pollingIntervalReg.Match(js);
-                    if (pollingIntervalMatch.Success)
-                    {
-                        var myValue = AppSetting.Current.PollingInterval;
-                        js = pollingIntervalReg.Replace(js, $"this.pollingInterval={myValue},");
-                        Logger.PrintColor($"直播间已成功修改轮询间隔为{myValue}ms", ConsoleColor.Green);
-                    }
-
-                    js = reg.Replace(js, "if(true)");
-                    e.SetResponseBodyString(js);
-                    Logger.PrintColor($"直播间已强制启用Http轮询模式", ConsoleColor.Green);
-                }
+                e.SetResponseBodyString(updated);
+                Logger.LogInfo("直播脚本适配完成: " + uri.GetLeftPart(UriPartial.Path));
             }
         }
 
@@ -655,7 +503,7 @@ namespace DanmakuBackend.Proxy
         }
 
         //WebSocket 流读取
-        private async void WebSocket_DataReceived(object sender, DataEventArgs e)
+        private void WebSocket_DataReceived(object sender, DataEventArgs e)
         {
             var args = (SessionEventArgs)sender;
             string hostname = args.HttpClient.Request.RequestUri.Host;
@@ -674,13 +522,19 @@ namespace DanmakuBackend.Proxy
                         ProcessID = processid,
                         HostName = hostname,
                         Payload = frame.Data,
+                        CaptureGeneration = decoder.CaptureGeneration,
                         ProcessName = GetProcessName(processid)
                     });
                 }
             }
+            catch (ProtocolException ex)
+            {
+                Logger.LogWarn("抓取WS连接解析已停用，等待新连接；代理转发保持运行: " + ex.Message);
+            }
             catch (Exception ex)
             {
-                Logger.LogError($"解析WS数据包错误：" + ex.Message + "\n" + ex.StackTrace);
+                if (unexpectedWsErrorThrottle.ShouldLog())
+                    Logger.LogWarn("解析WS数据包错误（10秒限频）: " + ex.GetType().Name + ": " + ex.Message);
             }
         }
 
@@ -690,6 +544,10 @@ namespace DanmakuBackend.Proxy
         /// </summary>
         public override void Dispose()
         {
+            if (System.Threading.Interlocked.Exchange(ref disposing, 1) != 0) return;
+            proxyServer.BeforeResponse -= ProxyServer_BeforeResponse;
+            explicitEndPoint.BeforeTunnelConnectRequest -= ExplicitEndPoint_BeforeTunnelConnectRequest;
+            roomRequests.Stop().GetAwaiter().GetResult();
             //先停止事件消费线程，避免停代理期间残留任务
             CompleteEventQueue();
 

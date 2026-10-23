@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,10 +13,21 @@ namespace DanmakuBackend.Cloud
 {
     public class DanmakuManager
     {
+        private const int EventQueueCapacity = 512;
+        private static readonly TimeSpan EventQueueShutdownTimeout = TimeSpan.FromSeconds(2);
+
         private readonly SemaphoreSlim _authLock = new SemaphoreSlim(1, 1);
+        private readonly ConcurrentQueue<EventLog> _eventQueue = new ConcurrentQueue<EventLog>();
+        private readonly SemaphoreSlim _eventAvailable = new SemaphoreSlim(0);
+        private readonly object _eventQueueLock = new object();
         private readonly Client _client;
+        private readonly Task _eventWorker;
         private readonly string _roomId;
         private string _sessionRoomId;
+        public string ActiveRoomId => _sessionRoomId;
+        private int _isStopping;
+        private int _queuedEventCount;
+        private int _droppedEventCount;
 
         public DanmakuManager(string accessKey, string roomId)
         {
@@ -37,6 +49,7 @@ namespace DanmakuBackend.Cloud
                 AutoConnectRealtime = true
             });
             _client.InitializeAsync().Wait();
+            _eventWorker = Task.Run(ProcessEventQueueAsync);
             Logger.LogInfo("Danmaku服务初始化完成");
         }
 
@@ -97,23 +110,64 @@ namespace DanmakuBackend.Cloud
             return _sessionRoomId == id;
         }
 
-        public async void ReportEvent(string roomId, string eventName, object body, string note = null)
+        public void ReportEvent(string roomId, string eventName, object body, string note = null)
         {
-            Logger.LogWarn($@"报告事件<{eventName}> {note}");
-            try
+            var eventLog = new EventLog
             {
-                await _client.From<EventLog>().Insert(new EventLog
+                EventName = eventName,
+                RoomId = roomId,
+                Body = body,
+                Timestamp = DateTime.Now,
+                Note = note
+            };
+
+            lock (_eventQueueLock)
+            {
+                if (_isStopping != 0 || _queuedEventCount >= EventQueueCapacity)
                 {
-                    EventName = eventName,
-                    RoomId = roomId,
-                    Body = body,
-                    Timestamp = DateTime.Now,
-                    Note = note
-                });
+                    Interlocked.Increment(ref _droppedEventCount);
+                    return;
+                }
+
+                _eventQueue.Enqueue(eventLog);
+                _queuedEventCount++;
+                _eventAvailable.Release();
             }
-            catch (Exception e)
+        }
+
+        private async Task ProcessEventQueueAsync()
+        {
+            while (true)
             {
-                Logger.LogError(@"报告事件错误: " + e.Message);
+                await _eventAvailable.WaitAsync().ConfigureAwait(false);
+
+                EventLog eventLog;
+                lock (_eventQueueLock)
+                {
+                    if (!_eventQueue.TryDequeue(out eventLog))
+                    {
+                        if (_isStopping != 0) return;
+                        continue;
+                    }
+
+                    _queuedEventCount--;
+                }
+
+                try
+                {
+                    Logger.LogWarn($@"报告事件<{eventLog.EventName}> {eventLog.Note}");
+                    await _client.From<EventLog>().Insert(eventLog).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(@"报告事件错误: " + e.Message);
+                }
+
+                var droppedCount = Interlocked.Exchange(ref _droppedEventCount, 0);
+                if (droppedCount > 0)
+                {
+                    Logger.LogWarn($"事件汇报队列满或服务正在关闭，已丢弃 {droppedCount} 条事件");
+                }
             }
         }
 
@@ -209,10 +263,44 @@ namespace DanmakuBackend.Cloud
 
         public void Destroy()
         {
+            lock (_eventQueueLock)
+            {
+                if (_isStopping == 0)
+                {
+                    _isStopping = 1;
+                    _eventAvailable.Release();
+                }
+            }
+
+            try
+            {
+                if (!_eventWorker.Wait(EventQueueShutdownTimeout))
+                {
+                    Logger.LogWarn("等待事件汇报队列关闭超时，剩余事件将在进程退出时丢弃");
+                }
+                else
+                {
+                    var droppedCount = Interlocked.Exchange(ref _droppedEventCount, 0);
+                    if (droppedCount > 0)
+                    {
+                        Logger.LogWarn($"服务关闭时丢弃 {droppedCount} 条事件汇报");
+                    }
+                }
+            }
+            catch (AggregateException e)
+            {
+                Logger.LogError("关闭事件汇报队列异常: " + e.GetBaseException().Message);
+            }
+
             try
             {
                 // 释放会话
-                ReleaseSession().ConfigureAwait(false).GetAwaiter().GetResult();
+                var release = ReleaseSession();
+                if (!release.Wait(2000))
+                {
+                    Logger.LogWarn("释放会话等待超时，不阻塞程序退出");
+                    release.ContinueWith(task => { var ignored = task.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+                }
             }
             catch (Exception e)
             {
@@ -232,7 +320,7 @@ namespace DanmakuBackend.Cloud
             };
             var response = await _client.Functions.Invoke("validate-session-and-get-licence", options: options);
             var res = JsonConvert.DeserializeObject<ReleaseSessionResponse>(response);
-            if (res.Error != null) Logger.LogDebug($"释放会话异常: {res?.Error ?? "未知错误"}");
+            if (res.Error != null) Logger.LogWarn($"释放会话异常: {res.Error}");
         }
 
         /// <summary>

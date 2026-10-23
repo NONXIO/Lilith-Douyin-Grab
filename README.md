@@ -2,6 +2,13 @@
 
 # 📺 抖音弹幕监听器
 
+## Lilith 项目规范
+
+本后端的整体项目规范与阶段任务统一维护在相邻主程序仓库：
+[项目边界](../lilith-danmaku/openspec/project.md)、[优化阶段](../lilith-danmaku/openspec/roadmap.md)。
+源码仓库保持独立，本地授权、加密协议及扩展消息不可被上游源文件整体替换。
+本次选择性合并来源与范围见 [UPSTREAM_COMPATIBILITY.md](UPSTREAM_COMPATIBILITY.md)。
+
 <p style="text-align:center">- 小白不圆 -</p>
 
 ## 🔉前文提要

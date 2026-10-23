@@ -25,6 +25,50 @@ namespace DanmakuBackend
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
+            if (args.Length == 1 && args[0] == "--restore-owned-proxy")
+            {
+                try { if (!OwnedProxySettings.Restore()) Environment.ExitCode = 2; }
+                catch (Exception error) { Logger.LogWarn("代理所有权恢复失败，未强制关闭: " + error.GetType().Name); Environment.ExitCode = 1; }
+                finally { NLog.LogManager.Shutdown(); }
+                Environment.Exit(Environment.ExitCode);
+                return;
+            }
+            if (args.Length == 1 && args[0] == "--transport-self-test")
+            {
+                try
+                {
+                    var checks = Server.TransportSelfTest.Run();
+                    Logger.LogInfo("TRANSPORT_SELF_TEST_PASS checks=" + checks);
+                    Console.WriteLine("TRANSPORT_SELF_TEST_PASS checks=" + checks);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError("TRANSPORT_SELF_TEST_FAIL: " + ex);
+                    Console.Error.WriteLine("TRANSPORT_SELF_TEST_FAIL: " + ex);
+                    Environment.ExitCode = 1;
+                }
+                finally { NLog.LogManager.Shutdown(); }
+                Environment.Exit(Environment.ExitCode);
+                return;
+            }
+            if (args.Length == 1 && args[0] == "--capture-self-test")
+            {
+                try
+                {
+                    var checks = Proxy.CaptureSelfTest.Run();
+                    Logger.LogInfo("CAPTURE_SELF_TEST_PASS checks=" + checks);
+                    Console.WriteLine("CAPTURE_SELF_TEST_PASS checks=" + checks);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError("CAPTURE_SELF_TEST_FAIL: " + ex);
+                    Console.Error.WriteLine("CAPTURE_SELF_TEST_FAIL: " + ex.Message);
+                    Environment.ExitCode = 1;
+                }
+                finally { NLog.LogManager.Shutdown(); }
+                Environment.Exit(Environment.ExitCode);
+                return;
+            }
             if (Debugger.IsAttached) return;
             // 注册全局唯一实例 Mutex
             if (!Mutex.WaitOne(TimeSpan.Zero, true))
@@ -182,6 +226,8 @@ namespace DanmakuBackend
             {
                 Logger.LogError($"关闭资源失败(Server/Manager): {ex.Message}");
             }
+
+            LiveCompanHelper.RestoreOwnedFile();
 
             try
             {

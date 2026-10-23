@@ -27,7 +27,8 @@ namespace DanmakuBackend.Models.JsonEntity
         /// <summary>
         /// 更新配置
         /// </summary>
-        UpdateConfig = 102
+        UpdateConfig = 102,
+        MarkAudioIncident = 103
     }
 
     public class Command

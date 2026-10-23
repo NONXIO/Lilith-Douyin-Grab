@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using DanmakuBackend.Models;
 using Newtonsoft.Json.Linq;
 
@@ -28,7 +29,8 @@ namespace DanmakuBackend.Utility
                 { "aid", "6383" }
             };
 
-            var client = new HttpClient();
+            using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) })
+            {
             client.DefaultRequestHeaders.Add("referer", "https://live.douyin.com/405518163654");
             client.DefaultRequestHeaders.Add("authority", "www.douyin.com");
 
@@ -37,7 +39,8 @@ namespace DanmakuBackend.Utility
 
             try
             {
-                var response = await client.GetAsync(builder.Uri);
+                using (var response = await client.GetAsync(builder.Uri))
+                {
                 if (!response.IsSuccessStatusCode)
                 {
                     Logger.LogError($"响应失败: {response.StatusCode}");
@@ -48,11 +51,13 @@ namespace DanmakuBackend.Utility
                 var jobj = JObject.Parse(json);
                 var data = jobj?["data"].ToObject<WebCastGiftPack>();
                 return data;
+                }
             }
             catch (Exception ex)
             {
                 Logger.LogError($"礼物信息从服务器请求失败: {ex.Message}");
                 return null;
+            }
             }
         }
 
@@ -63,13 +68,12 @@ namespace DanmakuBackend.Utility
         /// <param name="user">账号凭据</param>
         /// <param name="proxy">查询代理</param>
         /// <returns></returns>
-        public static async Task<RoomInfo> GetRoomInfoForApi(string webRoomid, string cookie)
+        public static async Task<RoomInfo> GetRoomInfoForApi(string webRoomid, string cookie, CancellationToken cancellation = default(CancellationToken))
         {
             string url = "https://live.douyin.com/webcast/room/web/enter/";
 
-            var client = new HttpClient();
-
-
+            using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) })
+            {
             var uri = new UriBuilder(url);
             var dict = new Dictionary<string, string>();
             dict.Set("aid", "6383");
@@ -92,7 +96,8 @@ namespace DanmakuBackend.Utility
 
             url = uri.Uri.ToString();
 
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+            {
             request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("Cache-Control", "no-cache");
             request.Headers.Add("Referer", $"https://live.douyin.com/{webRoomid}");
@@ -101,7 +106,8 @@ namespace DanmakuBackend.Utility
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0");
             request.Headers.Add("Cookie", cookie);
 
-            var rsp = await client.SendAsync(request);
+            using (var rsp = await client.SendAsync(request, cancellation).ConfigureAwait(false))
+            {
             if (rsp == null || rsp.StatusCode != HttpStatusCode.OK)
             {
                 return null;
@@ -117,13 +123,6 @@ namespace DanmakuBackend.Utility
             {
                 dto.LiveUrl = $"https://live.douyin.com/{webRoomid}";
                 dto.WebRoomId = webRoomid;
-                if (AppRuntime.DanmakuManager.SetSessionRoomId(dto.WebRoomId, dto.RoomId, null,
-                        dto.Owner?.Nickname))
-                {
-                    AppRuntime.RoomCaches.AddRoomInfoCache(dto);
-                    Logger.LogInfo($"{dto.Owner.Nickname ?? dto.WebRoomId ?? dto.RoomId} 的直播间信息已添加到缓存");
-                    Logger.LogInfo($"已连接 <{dto.WebRoomId}|{dto.RoomId}> {dto.Owner.Nickname}的直播间");
-                }
             }
             else
             {
@@ -131,6 +130,9 @@ namespace DanmakuBackend.Utility
             }
 
             return dto;
+            }
+            }
+            }
         }
     }
 }

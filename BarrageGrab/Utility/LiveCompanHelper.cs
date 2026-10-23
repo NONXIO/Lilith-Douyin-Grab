@@ -14,6 +14,12 @@ namespace DanmakuBackend.Utility
     public static class LiveCompanHelper
     {
         public static string LiveCompanExePath { get; set; } = "";
+        private static OwnedCompanionFile indexOwnership;
+        public static void RestoreOwnedFile()
+        {
+            try { indexOwnership?.Restore(); }
+            catch (Exception error) { Logger.LogWarn("伴侣文件恢复失败，保留备份: " + error.GetType().Name); }
+        }
 
         /// <summary>
         /// 获取抖音直播伴侣的exe路径
@@ -151,8 +157,10 @@ namespace DanmakuBackend.Utility
 
                     using (var reader = process.StandardOutput)
                     {
-                        string result = reader.ReadToEnd();
-                        process.WaitForExit();
+                        var read = reader.ReadToEndAsync();
+                        if (!process.WaitForExit(5000)) { process.Kill(); throw new TimeoutException("PowerShell shortcut query timed out"); }
+                        if (!read.Wait(1000)) throw new TimeoutException("PowerShell output read timed out");
+                        string result = read.GetAwaiter().GetResult();
                         return result.Trim();
                     }
                 }
@@ -197,12 +205,16 @@ namespace DanmakuBackend.Utility
                 throw new Exception("未找到直播伴侣的index.js文件");
             }
 
-            var indexJs = File.ReadAllText(indexJsPath, Encoding.UTF8);
+            indexOwnership = new OwnedCompanionFile(indexJsPath);
+            if (!indexOwnership.Restore()) return;
+            var originalBytes = File.ReadAllBytes(indexJsPath);
+            string indexJs;
+            using (var reader = new StreamReader(new MemoryStream(originalBytes), Encoding.UTF8)) indexJs = reader.ReadToEnd();
             CheckBackFile(indexJsPath);
             var newjs = SetIndexJsContent(indexJs);
             if (newjs != indexJs && !newjs.IsNullOrWhiteSpace())
             {
-                File.WriteAllText(indexJsPath, newjs);
+                indexOwnership.Write(Encoding.UTF8.GetBytes(newjs), OwnedCompanionFile.Hash(originalBytes));
             }
 
             Logger.LogInfo("直播伴侣环境初始化完成");

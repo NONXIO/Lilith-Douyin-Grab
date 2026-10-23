@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using DanmakuBackend.Proxy.ProxyEventArgs;
+using DanmakuBackend.Server;
 using Microsoft.Win32;
+using DanmakuBackend.Utility;
 
 namespace DanmakuBackend.Proxy
 {
@@ -20,8 +22,11 @@ namespace DanmakuBackend.Proxy
         ///     弹幕事件队列：代理网络线程只做入队，重活由专用后台线程消费，
         ///     避免解析/序列化/同步发送阻塞代理数据泵导致直播伴侣卡顿
         /// </summary>
-        private readonly BlockingCollection<Action> _eventQueue =
-            new BlockingCollection<Action>(new ConcurrentQueue<Action>(), 50000);
+        private readonly ByteBudgetQueue<CaptureEvent> _eventQueue =
+            new ByteBudgetQueue<CaptureEvent>(2048, 128L * 1024 * 1024);
+        private readonly Thread eventWorker;
+        internal int CaptureQueueCount => _eventQueue.Count;
+        internal long CaptureQueueBytes => _eventQueue.Bytes;
 
         /// <summary>
         ///     代理端口
@@ -60,25 +65,31 @@ namespace DanmakuBackend.Proxy
 
         protected SystemProxy()
         {
-            var worker = new Thread(EventWorkerLoop)
+            eventWorker = new Thread(EventWorkerLoop)
             {
                 IsBackground = true,
                 Name = "ProxyEventWorker"
             };
-            worker.Start();
+            eventWorker.Start();
         }
 
         private void EventWorkerLoop()
         {
-            foreach (var action in _eventQueue.GetConsumingEnumerable())
+            while (!_eventQueue.IsClosed)
             {
+                if (!_eventQueue.TryTake(out var item)) { _eventQueue.Signal.Wait(); continue; }
                 try
                 {
-                    action();
+                    if (item.Value.Ws != null) OnWebSocketData?.Invoke(this, item.Value.Ws);
+                    else OnFetchResponse?.Invoke(this, item.Value.Http);
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError($"处理弹幕事件时出错: {ex.Message}");
+                }
+                finally
+                {
+                    item.Dispose();
                 }
             }
         }
@@ -90,7 +101,8 @@ namespace DanmakuBackend.Proxy
         {
             try
             {
-                _eventQueue.CompleteAdding();
+                _eventQueue.Close();
+                if (Thread.CurrentThread != eventWorker) eventWorker.Join(2000);
             }
             catch (Exception)
             {
@@ -103,12 +115,10 @@ namespace DanmakuBackend.Proxy
         /// </summary>
         public void RegisterSystemProxy()
         {
-            var registry =
+            using (var registry =
                 Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
-                    true);
-            registry.SetValue("ProxyEnable", 1);
-            registry.SetValue("ProxyServer", $"127.0.0.1:{ProxyPort}");
-            registry.SetValue("ProxyOverride", BuildProxyOverride(registry));
+                    true))
+                OwnedProxySettings.Apply(ProxyPort, BuildProxyOverride(registry));
 
             OnProxyStatus?.Invoke(this, new SystemProxyChangeEventArgs
             {
@@ -121,11 +131,7 @@ namespace DanmakuBackend.Proxy
         /// </summary>
         public void CloseSystemProxy()
         {
-            var registry =
-                Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
-                    true);
-            registry.SetValue("ProxyEnable", 0);
-            registry.SetValue("ProxyServer", $"http=localhost:{ProxyPort};https=localhost:{ProxyPort}");
+            OwnedProxySettings.Restore();
             OnProxyStatus?.Invoke(this, new SystemProxyChangeEventArgs
             {
                 Open = false
@@ -158,18 +164,7 @@ namespace DanmakuBackend.Proxy
         /// <param name="args"></param>
         protected void FireWsEvent(WsMessageEventArgs args)
         {
-            var queuedAt = DateTime.Now;
-            if (!_eventQueue.TryAdd(() =>
-                {
-                    var delay = (DateTime.Now - queuedAt).TotalMilliseconds;
-                    // 性能探针：队列积压说明弹幕处理链路消费不过来
-                    if (delay > 500)
-                        Logger.LogWarn($"[性能探针] WS弹幕事件排队延迟 {delay:F0}ms，处理链路可能积压");
-                    OnWebSocketData?.Invoke(this, args);
-                }))
-            {
-                Logger.LogError("弹幕事件队列已满，丢弃一条WS消息");
-            }
+            AddCaptureEvent(new CaptureEvent { Ws = args }, args.Payload?.Length ?? 0);
         }
 
         /// <summary>
@@ -178,17 +173,25 @@ namespace DanmakuBackend.Proxy
         /// <param name="args"></param>
         protected void FireOnFetchResponse(HttpResponseEventArgs args)
         {
-            var queuedAt = DateTime.Now;
-            if (!_eventQueue.TryAdd(() =>
-                {
-                    var delay = (DateTime.Now - queuedAt).TotalMilliseconds;
-                    if (delay > 500)
-                        Logger.LogWarn($"[性能探针] HTTP弹幕事件排队延迟 {delay:F0}ms，处理链路可能积压");
-                    OnFetchResponse?.Invoke(this, args);
-                }))
-            {
-                Logger.LogError("弹幕事件队列已满，丢弃一条HTTP弹幕响应");
-            }
+            // Only payload/metadata survive the network callback, never HttpWebClient.
+            AddCaptureEvent(new CaptureEvent { Http = new HttpResponseEventArgs {
+                Payload = args.Payload, ProcessID = args.ProcessID,
+                ProcessName = args.ProcessName, HostName = args.HostName
+            } }, args.Payload?.Length ?? 0);
+        }
+
+        private void AddCaptureEvent(CaptureEvent item, int payloadBytes)
+        {
+            bool merged;
+            var process = item.Ws?.ProcessName ?? item.Http?.ProcessName ?? "";
+            var host = item.Ws?.HostName ?? item.Http?.HostName ?? "";
+            _eventQueue.TryAdd(item, (long)payloadBytes + 512 + (process.Length + host.Length) * 2L, null, out merged);
+        }
+
+        private sealed class CaptureEvent
+        {
+            internal WsMessageEventArgs Ws;
+            internal HttpResponseEventArgs Http;
         }
 
         /// <summary>

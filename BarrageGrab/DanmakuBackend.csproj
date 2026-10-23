@@ -89,14 +89,14 @@
     <Reference Include="DeviceId.Windows, Version=6.9.0.0, Culture=neutral, PublicKeyToken=f755c371b5c59c52, processorArchitecture=MSIL">
       <HintPath>..\packages\DeviceId.Windows.6.9.0\lib\net40\DeviceId.Windows.dll</HintPath>
     </Reference>
-    <Reference Include="Esprima, Version=3.0.5.0, Culture=neutral, PublicKeyToken=2e92ba9c8d81157f, processorArchitecture=MSIL">
-      <HintPath>..\packages\Esprima.3.0.5\lib\net462\Esprima.dll</HintPath>
+    <Reference Include="Esprima, Version=3.0.6.0, Culture=neutral, PublicKeyToken=2e92ba9c8d81157f, processorArchitecture=MSIL">
+      <HintPath>..\packages\Esprima.3.0.6\lib\net462\Esprima.dll</HintPath>
     </Reference>
     <Reference Include="Fleck, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Fleck.1.2.0\lib\net45\Fleck.dll</HintPath>
     </Reference>
-    <Reference Include="HtmlAgilityPack, Version=1.12.4.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
-      <HintPath>..\packages\HtmlAgilityPack.1.12.4\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    <Reference Include="HtmlAgilityPack, Version=1.13.1.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>..\packages\HtmlAgilityPack.1.13.1\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
     <Reference Include="Jint, Version=4.4.2.0, Culture=neutral, PublicKeyToken=2e92ba9c8d81157f, processorArchitecture=MSIL">
       <HintPath>..\packages\Jint.4.4.2\lib\net462\Jint.dll</HintPath>
@@ -127,10 +127,10 @@
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="NLog, Version=6.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NLog.6.0.7\lib\net46\NLog.dll</HintPath>
+      <HintPath>..\packages\NLog.6.2.1\lib\net46\NLog.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net, Version=3.0.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
       <HintPath>..\packages\protobuf-net.3.2.56\lib\net462\protobuf-net.dll</HintPath>
@@ -292,6 +292,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppRuntime.cs" />
+    <Compile Include="Server\BoundedRoomCache.cs" />
+    <Compile Include="Server\FixedMessageWindow.cs" />
+    <Compile Include="Proxy\RoomRequestCoordinator.cs" />
+    <Compile Include="Utility\OwnedProxySettings.cs" />
+    <Compile Include="Utility\WindowsProxyConnection.cs" />
+    <Compile Include="Utility\OwnedCompanionFile.cs" />
     <Compile Include="AppSetting.cs" />
     <Compile Include="Cloud\DanmakuManager.cs"/>
     <Compile Include="Cloud\EventLog.cs" />
@@ -310,6 +316,7 @@
     <Compile Include="JsEngine.cs" />
     <Compile Include="Utility\LiveCompanHelper.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="AudioIncidentFeedback.cs" />
     <Compile Include="ObjectExtension.cs" />
     <Compile Include="Proxy\ProxyEventArgs\HttpResponseEventArgs.cs" />
     <Compile Include="Proxy\ProxyEventArgs\SystemProxyChangeEventArgs.cs" />
@@ -319,10 +326,16 @@
     <Compile Include="Proxy\SystemProxy.cs" />
     <Compile Include="Proxy\TitaniumProxy.cs" />
     <Compile Include="Proxy\WebSocketStreamDecoder.cs" />
+    <Compile Include="Proxy\BoundedCapturePayload.cs" />
+    <Compile Include="Proxy\UpstreamCompatibility.cs" />
+    <Compile Include="Proxy\CaptureSelfTest.cs" />
     <Compile Include="Utility\WinApi.cs" />
     <Compile Include="Server\WssBarrageGrab.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server\WsBarrageServer.cs" />
+    <Compile Include="Server\ByteBudgetQueue.cs" />
+    <Compile Include="Server\OrderedSocketSender.cs" />
+    <Compile Include="Server\TransportSelfTest.cs" />
     <Compile Include="Views\FormView.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -51,11 +51,12 @@ namespace DanmakuBackend.Server
             socketList = new ConcurrentDictionary<string, UserState>(); //客户端列表
 
         private WebSocketServer socketServer; //Ws服务器对象
+        private readonly object clientGate = new object();
 
         public WsBarrageServer()
         {
             // 配置 Fleck 日志输出
-            FleckLog.Level = LogLevel.Debug;
+            FleckLog.Level = LogLevel.Info;
             var socket = new WebSocketServer($"ws://0.0.0.0:{Appsetting.WsProt}");
             socket.RestartAfterListenError = true; //异常重启
 
@@ -101,6 +102,23 @@ namespace DanmakuBackend.Server
         /// </summary>
         public bool IsDisposed { get; private set; } = false;
 
+        internal object IncidentSnapshot()
+        {
+            var capture = grab.Proxy as DanmakuBackend.Proxy.SystemProxy;
+            var senders = socketList.Values.Where(state => state.Sender != null).Select(state => state.Sender).ToArray();
+            return new
+            {
+                clientCount = socketList.Count,
+                giftCountCacheCount = giftCountCache.Count,
+                messageTypeCount = grab.MessageTypeCount,
+                roomCacheCount = AppRuntime.RoomCaches?.Count ?? 0,
+                captureQueueCount = capture?.CaptureQueueCount,
+                captureQueueBytes = capture?.CaptureQueueBytes,
+                outboundQueueCount = senders.Sum(sender => sender.Count),
+                outboundQueueBytes = senders.Sum(sender => sender.Bytes)
+            };
+        }
+
         /// <summary>
         /// 关闭服务器连接，并关闭系统代理
         /// </summary>
@@ -108,6 +126,15 @@ namespace DanmakuBackend.Server
         {
             if (IsDisposed) return;
             IsDisposed = true;
+            var stoppingSenders = socketList.Values.Where(state => state.Sender != null).Select(state => state.Sender).ToArray();
+            foreach (var sender in stoppingSenders) sender.Stop("server-stopping");
+            try
+            {
+                if (!Task.WhenAll(stoppingSenders.Select(sender => sender.Completion)).Wait(2000))
+                    Logger.LogWarn("发送消费者退出等待超时，旧连接已隔离");
+            }
+            catch (Exception ex) { Logger.LogWarn("发送消费者退出异常: " + ex.GetType().Name); }
+            socketList.Clear();
 
             // 停止定时器
             try
@@ -381,13 +408,6 @@ namespace DanmakuBackend.Server
             if (enty.User?.FansClub != null) enty.Level = enty.User.FansClub.Level;
 
             var msgType = PackMsgType.粉丝团消息;
-            if (msg.User?.badgeImageListV2 != null &&
-                msg.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
-            {
-                AppRuntime.DanmakuManager.ReportEvent(AppRuntime.DanmakuManager.LicenceInfo?.RoomId, msg.Common.Method,
-                    msg.ToJson(), "新守护相关");
-            }
-
             AttachRoomInfo(enty);
             Broadcast(new DanmakuMessagePack(enty.ToJson(), msgType, e.Process));
         }
@@ -624,8 +644,6 @@ namespace DanmakuBackend.Server
             enty.EmojiUrl = msg.emojiContent.Pieces.First().imageValue.Image.urlList.First();
             enty.Content = "[会员表情]";
             AttachRoomInfo(enty);
-            AppRuntime.DanmakuManager.ReportEvent(AppRuntime.DanmakuManager.LicenceInfo?.RoomId, "会员表情", msg.ToJson(),
-                "会员表情消息");
             Broadcast(new DanmakuMessagePack(enty.ToJson(), PackMsgType.会员表情, e.Process));
         }
 
@@ -720,12 +738,6 @@ namespace DanmakuBackend.Server
                 Broadcast(new DanmakuMessagePack(enty.ToJson(), type, e.Process));
             }
 
-            if (msg.Common.User != null && msg.Common.User.badgeImageListV2 != null &&
-                msg.Common.User.badgeImageListV2.Exists(image => image.Uri.Contains("star_guard")))
-            {
-                AppRuntime.DanmakuManager.ReportEvent(AppRuntime.DanmakuManager.LicenceInfo?.RoomId, msg.Common.Method,
-                    msg.ToJson(), "新守护相关");
-            }
         }
 
         //直播间状态变更
@@ -738,7 +750,7 @@ namespace DanmakuBackend.Server
             Broadcast(new DanmakuMessagePack(json, type, Process.GetCurrentProcess().ProcessName));
         }
 
-        private void StartAuthHandShare(IWebSocketConnection socket)
+        private void StartAuthHandShare(UserState connection)
         {
             Logger.LogInfo("开始客户端认证");
             try
@@ -753,7 +765,7 @@ namespace DanmakuBackend.Server
                     Cmd = CommandCode.Auth,
                     Data = serverHello
                 };
-                socket.Send(JsonConvert.SerializeObject(helloCommand));
+                connection.Sender.TrySend(new OutboundPacket { Data = JsonConvert.SerializeObject(helloCommand) });
             }
             catch (Exception ex)
             {
@@ -766,19 +778,20 @@ namespace DanmakuBackend.Server
         {
             //客户端url
             var clientUrl = socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort;
+            var connection = new UserState(socket, clientUrl);
+            var socketId = socket.ConnectionInfo.Id.ToString();
+            connection.Sender = new OrderedSocketSender(packet => {
+                if (packet.Pong) return socket.SendPong(Encoding.UTF8.GetBytes(packet.Data));
+                return socket.Send(packet.Key == null ? packet.Data : EncryptPayload(packet.Key, packet.Data));
+            }, (reason, unconfirmed) => {
+                if (unconfirmed > 0 || reason == "send-timeout" || reason.EndsWith("error", StringComparison.Ordinal))
+                    Logger.LogWarn($"[传输异常] 后端发送停止: {reason}，未确认交付:{unconfirmed}");
+                try { socket.Close(); } catch { }
+            });
+            socketList[socketId] = connection;
             socket.OnOpen = () =>
             {
-                // 1. 授权的客户端更新新连接实例
-                if (Client != null && Client.SessionId == clientUrl && Client.IsAuthenticated)
-                {
-                    Client.Socket.Close(); // Close old socket? Logic implies re-connection handling
-                    Client.Socket = socket;
-                    Client.LastPing = DateTime.Now;
-                    Logger.LogInfo($"已认证客户端重连: {clientUrl}");
-                    return;
-                }
-
-                StartAuthHandShare(socket);
+                StartAuthHandShare(connection); // Every new physical socket performs the existing handshake.
             };
 
             //接收指令
@@ -799,7 +812,7 @@ namespace DanmakuBackend.Server
                             try
                             {
                                 // 处理认证请求
-                                await HandleAuthenticationAsync(socket, clientUrl, cmdPack.Data).ConfigureAwait(false);
+                                await HandleAuthenticationAsync(connection, cmdPack.Data).ConfigureAwait(false);
                             }
                             catch (Exception e)
                             {
@@ -822,6 +835,15 @@ namespace DanmakuBackend.Server
                             // 处理更新配置请求
                             HandleUpdateConfig(socket, cmdPack.Data);
                             break;
+                        case CommandCode.MarkAudioIncident:
+                            if (Client != null && Client.Socket == socket && Client.IsAuthenticated)
+                            {
+                                var marker = cmdPack.Data as JObject;
+                                Guid markerId;
+                                if (Guid.TryParse(marker?["id"]?.ToString(), out markerId))
+                                    AudioIncidentFeedback.Mark(markerId.ToString());
+                            }
+                            break;
                     }
                 }
                 catch (Exception ex)
@@ -833,19 +855,25 @@ namespace DanmakuBackend.Server
             socket.OnClose = () =>
             {
                 Logger.LogInfo("客户端关闭");
-                if (Client?.ClientID == clientUrl)
+                connection.Closed = true;
+                connection.Sender.Stop("connection-closed");
+                socketList.TryRemove(socketId, out var removed);
+                lock (clientGate)
                 {
-                    Client?.Socket.Close();
-                    Client = null;
-                    AppRuntime.DanmakuManager.CleanSession();
+                    if (ReferenceEquals(Client, connection))
+                    {
+                        Client = null;
+                        AppRuntime.DanmakuManager.CleanSession();
+                    }
                 }
             };
 
             socket.OnPing = (data) =>
             {
-                if (Client?.ClientID != clientUrl) return;
-                Client.LastPing = DateTime.Now;
-                socket.SendPong(Encoding.UTF8.GetBytes("ok"));
+                var current = Client;
+                if (current?.Socket != socket) return;
+                current.LastPing = DateTime.Now;
+                connection.Sender.TrySend(new OutboundPacket { Data = "ok", Pong = true });
             };
         }
 
@@ -855,10 +883,12 @@ namespace DanmakuBackend.Server
         /// <param name="socket">连接对象</param>
         /// <param name="clientUrl">客户端URL</param>
         /// <param name="data">认证数据</param>
-        private async Task HandleAuthenticationAsync(IWebSocketConnection socket, string clientUrl, object data)
+        private async Task HandleAuthenticationAsync(UserState connection, object data)
         {
+            var socket = connection.Socket;
+            var clientUrl = connection.ClientID;
             // 如果已经认证过，直接返回
-            if (Client != null && Client.ClientID == clientUrl && Client.IsAuthenticated) return;
+            if (connection.IsAuthenticated || connection.Closed) return;
             try
             {
                 // 处理 data 对象：可能是 JObject、字符串或其他类型
@@ -909,13 +939,18 @@ namespace DanmakuBackend.Server
                 }
 
                 // 认证成功
-                Client = new UserState(socket, clientUrl)
+                UserState old;
+                lock (clientGate)
                 {
-                    IsAuthenticated = true,
-                    SessionId = authRequest.SessionId,
-                    LastPing = DateTime.Now,
-                    EncryptionKey = encryptionKey
-                };
+                    if (connection.Closed || IsDisposed) return;
+                    old = Client;
+                    connection.IsAuthenticated = true;
+                    connection.SessionId = authRequest.SessionId;
+                    connection.LastPing = DateTime.Now;
+                    connection.EncryptionKey = encryptionKey;
+                    Client = connection;
+                }
+                if (old != null && !ReferenceEquals(old, connection)) old.Sender.Stop("connection-replaced");
                 Logger.LogInfo("客户端认证成功");
 
                 // 如果直播伴侣已经启动（或者尝试启动过），则在客户端连接后立即同步状态
@@ -924,7 +959,7 @@ namespace DanmakuBackend.Server
                     var pack = new DanmakuMessagePack(JsonConvert.SerializeObject("直播伴侣已启动"), PackMsgType.直播伴侣启动,
                         Process.GetCurrentProcess().ProcessName);
                     var json = JsonConvert.SerializeObject(pack);
-                    socket.Send(json);
+                    connection.Sender.TrySend(new OutboundPacket { Data = json });
                 }
             }
             catch (Exception ex)
@@ -954,62 +989,53 @@ namespace DanmakuBackend.Server
         /// <param name="pack">弹幕数据包</param>
         public void Broadcast(DanmakuMessagePack pack)
         {
-            if (pack == null) return;
-            if (Client != null && !Client.Socket.IsAvailable) Client = null;
-
-            if (Client != null && Client.IsAuthenticated)
+            if (pack == null || IsDisposed) return;
+            UserState client;
+            lock (clientGate) client = Client;
+            if (client == null || !client.IsAuthenticated)
             {
-                try
-                {
-                    if (Client.EncryptionKey == null || Client.EncryptionKey.Length == 0)
-                    {
-                        Logger.LogWarn("客户端协议错误，消息未发送");
-                        return;
-                    }
-
-                    var payload = pack.ToJson();
-                    var encryptedPayload = EncryptPayload(Client.EncryptionKey, payload);
-                    var socket = Client.Socket;
-                    //异步发送，避免慢客户端阻塞弹幕处理链路（代理线程/事件消费线程）
-                    _ = SendToClientAsync(socket, encryptedPayload);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError($"发送消息到客户端失败: {ex.Message}");
-                    Client.Socket.Close();
-                    Client = null;
-                }
+                return;
             }
-            else
+            if (!client.Socket.IsAvailable)
             {
-                if (AppRuntime.IsDebugMode) Logger.LogWarn("没有已认证的客户端连接，消息未发送");
+                client.Sender.Stop("unavailable"); return;
             }
-        }
-
-        /// <summary>
-        /// 异步发送数据到客户端，失败时清理连接
-        /// </summary>
-        private async Task SendToClientAsync(IWebSocketConnection socket, string data)
-        {
+            if (client.EncryptionKey == null || client.EncryptionKey.Length == 0) return;
             try
             {
-                await socket.Send(data).ConfigureAwait(false);
+                // Encrypt on the sole sender, after the bounded queue reservation.
+                client.Sender.TrySend(new OutboundPacket { Data = pack.ToJson(), Key = client.EncryptionKey },
+                    SnapshotKey(pack));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Logger.LogError($"发送消息到客户端失败: {ex.Message}");
-                try
-                {
-                    socket.Close();
-                }
-                catch (Exception closeEx)
-                {
-                    Logger.LogError($"关闭客户端连接失败: {closeEx.Message}");
-                }
-
-                if (Client != null && Client.Socket == socket) Client = null;
+                client.Sender.Stop("serialization-error");
             }
         }
+
+        internal static bool CountsAsBusiness(PackMsgType type)
+        { return ((int)type >= 1 && (int)type <= 13) || type == PackMsgType.高热聊天; }
+
+        internal static string SnapshotKey(DanmakuMessagePack pack)
+        {
+            if (pack.Type != PackMsgType.直播间统计 && pack.Type != PackMsgType.房间数据 &&
+                pack.Type != PackMsgType.房间排行) return null;
+            try
+            {
+                var room = JObject.Parse(pack.Data)["room_id"]?.ToString();
+                return string.IsNullOrEmpty(room) || room.Length > 128 ? null : (int)pack.Type + "|" + room;
+            }
+            catch { return null; }
+        }
+
+        private void QueuePlain(IWebSocketConnection socket, string data)
+        {
+            if (socketList.TryGetValue(socket.ConnectionInfo.Id.ToString(), out var state))
+                state.Sender.TrySend(new OutboundPacket { Data = data });
+        }
+
+        internal static string EncryptForTransportTest(byte[] key, string plaintext)
+        { return EncryptPayload(key, plaintext); }
 
         private static byte[] DeriveEncryptionKey(string sessionId, string machineId)
         {
@@ -1077,7 +1103,7 @@ namespace DanmakuBackend.Server
                 Cmd = CommandCode.GetConfig,
                 Data = JObject.Parse(json) // Data expects object, JObject parses it structure-wise
             };
-            socket.Send(JsonConvert.SerializeObject(response));
+            QueuePlain(socket, JsonConvert.SerializeObject(response));
         }
 
         /// <summary>
@@ -1095,7 +1121,7 @@ namespace DanmakuBackend.Server
                     Cmd = CommandCode.UpdateConfig,
                     Data = new { success = true, message = "配置已更新" }
                 };
-                socket.Send(JsonConvert.SerializeObject(response));
+                QueuePlain(socket, JsonConvert.SerializeObject(response));
             }
             catch (Exception ex)
             {
@@ -1105,7 +1131,7 @@ namespace DanmakuBackend.Server
                     Cmd = CommandCode.UpdateConfig,
                     Data = new { success = false, message = $"更新失败: {ex.Message}" }
                 };
-                socket.Send(JsonConvert.SerializeObject(response));
+                QueuePlain(socket, JsonConvert.SerializeObject(response));
             }
         }
 
@@ -1114,6 +1140,8 @@ namespace DanmakuBackend.Server
         /// </summary>
         class UserState
         {
+            internal OrderedSocketSender Sender;
+            internal volatile bool Closed;
             public UserState()
             {
             }

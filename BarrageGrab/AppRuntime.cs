@@ -62,125 +62,14 @@ namespace DanmakuBackend
         /// <summary>
         /// 房间缓存管理器
         /// </summary>
-        public class RoomCacheManager
+        public class RoomCacheManager : BoundedRoomCache
         {
-            /// <summary>
-            /// 房间ID - 房间信息映射缓存
-            /// </summary>
-            public ConcurrentDictionary<string, RoomInfo> RoomInfoCache { get; } =
-                new ConcurrentDictionary<string, RoomInfo>();
-
-            /// <summary>
-            /// 添加房间缓存时触发
-            /// </summary>
+            public RoomCacheManager() : base(512, TimeSpan.FromMinutes(30), () => DateTime.UtcNow, () => DanmakuManager?.ActiveRoomId)
+            { Changed = (mode, info) => OnCache?.Invoke(this, new RoomCacheEventArgs { Model = mode, RoomInfo = info }); }
             public event EventHandler<RoomCacheEventArgs> OnCache;
-
-            /// <summary>
-            /// 添加WebRoomid-房间ID 映射
-            /// </summary>
-            /// <param name="webrid"></param>
-            /// <param name="roomid"></param>
-            public void SetRoomCache(string roomid, string webrid)
-            {
-                if (RoomInfoCache.ContainsKey(roomid))
-                {
-                    RoomInfoCache[roomid].WebRoomId = webrid;
-                }
-                else
-                {
-                    var info = new RoomInfo()
-                    {
-                        RoomId = roomid,
-                        WebRoomId = webrid,
-                        Title = "房间" + webrid
-                    };
-                    var succ = RoomInfoCache.TryAdd(roomid, info);
-                    if (succ)
-                    {
-                        OnCache?.Invoke(this, new RoomCacheEventArgs()
-                        {
-                            Model = 0,
-                            RoomInfo = info
-                        });
-                    }
-                }
-            }
-
-            /// <summary>
-            /// 添加房间缓存信息
-            /// </summary>
-            /// <param name="roomid"></param>
-            /// <param name="roomInfo"></param>
-            public void AddRoomInfoCache(RoomInfo roomInfo)
-            {
-                if (roomInfo == null) return;
-                var roomid = roomInfo.RoomId;
-                if (RoomInfoCache.ContainsKey(roomid))
-                {
-                    RoomInfoCache[roomid] = roomInfo;
-                    OnCache?.Invoke(this, new RoomCacheEventArgs()
-                    {
-                        Model = 1,
-                        RoomInfo = roomInfo
-                    });
-                }
-                else
-                {
-                    var succ = RoomInfoCache.TryAdd(roomid, roomInfo);
-                    if (succ)
-                    {
-                        OnCache?.Invoke(this, new RoomCacheEventArgs()
-                        {
-                            Model = 0,
-                            RoomInfo = roomInfo
-                        });
-                    }
-                }
-            }
-
-            /// <summary>
-            /// 根据roomid从缓存获取webRoomid
-            /// </summary>
-            /// <param name="roomid"></param>
-            /// <returns></returns>
-            public string GetCachedWebRoomid(string roomid)
-            {
-                RoomInfo value;
-                if (RoomInfoCache.TryGetValue(roomid, out value)) return value.WebRoomId ?? "未知";
-                return "未知";
-            }
-
-            /// <summary>
-            /// 根据roomid从缓存获取房间信息
-            /// </summary>
-            /// <param name="roomid"></param>
-            /// <returns></returns>
-            public RoomInfo GetCachedWebRoomInfo(string roomid)
-            {
-                RoomInfo value;
-                if (RoomInfoCache.TryGetValue(roomid, out value)) return value;
-                return null;
-            }
-
-            /// <summary>
-            /// 根据webRoomid从缓存获取房间信息
-            /// </summary>
-            /// <param name="webrid"></param>
-            /// <returns></returns>
-            public RoomInfo GetByWebRoomid(string webrid)
-            {
-                var find = RoomInfoCache.FirstOrDefault(p => p.Value.WebRoomId == webrid);
-                return find.Value;
-            }
-
-
             public class RoomCacheEventArgs : EventArgs
             {
                 public RoomInfo RoomInfo { get; set; }
-
-                /// <summary>
-                /// 0:添加,1更新,2删除
-                /// </summary>
                 public int Model { get; set; }
             }
         }

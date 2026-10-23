@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using DanmakuBackend.Models.ProtoEntity;
 using DanmakuBackend.Proxy;
@@ -18,7 +17,10 @@ namespace DanmakuBackend.Server
         private AppSetting appsetting = AppSetting.Current;
 
         //用于缓存接收过的消息ID，判断是否重复接收
-        private Dictionary<string, List<long>> msgDic = new Dictionary<string, List<long>>();
+        private readonly FixedMessageWindow messageWindow = new FixedMessageWindow();
+        private static readonly HashSet<string> knownMethods = new HashSet<string> { "WebcastMemberMessage", "WebcastSocialMessage", "WebcastChatMessage", "WebcastHotChatMessage", "WebcastLikeMessage", "WebcastGiftMessage", "WebcastRoomUserSeqMessage", "WebcastControlMessage", "WebcastFansclubMessage", "WebcastRoomStatsMessage", "WebcastRoomRankMessage", "WebcastEmojiChatMessage", "WebcastAudioChatMessage", "WebcastRoomMessage", "WebcastExhibitionChatMessage", "WebcastRoomIntroMessage", "WebcastLowPcuGuideMessage", "WebcastLowPcuGuideChatMessage", "WebcastRoomDataSyncMessage", "WebcastInRoomBannerMessage", "WebcastRoomStreamAdaptationMessage", "WebcastHotRoomMessage", "WebcastRanklistHourEntranceMessage", "WebcastGiftSortMessage", "WebcastInRoomBannerRefreshMessage", "WebcastPrivilegeScreenChatMessage", "WebcastBindingGiftMessage", "WebcastAssetEffectUtilMessage", "WebcastRoomIndicatorMessage", "WebcastTaskCenterEntranceMessage", "WebcastResidentGuestMessage", "WebcastGiftEffectGameMessage", "WebcastChatLikeMessage", "WebcastGrowthTaskMessage", "WebcastLotteryEventNewMessage", "WebcastLotteryEventMessage", "WebcastActivityEmojiGroupsMessage", "WebcastRoomCommentTopicMessage" };
+        private volatile bool disposed;
+        private readonly CaptureErrorThrottle captureErrorThrottle = new CaptureErrorThrottle();
 
         //ISystemProxy proxy = new FiddlerProxy();
         ISystemProxy proxy = new TitaniumProxy();
@@ -34,10 +36,17 @@ namespace DanmakuBackend.Server
         /// 代理
         /// </summary>
         public ISystemProxy Proxy => proxy;
+        public int MessageTypeCount => messageWindow.Count;
 
         public void Dispose()
         {
+            if (disposed) return;
+            disposed = true;
+            proxy.OnWebSocketData -= Proxy_OnWebSocketData;
+            proxy.OnFetchResponse -= Proxy_OnFetchResponse;
+            proxy.OnRoomStatusChange -= Proxy_OnRoomStatusChange;
             proxy.Dispose();
+            messageWindow.Clear();
         }
 
         private void Proxy_OnRoomStatusChange(object sender, RoomStatusEventArgs e)
@@ -129,21 +138,7 @@ namespace DanmakuBackend.Server
         //gzip解压缩
         private byte[] Decompress(byte[] zippedData)
         {
-            MemoryStream ms = new MemoryStream(zippedData);
-            GZipStream compressedzipStream = new GZipStream(ms, CompressionMode.Decompress);
-            MemoryStream outBuffer = new MemoryStream();
-            byte[] block = new byte[1024];
-            while (true)
-            {
-                int bytesRead = compressedzipStream.Read(block, 0, block.Length);
-                if (bytesRead <= 0)
-                    break;
-                else
-                    outBuffer.Write(block, 0, bytesRead);
-            }
-
-            compressedzipStream.Close();
-            return outBuffer.ToArray();
+            return BoundedCapturePayload.Decompress(zippedData);
         }
 
         //ws数据处理
@@ -151,27 +146,28 @@ namespace DanmakuBackend.Server
         {
             if (!appsetting.ProcessFilter.Contains(e.ProcessName)) return;
             var buff = e.Payload;
-            if (buff.Length == 0) return;
+            if (buff == null || buff.Length == 0) return;
             //如果需要Gzip解压缩，但是开头字节不符合Gzip特征字节 则不处理
             if (e.NeedDecompress && buff[0] != 0x08) return;
 
             try
             {
+                BoundedCapturePayload.Validate(buff);
                 var enty = DeserializeProto<WssResponse>(buff);
                 if (enty == null) return;
 
                 //检测包格式
-                if (!enty.Headers.Any(a => a.Key == "compress_type" && a.Value == "gzip")) return;
+                if (enty.Headers == null || !enty.Headers.Any(a => a.Key == "compress_type" && a.Value == "gzip")) return;
 
                 byte[] allBuff;
                 //解压gzip
                 allBuff = e.NeedDecompress ? Decompress(enty.Payload) : enty.Payload;
                 var response = DeserializeProto<Response>(allBuff);
-                response.Messages.ForEach(f => DoMessage(f, e.ProcessName));
+                response?.Messages?.ForEach(f => DoMessage(f, e.ProcessName, e.CaptureGeneration));
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"处理弹幕数据包时出错:{ex.Message}");
+                LogCaptureError(ex);
             }
         }
 
@@ -180,32 +176,25 @@ namespace DanmakuBackend.Server
         {
             var payload = e.Payload;
             if (payload == null || payload.Length == 0) return;
-            var response = DeserializeProto<Response>(payload);
-            response.Messages.ForEach(f => { DoMessage(f, e.ProcessName); });
+            try
+            {
+                var response = DeserializeProto<Response>(payload);
+                response?.Messages?.ForEach(f => { DoMessage(f, e.ProcessName); });
+            }
+            catch (Exception ex) { LogCaptureError(ex); }
+        }
+
+        private void LogCaptureError(Exception ex)
+        {
+            if (captureErrorThrottle.ShouldLog())
+                Logger.LogWarn("抓取载荷拒绝（重复错误按10秒限频）: " + ex.GetType().Name + ": " + ex.Message);
         }
 
         //发送事件
-        private void DoMessage(Message msg, string processName)
+        private void DoMessage(Message msg, string processName, long captureGeneration = 0)
         {
-            List<long> msgIdList;
-            if (msgDic.TryGetValue(msg.Method, out var value))
-            {
-                msgIdList = value;
-            }
-            else
-            {
-                msgIdList = new List<long>(320);
-                msgDic.Add(msg.Method, msgIdList);
-            }
-
-            if (msgIdList.Contains(msg.msgId))
-            {
-                return;
-            }
-
-            msgIdList.Add(msg.msgId);
-            //每种消息类型设置300容量应该足够,不太可能存在一条消息被挤出队列后再次出现
-            while (msgIdList.Count > 300) msgIdList.RemoveAt(0);
+            if (disposed || msg == null || !knownMethods.Contains(msg.Method)) return;
+            if (!messageWindow.Accept(msg.Method, msg.msgId, AppRuntime.DanmakuManager?.ActiveRoomId ?? "", captureGeneration)) return;
             try
             {
                 switch (msg.Method)
@@ -358,6 +347,7 @@ namespace DanmakuBackend.Server
 
         private T DeserializeProto<T>(byte[] data)
         {
+            BoundedCapturePayload.Validate(data);
             using (var ms = new MemoryStream(data))
             {
                 return Serializer.Deserialize<T>(ms);

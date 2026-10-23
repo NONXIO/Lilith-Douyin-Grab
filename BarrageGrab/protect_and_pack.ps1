@@ -1,3 +1,4 @@
+param([string]$OutputDirectory = '')
 $ErrorActionPreference = "Stop"
 
 # --- CONFIGURATION ---
@@ -14,6 +15,11 @@ if (-not (Test-Path $ConfuserCliPath)) {
 $ScriptDir = $PSScriptRoot
 $BinDir = Join-Path $ScriptDir "bin\Release"
 $OutputDir = Join-Path $BinDir "Confused"
+if ($OutputDirectory) { $OutputDir = [IO.Path]::GetFullPath($OutputDirectory) }
+$ResolvedBinDir = [IO.Path]::GetFullPath($BinDir)
+if (-not ([IO.Path]::GetFullPath($OutputDir)).StartsWith($ResolvedBinDir + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Protection output must stay inside bin/Release.'
+}
 $MainExe = "DanmakuBackend.exe"
 $MainExePath = Join-Path $BinDir $MainExe
 
@@ -28,8 +34,10 @@ if (-not (Test-Path $MainExePath)) {
 # Generate Confuser.crproj
 Write-Host "Generating confuser.crproj..." -ForegroundColor Cyan
 
+$xmlOutputDir = [Security.SecurityElement]::Escape($OutputDir)
+$xmlBinDir = [Security.SecurityElement]::Escape($BinDir)
 $xmlContent = @"
-<project outputDir="$OutputDir" baseDir="$BinDir" xmlns="http://confuser.codeplex.com">
+<project outputDir="$xmlOutputDir" baseDir="$xmlBinDir" xmlns="http://confuser.codeplex.com">
   <rule pattern="true" preset="none" />
   <rule pattern="match('$MainExe')" preset="maximum" />
   <packer id="compressor" />
@@ -46,6 +54,10 @@ foreach ($dll in $Dlls) {
 
 $xmlContent += "</project>"
 $CrprojPath = Join-Path $ScriptDir "confuser.crproj"
+if ($OutputDirectory) {
+    New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+    $CrprojPath = Join-Path $OutputDir 'confuser.crproj'
+}
 $xmlContent | Out-File -FilePath $CrprojPath -Encoding UTF8
 
 Write-Host "Project file created at $CrprojPath" -ForegroundColor Green
@@ -80,17 +92,18 @@ if (Test-Path $ConfuserCliPath) {
         }
 
         # Cleanup PDB files
-        Get-ChildItem -Path $OutputDir -Filter "*.pdb" | Remove-Item -Force
+        Get-ChildItem -LiteralPath $OutputDir -Filter "*.pdb" -File | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
         Write-Host "Cleaned up PDB files." -ForegroundColor Green
         Write-Host "Output is available at: $OutputDir\$MainExe" -ForegroundColor Green
     }
     else {
-        Write-Host "Unknown error occurred immediately." -ForegroundColor Red
+        throw "ConfuserEx failed (exit code $LASTEXITCODE); do not publish its output."
         # Note: ConfuserEx usually pauses or returns 0 even on partial errors, check output log
     }
 }
 else {
-    Write-Host "WARNING: Confuser.CLI.exe not found at '$ConfuserCliPath'" -ForegroundColor Yellow
-    Write-Host "Please edit this script and set `$ConfuserCliPath` to your installed ConfuserEx location." -ForegroundColor Yellow
-    Write-Host "Then run this script again."
+    throw "Confuser.CLI.exe not found at '$ConfuserCliPath'. Set CONFUSER_CLI_PATH."
+}
+if (-not (Test-Path -LiteralPath (Join-Path $OutputDir $MainExe))) {
+    throw 'Protected Backend executable was not generated.'
 }

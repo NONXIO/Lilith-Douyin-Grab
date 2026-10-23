@@ -2,6 +2,7 @@
 {
     public class WsMessageEventArgs
     {
+        public long CaptureGeneration { get; set; }
         /// <summary>
         /// 消息体
         /// </summary>
