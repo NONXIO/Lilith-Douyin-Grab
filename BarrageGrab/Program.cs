@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -25,6 +25,13 @@ namespace DanmakuBackend
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
+            // Read-only path diagnostic; return before licensing, proxy and capture initialization.
+            if (args.Length == 2 && args[0] == "--companion-path")
+            {
+                try { Console.WriteLine("COMPANION_PATH_OK:" + CompanionLocation.ResolveCandidate(args[1])); }
+                catch (Exception error) { Console.Error.WriteLine("COMPANION_PATH_FAIL:" + error.GetType().Name); Environment.ExitCode = 1; }
+                return;
+            }
             if (args.Length == 1 && args[0] == "--restore-owned-proxy")
             {
                 try { if (!OwnedProxySettings.Restore()) Environment.ExitCode = 2; }
@@ -164,7 +171,7 @@ namespace DanmakuBackend
             {
                 _exited = true;
                 if (_mainForm != null && !_mainForm.IsDisposed)
-                    _mainForm.Invoke(new Action(Application.Exit));
+                    _mainForm.Invoke(new Action(_mainForm.RequestApplicationExit));
             };
             AppRuntime.WsServer.StartListen(); //启动WS以及代理服务
             Logger.LogInfo("后端服务启动完成");
@@ -176,7 +183,7 @@ namespace DanmakuBackend
                 if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
                 {
                     Logger.LogInfo("启动直播伴侣...");
-                    Process.Start("explorer.exe", $"\"{exePath}\"");
+                    LiveCompanHelper.StartOwnedProcess(exePath);
                     AppRuntime.WsServer.Broadcast(new DanmakuMessagePack(JsonConvert.SerializeObject("直播伴侣启动成功"),
                         PackMsgType.直播伴侣启动,
                         Process.GetCurrentProcess().ProcessName));
@@ -227,6 +234,7 @@ namespace DanmakuBackend
                 Logger.LogError($"关闭资源失败(Server/Manager): {ex.Message}");
             }
 
+            LiveCompanHelper.StopOwnedProcess();
             LiveCompanHelper.RestoreOwnedFile();
 
             try

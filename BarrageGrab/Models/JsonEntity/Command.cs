@@ -87,6 +87,8 @@ namespace DanmakuBackend.Models.JsonEntity
     /// </summary>
     public class ServerHello
     {
+        [JsonProperty("companion_lifecycle")]
+        public int CompanionLifecycle { get; set; } = 1;
         /// <summary>
         /// 机器ID
         /// </summary>

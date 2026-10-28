@@ -15,6 +15,23 @@ namespace DanmakuBackend.Utility
     {
         public static string LiveCompanExePath { get; set; } = "";
         private static OwnedCompanionFile indexOwnership;
+        private static readonly OwnedCompanionProcess ownedProcess = new OwnedCompanionProcess();
+        public static bool StartOwnedProcess(string path)
+        {
+            try { return ownedProcess.Start(path); }
+            catch (Exception error) { Logger.LogWarn("伴侣启动失败，未接管其他进程: " + error.GetType().Name); return false; }
+        }
+        public static void StopOwnedProcess() { ownedProcess.Dispose(); }
+        public static string CompanionOwnership()
+        {
+            if (ownedProcess.IsOwned) return "owned";
+            var name = Path.GetFileNameWithoutExtension(LiveCompanExePath);
+            if (string.IsNullOrEmpty(name)) return "none";
+            var candidates = Process.GetProcessesByName(name);
+            try { return candidates.Length > 0 ? "external" : "none"; }
+            finally { foreach (var candidate in candidates) candidate.Dispose(); }
+        }
+        public static void ReleaseOwnedProcess() { ownedProcess.Release(); }
         public static void RestoreOwnedFile()
         {
             try { indexOwnership?.Restore(); }
@@ -41,134 +58,8 @@ namespace DanmakuBackend.Utility
 
         private static string GetExePathInternal()
         {
-            string appName = "直播伴侣";
-            appName = Path.GetFileNameWithoutExtension(appName);
-            string exePath = "";
-
-            //从卸载列表中查找
-            try
-            {
-                // 打开注册表中的卸载信息节点
-                var uninstallNode =
-                    Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
-
-                if (uninstallNode != null)
-                {
-                    // 遍历所有的子键（每个子键代表一个已安装的程序的卸载信息）
-                    foreach (string subKeyName in uninstallNode.GetSubKeyNames())
-                    {
-                        RegistryKey subKey = uninstallNode.OpenSubKey(subKeyName);
-                        var displayName = subKey?.GetValue("DisplayName")?.ToString() ?? "";
-
-                        if (!displayName.Contains(appName)) continue;
-                        string uninstallString = subKey?.GetValue("UninstallString")?.ToString();
-                        if (uninstallString.IsNullOrWhiteSpace()) continue;
-
-                        //"D:\Program Files (x86)\webcast_mate\Uninstall 直播伴侣.exe" /allusers
-                        //正则取出""中间的内容
-                        var match = Regex.Match(uninstallString, "\"(.+?)\"");
-                        if (match.Success)
-                        {
-                            string uninstallPath = match.Groups[1].Value;
-                            string dir = Path.GetDirectoryName(uninstallPath);
-                            string exe = Path.Combine(dir, $"{appName}.exe");
-                            if (File.Exists(exe))
-                            {
-                                exePath = exe;
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // 发生异常时，可能是注册表访问出错，记录错误信息
-                Logger.LogError(ex, $"Error checking for Live Companion installation path: {ex.Message}");
-            }
-
-            //从 C:\ProgramData\Microsoft\Windows\Start Menu\Programs 中查找
-            var startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu),
-                "Programs");
-            var findFiles = Directory.GetFiles(startMenuPath, $"{appName}.lnk", SearchOption.AllDirectories);
-            if (findFiles.Length > 0)
-            {
-                exePath = GetShortcutTarget(findFiles[0]);
-            }
-
-            var fileName = Path.GetFileName(exePath);
-
-            //判断是否是 版本选择器
-            if (fileName.Contains("Launcher"))
-            {
-                var dir = Path.GetDirectoryName(exePath);
-                //读取目录下 launcher_config.json
-                var launcherConfigPath = Path.Combine(dir, "launcher_config.json");
-                if (File.Exists(launcherConfigPath))
-                {
-                   
-                    var json = File.ReadAllText(launcherConfigPath, Encoding.UTF8);
-                    var jobj = JsonConvert.DeserializeObject<dynamic>(json);
-                    string curPath = jobj.cur_path;
-                    exePath = Path.Combine(dir, curPath, "直播伴侣.exe");
-                    LiveCompanExePath = exePath;
-                }
-                else
-                {
-                    // 缺少 launcher_config.json 无法定位真实程序路径，返回空串跳过配置
-                    Logger.LogWarn("未找到直播伴侣版本选择器的 launcher_config.json 文件，跳过直播伴侣配置");
-                    return string.Empty;
-                }
-            }
-
-            // 如果没有找到相关信息，则返回空字符串
-            return exePath;
-        }
-
-        /// <summary>
-        /// 获取 .lnk 文件的目标路径
-        /// </summary>
-        /// <param name="shortcutPath">快捷方式文件路径</param>
-        /// <returns>目标路径</returns>
-        private static string GetShortcutTarget(string shortcutPath)
-        {
-            if (string.IsNullOrEmpty(shortcutPath))
-            {
-                throw new ArgumentException(@"快捷方式路径不能为空", nameof(shortcutPath));
-            }
-
-            var processStartInfo = new ProcessStartInfo
-            {
-                FileName = "powershell",
-                Arguments =
-                    $"-command \"$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('{shortcutPath}'); $Shortcut.TargetPath\"",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            try
-            {
-                using (var process = Process.Start(processStartInfo))
-                {
-                    if (process == null)
-                    {
-                        throw new InvalidOperationException("无法启动 PowerShell 进程");
-                    }
-
-                    using (var reader = process.StandardOutput)
-                    {
-                        var read = reader.ReadToEndAsync();
-                        if (!process.WaitForExit(5000)) { process.Kill(); throw new TimeoutException("PowerShell shortcut query timed out"); }
-                        if (!read.Wait(1000)) throw new TimeoutException("PowerShell output read timed out");
-                        string result = read.GetAwaiter().GetResult();
-                        return result.Trim();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"powershell 获取快捷方式目标路径失败，错误信息:{ex.Message}", ex);
-            }
+            LiveCompanExePath = CompanionLocation.Find(AppSetting.Current.LiveCompanPath, diagnostic: Logger.LogWarn);
+            return LiveCompanExePath;
         }
 
         /// <summary>

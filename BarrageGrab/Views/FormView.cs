@@ -85,6 +85,11 @@ namespace DanmakuBackend.Views
         /// <summary>
         /// 右键菜单 - 退出程序
         /// </summary>
+        public void RequestApplicationExit()
+        {
+            ExitApplication_Click(this, EventArgs.Empty);
+        }
+
         private void ExitApplication_Click(object sender, EventArgs e)
         {
             isExiting = true;

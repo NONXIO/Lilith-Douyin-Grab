@@ -822,10 +822,33 @@ namespace DanmakuBackend.Server
 
                             break;
                         case CommandCode.Close:
+                            var lifecycle = cmdPack.Data as JObject;
+                            if (lifecycle?["lifecycle"]?.ToString() == "companion-v1")
+                            {
+                                if (Client == null || Client.Socket != socket || !Client.IsAuthenticated) break;
+                                var requestId = lifecycle["requestId"]?.ToString();
+                                Guid parsedId;
+                                if (!Guid.TryParse(requestId, out parsedId)) break;
+                                try
+                                {
+                                    var action = lifecycle["action"]?.ToString();
+                                    if (action == "release") Utility.LiveCompanHelper.ReleaseOwnedProcess();
+                                    else if (action != "status") throw new InvalidOperationException("伴侣操作无效");
+                                    QueuePlain(socket, JsonConvert.SerializeObject(new Command { Cmd = CommandCode.Close,
+                                        Data = new { lifecycle = "companion-v1", requestId, success = true, ownership = Utility.LiveCompanHelper.CompanionOwnership() } }));
+                                }
+                                catch (Exception error)
+                                {
+                                    QueuePlain(socket, JsonConvert.SerializeObject(new Command { Cmd = CommandCode.Close,
+                                        Data = new { lifecycle = "companion-v1", requestId, success = false, message = "无法保留直播伴侣：" + error.Message } }));
+                                }
+                                break;
+                            }
                             // 关闭服务器
                             Logger.LogInfo("关闭程序...");
+                            // Dispose signals Application.Exit; Program.Main then restores owned files
+                            // and finishes the existing cleanup before terminating the process.
                             Dispose();
-                            Environment.Exit(0);
                             break;
                         case CommandCode.GetConfig:
                             // 处理获取配置请求
